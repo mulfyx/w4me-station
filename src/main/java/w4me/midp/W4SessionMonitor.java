@@ -64,4 +64,6 @@ interface W4SessionMonitor {
             int framebufferSide,
             int controlsTop,
             int controlsHeight);
+
+    void onSessionClosed(String reason);
 }

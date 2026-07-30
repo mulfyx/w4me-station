@@ -249,19 +249,29 @@ cmd_verify_duck() {
 cmd_verify_launcher() {
     SOURCE_JAR="${1:-${ROOT_DIR}/dist/w4me-station.jar}"
     RESULT_DIR="${ROOT_DIR}/build/reports/kemu/launcher"
+    TEMP_DIR="$(mktemp -d)"
+    DIAGNOSTIC_JAR="${TEMP_DIR}/launcher-diagnostic.jar"
     # Pins the release catalog and its order, which is a user-visible contract.
     # Keep in sync with w4me.midp.LibraryList and the list in tools/build.sh.
     EXPECTED_ITEMS='"items":["Sokoban","Wasm Wars","Annoying Robots","Waternet","Dragon Poker Draw","Tic Tac Toe","Watris","Glowfish Chess","Duck Maze","Rubido","Untangle","Sound Demo","Plasma Cube"]'
 
     cleanup() {
         "${ROOT_DIR}/tools/kemu/run.sh" session stop >/dev/null 2>&1 || true
+        rm -rf -- "${TEMP_DIR}"
     }
     trap cleanup EXIT
 
     rm -rf -- "${RESULT_DIR}"
     mkdir -p -- "${RESULT_DIR}"
+    build_diagnostic_jar \
+        "${SOURCE_JAR}" \
+        "${DIAGNOSTIC_JAR}" \
+        "${TEMP_DIR}/classes" \
+        "W4ME Launcher Diagnostic" \
+        "w4me.midp.DiagnosticLibraryMidlet" \
+        "${ROOT_DIR}/src/test/java/w4me/midp/DiagnosticLibraryMidlet.java"
     KEMU_SIZE=176x220 "${ROOT_DIR}/tools/kemu/run.sh" session \
-        start "${SOURCE_JAR}" >/dev/null
+        start "${DIAGNOSTIC_JAR}" >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 500 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/initial.json"
@@ -278,7 +288,7 @@ cmd_verify_launcher() {
             "${RESULT_DIR}/initial.json" ||
         ! grep -F -q -- '"id":2,"text":"Choose .wasm file"' \
             "${RESULT_DIR}/initial.json" ||
-        ! grep -F -q -- '"id":3,"text":"Sound settings"' \
+        ! grep -F -q -- '"id":3,"text":"Settings"' \
             "${RESULT_DIR}/initial.json"; then
         printf 'error: native LCDUI launcher structure is incomplete\n' >&2
         exit 1
@@ -299,14 +309,137 @@ cmd_verify_launcher() {
         >"${RESULT_DIR}/cartridge.json"
     if ! grep -F -q -- '"displayableKind":"canvas"' \
         "${RESULT_DIR}/cartridge.json" ||
-        ! grep -F -q -- '"right":"Library"' \
+        ! grep -F -q -- '"softkeys":{"left":"","right":""}' \
             "${RESULT_DIR}/cartridge.json"; then
-        printf 'error: launcher Run command did not open the selected cartridge\n' >&2
+        printf 'error: gameplay Canvas still exposes a platform command chooser\n' >&2
         exit 1
     fi
 
+    # The raw Nokia right-softkey event directly requests a frame-boundary pause.
+    # There is no intermediate one-item LCDUI command chooser; the next
+    # Displayable must be the native paused-menu List.
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/system-menu.json"
+    if ! grep -F -q -- '"displayableKind":"list"' \
+        "${RESULT_DIR}/system-menu.json" ||
+        ! grep -F -q -- '"title":"Paused"' \
+            "${RESULT_DIR}/system-menu.json" ||
+        ! grep -F -q -- \
+            '"items":["Continue","Settings","Restart Cart","Exit"]' \
+            "${RESULT_DIR}/system-menu.json"; then
+        printf 'error: native LCDUI system menu is incomplete\n' >&2
+        exit 1
+    fi
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd screenshot \
+        --out "${RESULT_DIR}/paused-menu.png" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+
+    # Restart is the third base action: Continue, Settings, Restart Cart, Exit.
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/restart-menu.json"
+    if ! grep -F -q -- '"selectedIndex":2' \
+        "${RESULT_DIR}/restart-menu.json"; then
+        printf 'error: diagnostic Restart Cart selection is missing\n' >&2
+        exit 1
+    fi
+    snapshot_id="$(
+        sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+            "${RESULT_DIR}/restart-menu.json"
+    )"
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+        --snapshot "${snapshot_id}" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1500 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/restarted.json"
+    if ! grep -F -q -- '"displayableKind":"canvas"' \
+        "${RESULT_DIR}/restarted.json"; then
+        printf 'error: Restart Cart did not reopen the cartridge Canvas\n' >&2
+        exit 1
+    fi
+
+    # Game-origin Settings keeps the worker paused and returns through
+    # Audio -> Settings -> the same native system menu.
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/settings-menu.json"
+    if ! grep -F -q -- '"selectedIndex":1' \
+        "${RESULT_DIR}/settings-menu.json"; then
+        printf 'error: diagnostic Settings selection is missing\n' >&2
+        exit 1
+    fi
+    snapshot_id="$(
+        sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+            "${RESULT_DIR}/settings-menu.json"
+    )"
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+        --snapshot "${snapshot_id}" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/game-settings.json"
+    if ! grep -F -q -- '"displayableKind":"list"' \
+        "${RESULT_DIR}/game-settings.json" ||
+        ! grep -F -q -- '"title":"Settings"' \
+            "${RESULT_DIR}/game-settings.json" ||
+        ! grep -F -q -- '"items":["Audio"]' \
+            "${RESULT_DIR}/game-settings.json"; then
+        printf 'error: game-origin Settings category list is incomplete\n' >&2
+        exit 1
+    fi
+
+    snapshot_id="$(
+        sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+            "${RESULT_DIR}/game-settings.json"
+    )"
+    if ! [[ "${snapshot_id}" =~ ^[0-9]+$ ]]; then
+        printf 'error: cannot read game Settings command snapshot\n' >&2
+        exit 1
+    fi
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+        --snapshot "${snapshot_id}" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/game-audio.json"
+    if ! grep -F -q -- '"displayableKind":"screen"' \
+        "${RESULT_DIR}/game-audio.json" ||
+        ! grep -F -q -- '"title":"Audio"' \
+            "${RESULT_DIR}/game-audio.json" ||
+        ! grep -F -q -- '"left":"Save"' \
+            "${RESULT_DIR}/game-audio.json" ||
+        ! grep -F -q -- '"right":"Cancel"' \
+            "${RESULT_DIR}/game-audio.json"; then
+        printf 'error: game-origin Audio form is incomplete\n' >&2
+        exit 1
+    fi
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 200 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+
+    # Exit is the fourth and final base action.
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+        >"${RESULT_DIR}/exit-menu.json"
+    if ! grep -F -q -- '"selectedIndex":3' \
+        "${RESULT_DIR}/exit-menu.json"; then
+        printf 'error: diagnostic Exit-last selection is missing\n' >&2
+        exit 1
+    fi
+    snapshot_id="$(
+        sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+            "${RESULT_DIR}/exit-menu.json"
+    )"
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+        --snapshot "${snapshot_id}" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 800 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/returned.json"
     if ! grep -F -q -- '"displayableKind":"list"' \
@@ -327,22 +460,23 @@ cmd_verify_launcher() {
         printf 'error: cannot read restored launcher command snapshot\n' >&2
         exit 1
     fi
+    # Library-origin Settings returns to the library without a game session.
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 3 \
         --snapshot "${snapshot_id}" >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
-        >"${RESULT_DIR}/sound-settings.json"
-    if ! grep -F -q -- '"displayableKind":"screen"' \
-        "${RESULT_DIR}/sound-settings.json" ||
-        ! grep -F -q -- '"title":"Sound settings"' \
-            "${RESULT_DIR}/sound-settings.json" ||
-        ! grep -F -q -- '"left":"Save"' \
-            "${RESULT_DIR}/sound-settings.json" ||
-        ! grep -F -q -- '"right":"Cancel"' \
-            "${RESULT_DIR}/sound-settings.json"; then
-        printf 'error: launcher did not open the native sound settings Form\n' >&2
+        >"${RESULT_DIR}/library-settings.json"
+    if ! grep -F -q -- '"displayableKind":"list"' \
+        "${RESULT_DIR}/library-settings.json" ||
+        ! grep -F -q -- '"title":"Settings"' \
+            "${RESULT_DIR}/library-settings.json" ||
+        ! grep -F -q -- '"items":["Audio"]' \
+            "${RESULT_DIR}/library-settings.json"; then
+        printf 'error: launcher did not open library-origin Settings\n' >&2
         exit 1
     fi
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 200 >/dev/null
 
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd logs worker --lines 300 \
         >"${RESULT_DIR}/worker.log"
@@ -351,13 +485,22 @@ cmd_verify_launcher() {
         printf 'error: native launcher flow reported a runtime failure\n' >&2
         exit 1
     fi
+    if ! grep -F -q -- \
+        'W4ME_SESSION_CLOSED cart=Sokoban reason=restart count=1' \
+        "${RESULT_DIR}/worker.log" ||
+        ! grep -F -q -- \
+            'W4ME_SESSION_CLOSED cart=Sokoban reason=exit count=2' \
+            "${RESULT_DIR}/worker.log"; then
+        printf 'error: restart/exit did not close each worker-owned session exactly once\n' >&2
+        exit 1
+    fi
     {
         printf 'source-jar-sha256=%s\n' \
             "$(sha256sum -- "${SOURCE_JAR}" | awk '{print $1}')"
         printf '%s\n' \
-            'displayable=list items=13 selected=0 run=PASS return=PASS sound-settings=PASS'
+            'displayable=list items=13 selected=0 native-menu=PASS restart=PASS exit-last=PASS game-settings=PASS library-settings=PASS cleanup=PASS'
     } >"${RESULT_DIR}/receipt.txt"
-    printf 'PASS KEmulator native LCDUI launcher items=13 run return focus sound-settings\n'
+    printf 'PASS KEmulator launcher native-menu restart exit-last settings origins cleanup\n'
 }
 
 cmd_verify_external() {

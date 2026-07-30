@@ -27,6 +27,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
     private long maximumFrameMillis;
     private int presentedFrames;
     private long benchmarkStartedAt;
+    private int closedSessions;
 
     DiagnosticW4SessionMonitor(
             String title,
@@ -229,6 +230,17 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
                         + ","
                         + controlsHeight
                         + " overlap=0");
+    }
+
+    public void onSessionClosed(String reason) {
+        closedSessions++;
+        System.out.println(
+                "W4ME_SESSION_CLOSED cart="
+                        + title
+                        + " reason="
+                        + reason
+                        + " count="
+                        + closedSessions);
     }
 
     private void recordBenchmark(

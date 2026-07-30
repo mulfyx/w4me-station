@@ -243,6 +243,17 @@ javac \
     "${ROOT_DIR}/src/main/java/w4me/midp/AudioPreferences.java" \
     "${ROOT_DIR}/src/test/java/w4me/midp/AudioPreferencesSmoke.java"
 
+javac \
+    -source "${J2ME_SOURCE}" \
+    -target "${J2ME_TARGET}" \
+    -Xlint:-options \
+    -classpath "${CLASSES_DIR}" \
+    -d "${CLASSES_DIR}" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/SystemMenuModel.java" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/SystemMenuState.java" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/SettingsMenuModel.java" \
+    "${ROOT_DIR}/src/test/java/w4me/midp/SystemMenuSmoke.java"
+
 java -classpath "${CLASSES_DIR}" w4me.MandelbrotInterpreterSmoke \
     "${ROOT_DIR}/cartridges/mandelbrot.wasm" \
     "${ROOT_DIR}/src/main/resources/w4font.bin" \
@@ -409,6 +420,7 @@ java -classpath "${CLASSES_DIR}" w4me.Wasm4PcmSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.Wasm4PcmDifferentialSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.AudioSettingsSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.MmapiMidiBackendSmoke
+java -classpath "${CLASSES_DIR}" w4me.midp.SystemMenuSmoke
 java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.midp.AudioPreferencesSmoke
 
 java -classpath "${CLASSES_DIR}" w4me.SoundTestSmoke \

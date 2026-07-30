@@ -32,14 +32,14 @@ public final class AudioSettingsSmoke {
         assertEquals("unmute resumes at stored gain", submittedBeforeMute + 1, backend.submitCount);
         assertEquals("stored gain remains active", 0x3232, backend.lastVolume);
 
-        apu.setSuspended(true);
+        apu.suspendOutput();
         int submittedBeforeSuspend = backend.submitCount;
         apu.tone(294, 10, 100, 0);
         assertEquals(
                 "temporary suspension suppresses output",
                 submittedBeforeSuspend,
                 backend.submitCount);
-        apu.setSuspended(false);
+        apu.resumeOutput();
         if (apu.muted()) {
             throw new AssertionError("temporary suspension changed persistent mute");
         }

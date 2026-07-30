@@ -135,6 +135,15 @@ public final class Wasm4Apu {
         }
     }
 
+    public synchronized void suspendOutput() {
+        suspended = true;
+        silence();
+    }
+
+    public synchronized void resumeOutput() {
+        suspended = false;
+    }
+
     public synchronized boolean suspended() {
         return suspended;
     }

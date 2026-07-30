@@ -16,6 +16,7 @@ import w4me.runtime.audio.AudioControl;
 final class AudioSettingsForm extends Form implements CommandListener, ItemStateListener {
     private final W4MeMidlet midlet;
     private final W4Canvas source;
+    private final SettingsList settings;
     private final int capability;
     private final ChoiceGroup modeChoice;
     private final ChoiceGroup soundChoice;
@@ -31,9 +32,28 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
             boolean compatibilityMode,
             boolean muted,
             int gain) {
-        super("Sound settings");
+        this(
+                midlet,
+                source,
+                null,
+                capability,
+                compatibilityMode,
+                muted,
+                gain);
+    }
+
+    AudioSettingsForm(
+            W4MeMidlet midlet,
+            W4Canvas source,
+            SettingsList settings,
+            int capability,
+            boolean compatibilityMode,
+            boolean muted,
+            int gain) {
+        super("Audio");
         this.midlet = midlet;
         this.source = source;
+        this.settings = settings;
         this.capability = capability;
 
         modeChoice =
@@ -104,6 +124,7 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
                             : volumeGauge.getValue();
             midlet.finishAudioSettings(
                     source,
+                    settings,
                     true,
                     modeChoice.getSelectedIndex() == 1,
                     muted,
@@ -111,6 +132,7 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
         } else {
             midlet.finishAudioSettings(
                     source,
+                    settings,
                     false,
                     midlet.compatibilityAudioEnabled(),
                     midlet.soundMuted(),

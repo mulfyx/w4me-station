@@ -53,8 +53,8 @@ final class LibraryList extends List implements CommandListener {
                             : "Install .wasm",
                     Command.SCREEN,
                     1);
-    private final Command soundSettingsCommand =
-            new Command("Sound settings", Command.SCREEN, 2);
+    private final Command settingsCommand =
+            new Command("Settings", Command.SCREEN, 2);
     private final Command exitCommand = new Command("Exit", Command.EXIT, 1);
     private CartridgeStore.CartridgeInfo[] installed = new CartridgeStore.CartridgeInfo[0];
 
@@ -63,7 +63,7 @@ final class LibraryList extends List implements CommandListener {
         this.midlet = midlet;
         setSelectCommand(runCommand);
         addCommand(installCommand);
-        addCommand(soundSettingsCommand);
+        addCommand(settingsCommand);
         addCommand(exitCommand);
         setCommandListener(this);
         reloadInstalled();
@@ -107,8 +107,8 @@ final class LibraryList extends List implements CommandListener {
             openSelected();
         } else if (command == installCommand) {
             midlet.showInstallOptions();
-        } else if (command == soundSettingsCommand) {
-            midlet.showAudioSettings(null);
+        } else if (command == settingsCommand) {
+            midlet.showSettings(null);
         } else if (command == exitCommand) {
             midlet.exit();
         }
