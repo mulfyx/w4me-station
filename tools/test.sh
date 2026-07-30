@@ -33,6 +33,8 @@ case "${PAIRED_DIRTY_ACTUAL}" in
 esac
 printf 'paired-stats:pass dirty-source-classification\n'
 
+bash "${ROOT_DIR}/tools/container/runtime-smoke.sh"
+
 "${ROOT_DIR}/tools/bench/run.sh" w4bench
 
 TEST_DIR="${ROOT_DIR}/build/test"

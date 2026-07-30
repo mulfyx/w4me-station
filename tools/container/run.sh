@@ -5,6 +5,9 @@ ROOT_DIR="$(readlink -f -- "$(dirname -- "${BASH_SOURCE[0]}")/../..")"
 IMAGE="${W4ME_TOOLCHAIN_IMAGE:-w4me-station:latest}"
 KEMU_SESSION_CONTAINER="${W4ME_KEMU_SESSION_CONTAINER:-w4me-station-kemu}"
 
+# shellcheck disable=SC1091
+source "${ROOT_DIR}/tools/container/runtime.sh"
+
 if [ "${W4ME_TOOLCHAIN_CONTAINER:-}" = "1" ]; then
     printf 'error: tools/container/run.sh is a host-side entrypoint\n' >&2
     exit 1
@@ -13,7 +16,13 @@ if ! command -v docker >/dev/null 2>&1; then
     printf 'error: docker command not found; install Docker or a Docker-compatible Podman shim\n' >&2
     exit 1
 fi
-if ! docker image inspect "${IMAGE}" >/dev/null 2>&1; then
+if inspect_container_image "${IMAGE}" >/dev/null; then
+    :
+else
+    inspect_status="$?"
+    if [ "${inspect_status}" -ne 1 ]; then
+        exit "${inspect_status}"
+    fi
     printf 'error: toolchain image %s not found; run just setup\n' "${IMAGE}" >&2
     exit 1
 fi

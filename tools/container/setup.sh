@@ -7,6 +7,9 @@ PROJECT_LABEL="io.w4me.station.toolchain"
 FINGERPRINT_LABEL="${PROJECT_LABEL}.fingerprint"
 PREVIOUS_IMAGE="w4me-station-setup-previous:$$"
 
+# shellcheck disable=SC1091
+source "${ROOT_DIR}/tools/container/runtime.sh"
+
 if ! command -v docker >/dev/null 2>&1; then
     printf 'error: docker command not found; install Docker or a Docker-compatible Podman shim\n' >&2
     exit 1
@@ -20,12 +23,19 @@ fingerprint="$(
         sha256sum |
         cut -d ' ' -f 1
 )"
-current_fingerprint="$(
-    docker image inspect "${IMAGE}" \
-        --format "{{ index .Config.Labels \"${FINGERPRINT_LABEL}\" }}" \
-        2>/dev/null ||
-        true
-)"
+image_available=0
+if current_fingerprint="$(
+    inspect_container_image "${IMAGE}" \
+        --format "{{ index .Config.Labels \"${FINGERPRINT_LABEL}\" }}"
+)"; then
+    image_available=1
+else
+    inspect_status="$?"
+    if [ "${inspect_status}" -ne 1 ]; then
+        exit "${inspect_status}"
+    fi
+    current_fingerprint=""
+fi
 
 if [ "${W4ME_TOOLCHAIN_FORCE_REBUILD:-0}" != "1" ] &&
     [ "${current_fingerprint}" = "${fingerprint}" ]; then
@@ -43,7 +53,7 @@ cleanup_previous() {
 }
 trap cleanup_previous EXIT
 
-if docker image inspect "${IMAGE}" >/dev/null 2>&1; then
+if [ "${image_available}" = "1" ]; then
     docker image tag "${IMAGE}" "${PREVIOUS_IMAGE}"
     previous_saved=1
 fi
