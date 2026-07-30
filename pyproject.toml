@@ -1,0 +1,24 @@
+[tool.ruff]
+extend-exclude = [
+    "build",
+    "dist",
+    "node_modules",
+    "target",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+# Ruff's formatter owns these three mutually exclusive layout decisions.
+ignore = [
+    "COM812",
+    "D203",
+    "D213",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test assertions are the contract under test; Ruff's PT009 requires assert while
+# Bandit's S101 rejects it, so the test-only security rule is the required tie-break.
+"test_*.py" = ["S101"]
+
+[tool.ruff.format]
+line-ending = "lf"

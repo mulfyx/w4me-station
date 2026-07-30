@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<ruleset name="W4ME strict Java rules"
+    xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.github.io/schema/ruleset_2_0_0.xsd">
+    <description>
+        PMD quickstart with only rules that can be satisfied by Java 1.3 and
+        the CLDC 1.1 API.
+    </description>
+
+    <rule ref="rulesets/java/quickstart.xml">
+        <!-- Java 1.3 has no Override annotation. -->
+        <exclude name="MissingOverride" />
+        <!-- Java 1.3/CLDC lacks the modern wrapper factory methods. -->
+        <exclude name="PrimitiveWrapperInstantiation" />
+        <!-- CLDC 1.1 collections do not implement the Java SE collection interfaces. -->
+        <exclude name="LooseCoupling" />
+        <!-- CLDC 1.1 has no StandardCharsets constants. -->
+        <exclude name="UseStandardCharsets" />
+        <!-- CLDC 1.1 has no Locale API for locale-independent case conversion. -->
+        <exclude name="UseLocaleWithCaseConversions" />
+        <!-- MIDP command, displayable, canvas, and session objects are identity tokens. -->
+        <exclude name="CompareObjectsWithEquals" />
+        <!-- Volatile provides required LCDUI-event-thread to game-worker visibility. -->
+        <exclude name="AvoidUsingVolatile" />
+        <!-- Explicit WasmHost qualifiers document the numeric host-import ABI. -->
+        <exclude name="UnnecessaryFullyQualifiedName" />
+    </rule>
+</ruleset>

@@ -2,6 +2,7 @@ target/
 build/
 .local/
 node_modules/
+.npm/
 *.log
 .DS_Store
 __pycache__/

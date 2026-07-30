@@ -1,0 +1,205 @@
+version = 1
+SPDX-PackageName = "W4ME Station"
+SPDX-PackageSupplier = "W4ME Station contributors"
+SPDX-PackageDownloadLocation = "https://github.com/mulfyx/w4me-station"
+
+[[annotations]]
+path = [
+  ".claude/**",
+  ".codex/**",
+  ".dockerignore",
+  ".editorconfig",
+  ".editorconfig-checker.json",
+  ".ecrc",
+  ".gitattributes",
+  ".gitleaksignore",
+  ".gitleaks.toml",
+  ".github/**",
+  ".gitignore",
+  ".hadolint.yaml",
+  ".markdownlint-cli2.jsonc",
+  ".prettierignore",
+  ".prettierrc.json",
+  ".vale.ini",
+  ".yamllint.yml",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "LICENSE",
+  "README.md",
+  "REUSE.toml",
+  "SECURITY.md",
+  "THIRD_PARTY_NOTICES.md",
+  "_typos.toml",
+  "bench/**",
+  "cartridges/README.md",
+  "commitlint.config.mjs",
+  "config/**",
+  "docs/*.md",
+  "docs/media/README.md",
+  "docs/media/hero-phone.jpg",
+  "justfile",
+  "lychee.toml",
+  "openspec/**",
+  "package-lock.json",
+  "package.json",
+  "pom.xml",
+  "pyproject.toml",
+  "renovate.json5",
+  "src/main/java/**",
+  "src/main/manifest/**",
+  "src/main/resources/icon.png",
+  "src/test/**",
+  "testdata/**",
+  "tools/**"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 W4ME Station contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+  "dist/SHA256SUMS",
+  "dist/w4me-station-base.jad",
+  "dist/w4me-station.jad"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 W4ME Station contributors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = [
+  "dist/w4me-station-base.jar",
+  "dist/w4me-station.jar"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "W4ME Station contributors and bundled cartridge authors"
+SPDX-License-Identifier = "MIT AND ISC AND BSD-2-Clause AND CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "src/main/resources/w4font.bin"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Bruno Garcia"
+SPDX-License-Identifier = "ISC"
+
+[[annotations]]
+path = "docs/media/plasma-cube.jpg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "unnick"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "docs/media/sokoban.jpg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Lars Hamre"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "docs/media/wasm-wars.jpg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Daniel Kiyoshi Hashimoto Vouzella de Andrade"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/sokoban.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Lars Hamre"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/wasm-wars.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Daniel Kiyoshi Hashimoto Vouzella de Andrade"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/annoyingrobots.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Shimon Ulewicz"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/waternet.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Davy Willems"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/dragon-poker-draw.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "LoneGrayWolf"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/tictactoe.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Christopher Kleine"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = [
+  "cartridges/sound-demo.wasm",
+  "cartridges/watris.wasm"
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Bruno Garcia"
+SPDX-License-Identifier = "ISC"
+
+[[annotations]]
+path = "cartridges/glowfish-chess.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Analog Hors"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/duck-maze.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Julia Marques Sanches"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/untangle.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Mota Link"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/nyancat.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Jake Ledoux"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/plasma-cube.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "unnick"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/mandelbrot.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "LukeGrahamLandry"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/rubido.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Davy Willems"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "cartridges/sound-test.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Mr.Rafael"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/tankle.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Milky Natas"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"
+
+[[annotations]]
+path = "cartridges/game-of-life-zig-edition.wasm"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "David Roman"
+SPDX-License-Identifier = "CC-BY-NC-SA-4.0"

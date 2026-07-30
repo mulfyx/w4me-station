@@ -1,0 +1,17 @@
+{
+  "Exclude": [
+    "(^|/)[.]git(/|$)",
+    "(^|/)[.]local(/|$)",
+    "(^|/)[.]agents(/|$)",
+    "(^|/)[.]claude(/|$)",
+    "(^|/)[.]codex(/|$)",
+    "(^|/)[.]ruff_cache(/|$)",
+    "(^|/)build(/|$)",
+    "(^|/)dist(/|$)",
+    "(^|/)node_modules(/|$)",
+    "(^|/)target(/|$)",
+    "(^|/)__pycache__(/|$)",
+    "[.](bin|jar|jpg|md|png|wasm|zip)$"
+  ],
+  "IgnoreDefaults": false
+}

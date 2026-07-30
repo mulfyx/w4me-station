@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+        Java ME storage and MMAPI expose heterogeneous checked, runtime, and
+        linkage failures. Their narrow boundary methods deliberately normalize
+        those failures for callers.
+    -->
+    <Match>
+        <Class name="w4me.midp.CartridgeStore" />
+        <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION" />
+    </Match>
+    <Match>
+        <Class name="w4me.midp.Jsr75FileSystem" />
+        <Bug pattern="THROWS_METHOD_THROWS_RUNTIMEEXCEPTION" />
+    </Match>
+    <Match>
+        <Class name="w4me.midp.W4Canvas" />
+        <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION" />
+    </Match>
+    <Match>
+        <Class name="w4me.runtime.audio.MmapiMidiBackend$MidiPlayerFactory" />
+        <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION" />
+    </Match>
+
+    <!-- renderFrame and bandRenderer are owned exclusively by the game worker. -->
+    <Match>
+        <Class name="w4me.midp.W4Canvas" />
+        <Field name="bandRenderer" />
+        <Bug pattern="AT_STALE_THREAD_WRITE_OF_PRIMITIVE" />
+    </Match>
+
+    <!--
+        CLDC has no finalization attack surface or static anonymous classes.
+        This MIDlet constructor only installs fixed LCDUI command handlers.
+    -->
+    <Match>
+        <Class name="w4me.midp.W4MeMidlet" />
+        <Bug pattern="CT_CONSTRUCTOR_THROW,SIC_INNER_SHOULD_BE_STATIC_ANON" />
+    </Match>
+
+    <!--
+        Runtime collaborators, linear memory, and W4IR metadata are intentional
+        zero-copy ownership transfers on a memory-constrained CLDC VM.
+    -->
+    <Match>
+        <Class name="w4me.runtime.Wasm4Runtime" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Class name="w4me.wasm.W4IrFunction" />
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Class name="w4me.wasm.WasmInterpreter" />
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+    <Match>
+        <Class name="w4me.wasm.WasmModule" />
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+
+    <!--
+        Null means no audible output or no promotable resident code. Allocating
+        an empty array would erase the state distinction and waste CLDC heap.
+    -->
+    <Match>
+        <Class name="w4me.runtime.audio.MmapiMidiBackend" />
+        <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
+    </Match>
+    <Match>
+        <Class name="w4me.runtime.audio.Wasm4Pcm" />
+        <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
+    </Match>
+    <Match>
+        <Class name="w4me.wasm.WasmModule$FunctionBody" />
+        <Bug pattern="PZLA_PREFER_ZERO_LENGTH_ARRAYS" />
+    </Match>
+
+    <!--
+        Audio state is owned by the game worker. Settings mutate it only while
+        that worker is suspended at the synchronized system-menu boundary.
+    -->
+    <Match>
+        <Class name="w4me.runtime.audio.Wasm4Apu" />
+        <Bug pattern="IS2_INCONSISTENT_SYNC" />
+    </Match>
+
+    <!-- phase is an oscillator accumulator, not the enclosing loop counter. -->
+    <Match>
+        <Class name="w4me.runtime.audio.Wasm4Pcm" />
+        <Bug pattern="FL_FLOATS_AS_LOOP_COUNTERS" />
+    </Match>
+
+    <!--
+        Duplicate switch bodies encode distinct WebAssembly opcodes. Merging
+        their labels perturbs the measured hot tableswitch layout.
+    -->
+    <Match>
+        <Class name="w4me.wasm.WasmInterpreter" />
+        <Bug pattern="DB_DUPLICATE_SWITCH_CLAUSES" />
+    </Match>
+    <Match>
+        <Class name="w4me.wasm.WasmModule" />
+        <Bug pattern="DB_DUPLICATE_SWITCH_CLAUSES" />
+    </Match>
+
+    <!-- WebAssembly floating-point equality is exact by specification. -->
+    <Match>
+        <Class name="w4me.wasm.WasmInterpreter" />
+        <Bug pattern="FE_FLOATING_POINT_EQUALITY" />
+    </Match>
+
+    <!--
+        Shadow branch helpers are live in alternate InterpreterBuildConfig
+        variants even though the production constants remove their call sites.
+    -->
+    <Match>
+        <Class name="w4me.wasm.WasmInterpreter" />
+        <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD" />
+    </Match>
+
+    <!-- CLDC 1.0/1.1 has no Integer.valueOf(int) overload. -->
+    <Match>
+        <Class name="w4me.wasm.WasmModule" />
+        <Bug pattern="DM_NUMBER_CTOR" />
+    </Match>
+</FindBugsFilter>

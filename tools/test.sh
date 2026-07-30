@@ -9,9 +9,10 @@ source "${ROOT_DIR}/tools/container/env.sh"
 PAIRED_FIXTURE="${ROOT_DIR}/src/test/resources/phoneme-paired-wrong-sign.csv"
 PAIRED_EXPECTED="pairs=8 median-delta-us-per-frame=-255.5 median-speedup-percent=-0.220 wins=3 losses=5 ties=0 timer-resolution-us-per-frame=7.752 timer-resolved=yes order-balanced=yes source-clean=yes evidence-quality=measured"
 PAIRED_ACTUAL="$(
-    awk -f "${ROOT_DIR}/tools/phoneme/paired-stats.awk" "${PAIRED_FIXTURE}"
+    awk -v source_dirty=no \
+        -f "${ROOT_DIR}/tools/phoneme/paired-stats.awk" "${PAIRED_FIXTURE}"
 )"
-if [ "${PAIRED_ACTUAL}" != "${PAIRED_EXPECTED}" ]; then
+if [[ "${PAIRED_ACTUAL}" != "${PAIRED_EXPECTED}" ]]; then
     printf 'FAIL paired-stats wrong-sign regression\n' >&2
     printf 'expected: %s\n' "${PAIRED_EXPECTED}" >&2
     printf 'actual:   %s\n' "${PAIRED_ACTUAL}" >&2
@@ -24,12 +25,12 @@ PAIRED_DIRTY_ACTUAL="$(
         -f "${ROOT_DIR}/tools/phoneme/paired-stats.awk" "${PAIRED_FIXTURE}"
 )"
 case "${PAIRED_DIRTY_ACTUAL}" in
-*"source-clean=no evidence-quality=exploratory") ;;
-*)
-    printf 'FAIL paired-stats dirty-source classification\n' >&2
-    printf 'actual: %s\n' "${PAIRED_DIRTY_ACTUAL}" >&2
-    exit 1
-    ;;
+    *"source-clean=no evidence-quality=exploratory") ;;
+    *)
+        printf 'FAIL paired-stats dirty-source classification\n' >&2
+        printf 'actual: %s\n' "${PAIRED_DIRTY_ACTUAL}" >&2
+        exit 1
+        ;;
 esac
 printf 'paired-stats:pass dirty-source-classification\n'
 
@@ -51,7 +52,7 @@ DEFINED_CALL_ARGUMENTS_WASM="${TEST_DIR}/defined-call-arguments.wasm"
 W4IR_CACHE_METADATA_WASM="${TEST_DIR}/w4ir-cache-metadata-recovery.wasm"
 INTERPRETER_CONFIG_SOURCE="${INTERPRETER_CONFIG_SOURCE:-${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java}"
 
-[ -f "${INTERPRETER_CONFIG_SOURCE}" ] || {
+[[ -f "${INTERPRETER_CONFIG_SOURCE}" ]] || {
     printf 'error: missing interpreter config: %s\n' \
         "${INTERPRETER_CONFIG_SOURCE}" >&2
     exit 1
@@ -91,8 +92,8 @@ find "${ROOT_DIR}/src/main/java/w4me/wasm" \
     "${ROOT_DIR}/src/main/java/w4me/runtime" \
     -name '*.java' \
     ! -path "${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java" \
-    -print | sort >"${TEST_DIR}/sources.list"
-printf '%s\n' "${INTERPRETER_CONFIG_SOURCE}" >>"${TEST_DIR}/sources.list"
+    -print | sort > "${TEST_DIR}/sources.list"
+printf '%s\n' "${INTERPRETER_CONFIG_SOURCE}" >> "${TEST_DIR}/sources.list"
 javac \
     -source "${J2ME_SOURCE}" \
     -target "${J2ME_TARGET}" \
@@ -111,7 +112,7 @@ if javac \
     -classpath "${MIDP_API_JAR}" \
     -d "${TEST_DIR}/forbidden-api-classes" \
     "${ROOT_DIR}/src/test/resources/cldc-api/ForbiddenJavaSeApi.java" \
-    >"${TEST_DIR}/forbidden-api.log" 2>&1; then
+    > "${TEST_DIR}/forbidden-api.log" 2>&1; then
     printf 'error: CLDC API gate accepted java.lang.Math.log\n' >&2
     exit 1
 fi
@@ -256,6 +257,10 @@ javac \
     -Xlint:-options \
     -classpath "${MIDP_API_JAR}" \
     -d "${CLASSES_DIR}" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/FileEntry.java" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/FilePage.java" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/FilePageBuilder.java" \
+    "${ROOT_DIR}/src/main/java/w4me/midp/FileSelection.java" \
     "${ROOT_DIR}/src/main/java/w4me/midp/FileSystemAccess.java" \
     "${ROOT_DIR}/src/test/java/w4me/midp/FilePageBuilderSmoke.java"
 
@@ -287,7 +292,7 @@ java -classpath "${CLASSES_DIR}" w4me.MandelbrotInterpreterSmoke \
     "${FRAMEBUFFER}"
 
 actual_sha256="$(sha256sum -- "${FRAMEBUFFER}" | cut -d ' ' -f 1)"
-if [ "${actual_sha256}" != "${EXPECTED_FRAMEBUFFER_SHA256}" ]; then
+if [[ "${actual_sha256}" != "${EXPECTED_FRAMEBUFFER_SHA256}" ]]; then
     printf 'error: framebuffer mismatch: expected %s, got %s\n' \
         "${EXPECTED_FRAMEBUFFER_SHA256}" "${actual_sha256}" >&2
     exit 1
@@ -459,7 +464,7 @@ java -classpath "${CLASSES_DIR}" w4me.AudioTraceAnalysis \
     "${ROOT_DIR}/src/main/resources/w4font.bin" \
     "${ROOT_DIR}/cartridges/nyancat.wasm" \
     180 \
-    >"${audio_report_dir}/nyancat-tone-trace.csv"
+    > "${audio_report_dir}/nyancat-tone-trace.csv"
 grep -Fqx \
     'SUMMARY frames=180 events=48 zero-release=48 overlapping-replacements=0 web-phase-continuity=0 non-silent-starts=0 non-silent-ends=0 max-adjacent-step=254 framebuffer-fnv1a=69daa7ed' \
     "${audio_report_dir}/nyancat-tone-trace.csv"
@@ -468,7 +473,7 @@ java -classpath "${CLASSES_DIR}" w4me.AudioTraceAnalysis \
     "${ROOT_DIR}/cartridges/watris.wasm" \
     1800 \
     "${ROOT_DIR}/testdata/audio/watris-start.csv" \
-    >"${audio_report_dir}/watris-tone-trace.csv"
+    > "${audio_report_dir}/watris-tone-trace.csv"
 grep -Fqx \
     'SUMMARY frames=1800 events=3 zero-release=1 overlapping-replacements=0 web-phase-continuity=0 non-silent-starts=0 non-silent-ends=0 max-adjacent-step=254 framebuffer-fnv1a=578ebee9' \
     "${audio_report_dir}/watris-tone-trace.csv"

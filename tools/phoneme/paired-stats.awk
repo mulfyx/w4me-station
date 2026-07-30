@@ -1,8 +1,13 @@
 BEGIN {
 	FS = ","
-	if (source_dirty == "") {
-		source_dirty = "no"
-	}
+	failed = 0
+	count = 0
+	max_resolution = 0
+	wins = 0
+	losses = 0
+	ties = 0
+	baseline_first = 0
+	candidate_first = 0
 }
 
 NR == 1 && $1 == "sample" {
@@ -27,7 +32,7 @@ NF != 5 {
 		failed = 1
 		next
 	}
-	if (seen[sample]) {
+	if (sample in seen) {
 		printf "error: duplicate paired sample %d\n", sample > "/dev/stderr"
 		failed = 1
 		next

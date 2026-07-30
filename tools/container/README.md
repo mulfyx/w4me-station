@@ -27,9 +27,9 @@ container with a sanitized `PATH`. The repository is bind-mounted at
 Java 1.3. Both `J2ME_SOURCE` and `J2ME_TARGET` are pinned to `1.3` by
 `tools/container/env.sh`.
 
-The runner preserves the host UID for generated files. It uses
-`--userns=keep-id` automatically when the `docker` command is backed by
-rootless Podman.
+The image defaults to an unprivileged numeric user. The runner explicitly
+preserves the host UID and GID for generated files, and also uses
+`--userns=keep-id` when the `docker` command is backed by rootless Podman.
 
 ## KEmulator
 
@@ -67,16 +67,16 @@ docker rm -f w4me-station-kemu
 
 ## Pinned tools
 
-| Tool | Version / source |
-| --- | --- |
-| Base image | Fedora 44 |
-| Temurin JDK | `jdk8u492-b09` in `/opt/jdk8` |
-| Java ME source/target | `1.3` / `1.3` |
-| ProGuard | `7.0.1`, Java ME `StackMap` preverification |
-| CLDC/MIDP API lint | MicroEmulator `cldcapi11:2.0.4` and `midpapi20:2.0.4` LGPL build-time stubs, checksum-pinned |
-| KEmulator | `mulfyx/KEmulator` commit `73ba4b14b8c2` in `/opt/kemu` |
-| WABT | Fedora 44 package (`wasm2wat`, `wasm-objdump`, `wasm-validate`) |
-| Python, binutils, diffutils, ShellCheck, shfmt | Fedora 44 packages |
+| Tool                                           | Version / source                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Base image                                     | Fedora 44                                                                                    |
+| Temurin JDK                                    | `jdk8u492-b09` in `/opt/jdk8`                                                                |
+| Java ME source/target                          | `1.3` / `1.3`                                                                                |
+| ProGuard                                       | `7.0.1`, Java ME `StackMap` preverification                                                  |
+| CLDC/MIDP API lint                             | MicroEmulator `cldcapi11:2.0.4` and `midpapi20:2.0.4` LGPL build-time stubs, checksum-pinned |
+| KEmulator                                      | `mulfyx/KEmulator` commit `73ba4b14b8c2` in `/opt/kemu`                                      |
+| WABT                                           | Fedora 44 package (`wasm2wat`, `wasm-objdump`, `wasm-validate`)                              |
+| Python, binutils, diffutils, ShellCheck, shfmt | Fedora 44 packages                                                                           |
 
 Fedora 44 delegates standard image decoding away from the legacy GDK Pixbuf
 module interface used by KEmulator's SWT build. The container includes the

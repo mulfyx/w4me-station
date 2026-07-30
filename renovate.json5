@@ -1,0 +1,48 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: [
+    "config:best-practices",
+    ":dependencyDashboard",
+    "docker:pinDigests",
+  ],
+  automerge: false,
+  rangeStrategy: "pin",
+  packageRules: [
+    {
+      description: "Never automerge the Java ME build and emulator toolchain",
+      matchManagers: ["custom.regex"],
+      automerge: false,
+    },
+  ],
+  customManagers: [
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^tools/container/Containerfile$/"],
+      matchStrings: ["jdk8_version='(?<currentValue>[^']+)'"],
+      datasourceTemplate: "github-releases",
+      depNameTemplate: "adoptium/temurin8-binaries",
+    },
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^tools/container/Containerfile$/"],
+      matchStrings: ["jdk21_version='(?<currentValue>[^']+)'"],
+      datasourceTemplate: "github-releases",
+      depNameTemplate: "adoptium/temurin21-binaries",
+    },
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^tools/container/Containerfile$/"],
+      matchStrings: ["proguard_version='(?<currentValue>[^']+)'"],
+      datasourceTemplate: "github-releases",
+      depNameTemplate: "Guardsquare/proguard",
+    },
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^tools/container/Containerfile$/"],
+      matchStrings: ["kemu_commit='(?<currentDigest>[0-9a-f]{40})'"],
+      datasourceTemplate: "git-refs",
+      depNameTemplate: "https://github.com/mulfyx/KEmulator.git",
+      currentValueTemplate: "master",
+    },
+  ],
+}

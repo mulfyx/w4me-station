@@ -1,0 +1,12 @@
+---
+failure-threshold: style
+format: tty
+ignored: []
+strict-labels: true
+label-schema:
+  org.opencontainers.image.description: text
+  org.opencontainers.image.licenses: spdx
+  org.opencontainers.image.source: url
+  org.opencontainers.image.title: text
+trustedRegistries:
+  - registry.fedoraproject.org

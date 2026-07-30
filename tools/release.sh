@@ -18,7 +18,7 @@ source "${ROOT_DIR}/tools/container/env.sh"
         w4me-station.jad \
         w4me-station-base.jar \
         w4me-station-base.jad \
-        >SHA256SUMS
+        > SHA256SUMS
 )
 
 printf 'Release artifacts are ready in %s\n' "${ROOT_DIR}/dist"

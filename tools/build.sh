@@ -20,10 +20,10 @@ mkdir -p -- "${CLASSES_DIR}" "${DIST_DIR}"
 find "${ROOT_DIR}/src/main/java" \
     -name '*.java' \
     ! -path "${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java" \
-    -print | sort >"${BUILD_DIR}/sources.list"
+    -print | sort > "${BUILD_DIR}/sources.list"
 printf '%s\n' \
     "${ROOT_DIR}/bench/configs/timed/java/w4me/wasm/InterpreterBuildConfig.java" \
-    >>"${BUILD_DIR}/sources.list"
+    >> "${BUILD_DIR}/sources.list"
 javac \
     -source "${J2ME_SOURCE}" \
     -target "${J2ME_TARGET}" \
@@ -108,8 +108,8 @@ package_variant() {
     find "${normalized_dir}" -exec touch -h -t 198001010000.00 -- {} +
     (
         cd -- "${normalized_dir}"
-        find . -type f -print | LC_ALL=C sort |
-            zip -X -q "${normalized_jar_path}" -@
+        find . -type f -print | LC_ALL=C sort \
+            | zip -X -q "${normalized_jar_path}" -@
     )
     mv -- "${normalized_jar_path}" "${jar_path}"
 
@@ -127,14 +127,14 @@ package_variant() {
         printf '%s\n' 'MIDlet-1: W4ME Station,/icon.png,w4me.midp.W4MeMidlet'
         printf '%s\n' 'MicroEdition-Configuration: CLDC-1.1'
         printf '%s\n' 'MicroEdition-Profile: MIDP-2.0'
-        if [ "${include_jsr75}" = true ]; then
+        if [[ "${include_jsr75}" = true ]]; then
             printf '%s\n' 'MIDlet-Permissions-Opt: javax.microedition.io.Connector.http, javax.microedition.io.Connector.https, javax.microedition.io.Connector.file.read'
         else
             printf '%s\n' 'MIDlet-Permissions-Opt: javax.microedition.io.Connector.http, javax.microedition.io.Connector.https'
         fi
         printf 'MIDlet-Jar-URL: %s\n' "$(basename -- "${jar_path}")"
         printf 'MIDlet-Jar-Size: %s\n' "${jar_size}"
-    } >"${jad_path}"
+    } > "${jad_path}"
 
     "${ROOT_DIR}/tools/verify.sh" jar "${jar_path}"
     printf 'Built %s (%s bytes, Java ME preverified)\n' "${jar_path}" "${jar_size}"

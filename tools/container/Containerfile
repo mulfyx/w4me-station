@@ -1,15 +1,27 @@
 # W4ME Station development environment. Build with:
 #   docker build -t w4me-station -f tools/container/Containerfile .
-FROM registry.fedoraproject.org/fedora:44
+FROM registry.fedoraproject.org/fedora:44@sha256:754c6d7d5767750e57caf10376a72eb347ce5721a4310334aaeedb09ba80e05f
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+LABEL org.opencontainers.image.title="W4ME Station toolchain" \
+    org.opencontainers.image.description="Pinned Java ME build, test, quality, and security toolchain" \
+    org.opencontainers.image.source="https://github.com/mulfyx/w4me-station" \
+    org.opencontainers.image.licenses="MIT"
+
+# Fedora package repositories do not expose an immutable snapshot URL. The base
+# image and every quality executable are pinned independently below.
+# hadolint ignore=DL3041
 RUN dnf -y install --setopt=install_weak_deps=False \
-    binutils git-core findutils diffutils tar gzip zip unzip wabt procps-ng util-linux \
-    python3 \
+    binutils ca-certificates curl diffutils file findutils gawk git-core gzip jq \
+    procps-ng python3 python3-pip tar unzip util-linux wabt xz zip \
     just \
-    ShellCheck shfmt \
     && dnf clean all
 
 # Graphics, audio, input, and virtual-display runtime used by KEmulator.
+# Fedora package repositories are not immutable; the base image digest provides
+# the reproducible package snapshot boundary.
+# hadolint ignore=DL3041
 RUN dnf -y install --setopt=install_weak_deps=False \
     libX11 libXi mesa-libGL alsa-lib \
     libxkbcommon libxkbcommon-x11 \
@@ -17,6 +29,7 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     && dnf clean all
 
 # KEmulator uses SWT/GTK3 and AWT; fonts keep headless screenshots stable.
+# hadolint ignore=DL3041
 RUN dnf -y install --setopt=install_weak_deps=False \
     gtk3 libXrender libXtst dejavu-sans-fonts \
     gdk-pixbuf2-modules-extra \
@@ -26,7 +39,8 @@ RUN dnf -y install --setopt=install_weak_deps=False \
 # used both for legacy-compatible Java builds and KEmulator.
 ENV JAVA_HOME=/opt/jdk8
 ENV JDK8_HOME=/opt/jdk8
-RUN jdk8_url='https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u492-b09/OpenJDK8U-jdk_x64_linux_hotspot_8u492b09.tar.gz' \
+RUN jdk8_version='jdk8u492-b09' \
+    && jdk8_url="https://github.com/adoptium/temurin8-binaries/releases/download/${jdk8_version}/OpenJDK8U-jdk_x64_linux_hotspot_8u492b09.tar.gz" \
     && jdk8_sha256='da257f161d7f8c6ca5b0e5d9e4090f65ac28c5e398072e68b8ae87988b1d1a2e' \
     && curl -Ls "${jdk8_url}" -o /tmp/jdk8.tar.gz \
     && echo "${jdk8_sha256}  /tmp/jdk8.tar.gz" | sha256sum -c - \
@@ -35,9 +49,134 @@ RUN jdk8_url='https://github.com/adoptium/temurin8-binaries/releases/download/jd
     && rm /tmp/jdk8.tar.gz \
     && chmod -R a+rX /opt/jdk8
 
+# JDK 21 is used only for formatting and analysis-only Java 8 classfiles.
+# Release compilation continues to use JDK 8 and the Java ME boot class path.
+ENV QUALITY_JAVA_HOME=/opt/jdk21
+RUN jdk21_version='jdk-21.0.10+7' \
+    && jdk21_url="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz" \
+    && jdk21_sha256='ea3b9bd464d6dd253e9a7accf59f7ccd2a36e4aa69640b7251e3370caef896a4' \
+    && test "${jdk21_version}" = 'jdk-21.0.10+7' \
+    && curl -Ls "${jdk21_url}" -o /tmp/jdk21.tar.gz \
+    && echo "${jdk21_sha256}  /tmp/jdk21.tar.gz" | sha256sum -c - \
+    && mkdir -p /opt/jdk21 \
+    && tar -xzf /tmp/jdk21.tar.gz -C /opt/jdk21 --strip-components=1 \
+    && rm /tmp/jdk21.tar.gz \
+    && chmod -R a+rX /opt/jdk21
+
+# Maven resolves the pinned Java quality plugins declared in pom.xml.
+ENV MAVEN_HOME=/opt/maven
+RUN maven_version='3.9.16' \
+    && maven_url="https://archive.apache.org/dist/maven/maven-3/${maven_version}/binaries/apache-maven-${maven_version}-bin.tar.gz" \
+    && maven_sha512='831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6' \
+    && curl -Ls "${maven_url}" -o /tmp/maven.tar.gz \
+    && echo "${maven_sha512}  /tmp/maven.tar.gz" | sha512sum -c - \
+    && mkdir -p /opt/maven \
+    && tar -xzf /tmp/maven.tar.gz -C /opt/maven --strip-components=1 \
+    && rm /tmp/maven.tar.gz \
+    && chmod -R a+rX /opt/maven
+
+# Node is pinned independently from Fedora. npm ci installs the exact lockfile.
+ENV NODE_HOME=/opt/node \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
+RUN node_version='24.17.0' \
+    && node_url="https://nodejs.org/dist/v${node_version}/node-v${node_version}-linux-x64.tar.xz" \
+    && node_sha256='ab343a1b747c7cbf3630dfd7dbf818c5423fab2eb4f5ad1afc896f6bd121a917' \
+    && curl -Ls "${node_url}" -o /tmp/node.tar.xz \
+    && echo "${node_sha256}  /tmp/node.tar.xz" | sha256sum -c - \
+    && mkdir -p /opt/node \
+    && tar -xJf /tmp/node.tar.xz -C /opt/node --strip-components=1 \
+    && rm /tmp/node.tar.xz \
+    && chmod -R a+rX /opt/node
+
+# Exact standalone quality and security tools, each checked before extraction.
+RUN mkdir -p /opt/quality/bin /opt/quality/downloads /opt/quality/vale-styles \
+    && curl -Ls 'https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz' -o /opt/quality/downloads/shellcheck.tar.xz \
+    && echo '8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198  /opt/quality/downloads/shellcheck.tar.xz' | sha256sum -c - \
+    && tar -xJf /opt/quality/downloads/shellcheck.tar.xz -C /opt/quality/downloads \
+    && install -m 0755 /opt/quality/downloads/shellcheck-v0.11.0/shellcheck /opt/quality/bin/shellcheck \
+    && curl -Ls 'https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64' -o /opt/quality/downloads/shfmt \
+    && echo 'fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1  /opt/quality/downloads/shfmt' | sha256sum -c - \
+    && install -m 0755 /opt/quality/downloads/shfmt /opt/quality/bin/shfmt \
+    && curl -Ls 'https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz' -o /opt/quality/downloads/actionlint.tar.gz \
+    && echo '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  /opt/quality/downloads/actionlint.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/actionlint.tar.gz -C /opt/quality/bin actionlint \
+    && curl -Ls 'https://github.com/zizmorcore/zizmor/releases/download/v1.28.0/zizmor-x86_64-unknown-linux-gnu.tar.gz' -o /opt/quality/downloads/zizmor.tar.gz \
+    && echo 'e87b67160194884e375a46a12c57ccc904f762b53845f254fab7f17d98809c09  /opt/quality/downloads/zizmor.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/zizmor.tar.gz -C /opt/quality/bin zizmor \
+    && curl -Ls 'https://github.com/hadolint/hadolint/releases/download/v2.15.0/hadolint-linux-x86_64' -o /opt/quality/downloads/hadolint \
+    && echo 'eb8eb4dd06a068cce65cb84743fba69f09ed12a36ff13d58f9af090d6d696970  /opt/quality/downloads/hadolint' | sha256sum -c - \
+    && install -m 0755 /opt/quality/downloads/hadolint /opt/quality/bin/hadolint \
+    && curl -Ls 'https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v3.8.0/ec-linux-amd64.tar.gz' -o /opt/quality/downloads/editorconfig-checker.tar.gz \
+    && echo '613bd88f34165a334adcb6b7e92a123c9de0eada65846d31af63613b779ff3be  /opt/quality/downloads/editorconfig-checker.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/editorconfig-checker.tar.gz -C /opt/quality/bin --strip-components=1 bin/ec-linux-amd64 \
+    && mv /opt/quality/bin/ec-linux-amd64 /opt/quality/bin/editorconfig-checker
+
+RUN curl -Ls 'https://github.com/crate-ci/typos/releases/download/v1.48.0/typos-v1.48.0-x86_64-unknown-linux-musl.tar.gz' -o /opt/quality/downloads/typos.tar.gz \
+    && echo '72a930c9a94fc3914aa56835c5b859c892a797d40c1c42638b98d93f16ff519c  /opt/quality/downloads/typos.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/typos.tar.gz -C /opt/quality/bin ./typos \
+    && curl -Ls 'https://github.com/lycheeverse/lychee/releases/download/lychee-v0.24.2/lychee-x86_64-unknown-linux-gnu.tar.gz' -o /opt/quality/downloads/lychee.tar.gz \
+    && echo '1f4e0ef7f6554a6ed33dd7ac144fb2e1bbed98598e7af973042fc5cd43951c9a  /opt/quality/downloads/lychee.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/lychee.tar.gz -C /opt/quality/bin --strip-components=1 lychee-x86_64-unknown-linux-gnu/lychee \
+    && curl -Ls 'https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz' -o /opt/quality/downloads/gitleaks.tar.gz \
+    && echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  /opt/quality/downloads/gitleaks.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/gitleaks.tar.gz -C /opt/quality/bin gitleaks
+
+RUN curl -Ls 'https://github.com/google/osv-scanner/releases/download/v2.4.0/osv-scanner_linux_amd64' -o /opt/quality/downloads/osv-scanner \
+    && echo '15314940c10d26af9c6649f150b8a47c1262e8fc7e17b1d1029b0e479e8ed8a0  /opt/quality/downloads/osv-scanner' | sha256sum -c - \
+    && install -m 0755 /opt/quality/downloads/osv-scanner /opt/quality/bin/osv-scanner \
+    && curl -Ls 'https://github.com/aquasecurity/trivy/releases/download/v0.72.0/trivy_0.72.0_Linux-64bit.tar.gz' -o /opt/quality/downloads/trivy.tar.gz \
+    && echo 'bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea  /opt/quality/downloads/trivy.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/trivy.tar.gz -C /opt/quality/bin trivy \
+    && curl -Ls 'https://github.com/errata-ai/vale/releases/download/v3.16.0/vale_3.16.0_Linux_64-bit.tar.gz' -o /opt/quality/downloads/vale.tar.gz \
+    && echo '1049f4a585ccd1af96dcf4bdc16800cb3ce426b432da2b27893def42dcfe0ccb  /opt/quality/downloads/vale.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/vale.tar.gz -C /opt/quality/bin vale \
+    && curl -Ls 'https://github.com/vale-cli/Google/archive/refs/tags/v0.7.0.tar.gz' -o /opt/quality/downloads/vale-google.tar.gz \
+    && echo 'a4d6458fef518d51e5e7e84445a066ce73075ca5b8bb71f0feabb344258a4059  /opt/quality/downloads/vale-google.tar.gz' | sha256sum -c - \
+    && mkdir -p /opt/quality/vale-styles/Google \
+    && tar -xzf /opt/quality/downloads/vale-google.tar.gz \
+        -C /opt/quality/vale-styles/Google \
+        --strip-components=2 \
+        Google-0.7.0/Google
+
+RUN curl -Ls 'https://github.com/ossf/scorecard/releases/download/v5.5.0/scorecard_5.5.0_linux_amd64.tar.gz' -o /opt/quality/downloads/scorecard.tar.gz \
+    && echo '83b90a05c1540ef1390db1cd5711e5fd04be9c1d8537fb84d39d02092d6a8dff  /opt/quality/downloads/scorecard.tar.gz' | sha256sum -c - \
+    && tar -xzf /opt/quality/downloads/scorecard.tar.gz -C /opt/quality/bin scorecard \
+    && rm -rf /opt/quality/downloads \
+    && chmod -R a+rX /opt/quality
+
+COPY config/quality/requirements.lock /opt/quality/requirements.lock
+RUN python3 -m venv /opt/quality/venv \
+    && /opt/quality/venv/bin/pip install \
+        --disable-pip-version-check \
+        --no-cache-dir \
+        --require-hashes \
+        -r /opt/quality/requirements.lock \
+    && chmod -R a+rX /opt/quality/venv
+
+COPY package.json package-lock.json /opt/quality/node-tools/
+# Native RE2 is a build-only dependency; Node and every npm package remain
+# exactly pinned even though Fedora cannot pin the transient compiler packages.
+# hadolint ignore=DL3041
+RUN dnf -y install --setopt=install_weak_deps=False gcc-c++ make \
+    && PATH="/opt/node/bin:${PATH}" npm ci \
+    --ignore-scripts \
+    --audit=false \
+    --fund=false \
+    --prefix /opt/quality/node-tools \
+    && PATH="/opt/node/bin:${PATH}" \
+        node /opt/quality/node-tools/node_modules/node-gyp/bin/node-gyp.js rebuild \
+        --directory=/opt/quality/node-tools/node_modules/re2 \
+        --nodedir=/opt/node \
+    && PATH="/opt/node/bin:${PATH}" node -e \
+        'const RE2 = require("/opt/quality/node-tools/node_modules/re2"); if (!new RE2("^strict$").test("strict")) process.exit(1)' \
+    && dnf -y remove gcc-c++ make \
+    && dnf clean all \
+    && chmod -R a+rX /opt/quality/node-tools
+
 # ProGuard adds the Java ME StackMap attributes required by real CLDC VMs.
 ENV PROGUARD_HOME=/opt/proguard
-RUN proguard_url='https://github.com/Guardsquare/proguard/releases/download/v7.0.1/proguard-7.0.1.zip' \
+RUN proguard_version='7.0.1' \
+    && proguard_url="https://github.com/Guardsquare/proguard/releases/download/v${proguard_version}/proguard-${proguard_version}.zip" \
     && proguard_sha256='dd9a844389eb8cf421e4580713d0608e9cc10f5a0ac6f9e3f6c44154cd53dbc0' \
     && curl -Ls "${proguard_url}" -o /tmp/proguard.zip \
     && echo "${proguard_sha256}  /tmp/proguard.zip" | sha256sum -c - \
@@ -66,7 +205,10 @@ RUN cldc_api_url='https://repo.maven.apache.org/maven2/org/microemu/cldcapi11/2.
 # KEmulator.jar, MIDP APIs, and kemu.sh.
 ENV KEMU_HOME=/opt/kemu
 COPY tools/container/kemu-icon.xpm /tmp/kemu-icon/res/icon
-RUN kemu_commit='73ba4b14b8c2' \
+# KEmulator's upstream release script resolves sources relative to its working
+# directory and does not expose an equivalent directory argument.
+# hadolint ignore=DL3003
+RUN kemu_commit='73ba4b14b8c2c10a04a426de8cdd49102d3d6490' \
     && git clone --filter=blob:none 'https://github.com/mulfyx/KEmulator.git' /tmp/kemu-src \
     && git -C /tmp/kemu-src checkout "${kemu_commit}" \
     && cd /tmp/kemu-src \
@@ -76,14 +218,25 @@ RUN kemu_commit='73ba4b14b8c2' \
     && rm -rf /tmp/kemu-icon \
     && chmod -R a+rX /opt/kemu
 
-ENV PATH=/opt/jdk8/bin:/opt/proguard/bin:$PATH
+ENV OPENSPEC_TELEMETRY=0 \
+    PATH=/opt/jdk8/bin:/opt/proguard/bin:/opt/maven/bin:/opt/node/bin:/opt/quality/bin:/opt/quality/venv/bin:/opt/quality/node-tools/node_modules/.bin:$PATH
 
 RUN printf '%s\n' \
-    'export JAVA_HOME=/opt/jdk8' \
-    'export JDK8_HOME=/opt/jdk8' \
-    'export KEMU_HOME=/opt/kemu' \
-    'export PROGUARD_HOME=/opt/proguard' \
-    'export CLDC_API_JAR=/opt/j2me-api/cldcapi11-2.0.4.jar' \
-    'export MIDP_API_STUB_JAR=/opt/j2me-api/midpapi20-2.0.4.jar' \
-    'export PATH=/opt/jdk8/bin:/opt/proguard/bin:$PATH' \
+    "export NPM_CONFIG_UPDATE_NOTIFIER=false" \
+    "export OPENSPEC_TELEMETRY=0" \
+    "export JAVA_HOME=/opt/jdk8" \
+    "export JDK8_HOME=/opt/jdk8" \
+    "export QUALITY_JAVA_HOME=/opt/jdk21" \
+    "export MAVEN_HOME=/opt/maven" \
+    "export NODE_HOME=/opt/node" \
+    "export KEMU_HOME=/opt/kemu" \
+    "export PROGUARD_HOME=/opt/proguard" \
+    "export CLDC_API_JAR=/opt/j2me-api/cldcapi11-2.0.4.jar" \
+    "export MIDP_API_STUB_JAR=/opt/j2me-api/midpapi20-2.0.4.jar" \
+    "export PATH=/opt/jdk8/bin:/opt/proguard/bin:/opt/maven/bin:/opt/node/bin:/opt/quality/bin:/opt/quality/venv/bin:\${PATH}" \
     > /etc/profile.d/w4me-station-toolchain.sh
+
+# Keep direct image use unprivileged. The project runner explicitly overrides
+# this numeric identity with the invoking host UID/GID so bind-mounted build
+# artifacts remain host-owned.
+USER 65532:65532

@@ -10,7 +10,7 @@ PREVIOUS_IMAGE="w4me-station-setup-previous:$$"
 # shellcheck disable=SC1091
 source "${ROOT_DIR}/tools/container/runtime.sh"
 
-if ! command -v docker >/dev/null 2>&1; then
+if ! command -v docker > /dev/null 2>&1; then
     printf 'error: docker command not found; install Docker or a Docker-compatible Podman shim\n' >&2
     exit 1
 fi
@@ -18,27 +18,34 @@ fi
 fingerprint="$(
     cd -- "${ROOT_DIR}"
     sha256sum -- \
+        config/quality/requirements.lock \
+        package-lock.json \
+        package.json \
         tools/container/Containerfile \
-        tools/container/kemu-icon.xpm |
-        sha256sum |
-        cut -d ' ' -f 1
+        tools/container/kemu-icon.xpm \
+        tools/container/setup.sh \
+        | sha256sum \
+        | cut -d ' ' -f 1
 )"
 image_available=0
-if current_fingerprint="$(
+set +e
+current_fingerprint="$(
     inspect_container_image "${IMAGE}" \
         --format "{{ index .Config.Labels \"${FINGERPRINT_LABEL}\" }}"
-)"; then
+)"
+inspect_status="$?"
+set -e
+if [[ "${inspect_status}" -eq 0 ]]; then
     image_available=1
 else
-    inspect_status="$?"
-    if [ "${inspect_status}" -ne 1 ]; then
+    if [[ "${inspect_status}" -ne 1 ]]; then
         exit "${inspect_status}"
     fi
     current_fingerprint=""
 fi
 
-if [ "${W4ME_TOOLCHAIN_FORCE_REBUILD:-0}" != "1" ] &&
-    [ "${current_fingerprint}" = "${fingerprint}" ]; then
+if [[ "${W4ME_TOOLCHAIN_FORCE_REBUILD:-0}" != "1" ]] \
+    && [[ "${current_fingerprint}" = "${fingerprint}" ]]; then
     printf 'Toolchain image %s is up to date (%s).\n' \
         "${IMAGE}" "${fingerprint}"
     exit 0
@@ -46,14 +53,14 @@ fi
 
 previous_saved=0
 cleanup_previous() {
-    if [ "${previous_saved}" = "1" ]; then
-        docker image rm "${PREVIOUS_IMAGE}" >/dev/null 2>&1 || true
+    if [[ "${previous_saved}" = "1" ]]; then
+        docker image rm "${PREVIOUS_IMAGE}" > /dev/null 2>&1 || true
         previous_saved=0
     fi
 }
 trap cleanup_previous EXIT
 
-if [ "${image_available}" = "1" ]; then
+if [[ "${image_available}" = "1" ]]; then
     docker image tag "${IMAGE}" "${PREVIOUS_IMAGE}"
     previous_saved=1
 fi
@@ -65,8 +72,15 @@ build_arguments=(
     --label "${PROJECT_LABEL}=true"
     --label "${FINGERPRINT_LABEL}=${fingerprint}"
 )
-if docker --version 2>/dev/null | grep -qi podman; then
-    build_arguments+=(--layer-label "${PROJECT_LABEL}=true")
+buildah_version="$(
+    docker info --format '{{.Host.BuildahVersion}}' 2> /dev/null || true
+)"
+if [[ -n "${buildah_version}" ]] \
+    || docker --version 2> /dev/null | grep -qi podman; then
+    build_arguments+=(
+        --format docker
+        --layer-label "${PROJECT_LABEL}=true"
+    )
 fi
 build_arguments+=("${ROOT_DIR}")
 

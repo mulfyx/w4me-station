@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- Palantir Java Format is the sole owner of layout, wrapping, and imports. -->
+    <suppress checks="AvoidStarImport|CustomImportOrder|EmptyForIteratorPad|EmptyLineSeparator"
+        files=".*\.java" />
+    <suppress checks="GenericWhitespace|Indentation|LineLength|MethodParamPad|NoLineWrap"
+        files=".*\.java" />
+    <suppress checks="NoWhitespaceAfter|NoWhitespaceBefore|OperatorWrap|ParenPad|SeparatorWrap"
+        files=".*\.java" />
+    <suppress checks="TypecastParenPad|WhitespaceAfter|WhitespaceAround"
+        files=".*\.java" />
+    <suppress id="LeftCurlyNl" files=".*\.java" />
+    <!-- The product's established w4me root package contains its brand digit. -->
+    <suppress checks="PackageName" files=".*[/\\]w4me[/\\].*\.java" />
+</suppressions>

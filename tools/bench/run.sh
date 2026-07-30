@@ -15,7 +15,7 @@ cmd_untangle() {
     mkdir -p -- "${CLASSES_DIR}"
     find "${ROOT_DIR}/src/main/java/w4me/wasm" \
         "${ROOT_DIR}/src/main/java/w4me/runtime" \
-        -name '*.java' -print | sort >"${BUILD_DIR}/sources.list"
+        -name '*.java' -print | sort > "${BUILD_DIR}/sources.list"
     javac \
         -source "${J2ME_SOURCE}" \
         -target "${J2ME_TARGET}" \
@@ -64,7 +64,7 @@ cmd_corpus() {
     find \
         "${ROOT_DIR}/src/main/java/w4me/wasm" \
         "${ROOT_DIR}/src/main/java/w4me/runtime" \
-        -name '*.java' -print | sort >"${RESULT_DIR}/sources.list"
+        -name '*.java' -print | sort > "${RESULT_DIR}/sources.list"
 
     javac \
         -source "${J2ME_SOURCE}" \
@@ -129,7 +129,7 @@ cmd_fusions() {
     mkdir -p -- "${CLASSES_DIR}"
     find "${ROOT_DIR}/src/main/java/w4me/wasm" \
         "${ROOT_DIR}/src/main/java/w4me/runtime" \
-        -name '*.java' -print | sort >"${BUILD_DIR}/sources.list"
+        -name '*.java' -print | sort > "${BUILD_DIR}/sources.list"
     javac \
         -source "${J2ME_SOURCE}" \
         -target "${J2ME_TARGET}" \
@@ -151,12 +151,12 @@ cmd_fusions() {
     java -classpath "${CLASSES_DIR}" w4me.wasm.W4IrFusionProfile \
         "${ROOT_DIR}/src/main/resources/w4font.bin" \
         "${ROOT_DIR}/cartridges/plasma-cube.wasm" \
-        "${ROOT_DIR}/cartridges/untangle.wasm" |
-        tee "${BUILD_DIR}/profile.txt"
+        "${ROOT_DIR}/cartridges/untangle.wasm" \
+        | tee "${BUILD_DIR}/profile.txt"
 }
 
 cmd_w4bench() {
-    if [ "$#" -ne 0 ]; then
+    if [[ "$#" -ne 0 ]]; then
         printf 'error: unknown w4bench option: %s\n' "$1" >&2
         exit 2
     fi
@@ -178,8 +178,8 @@ cmd_w4bench() {
         --output-dir "${generated_dir}" \
         --require-frozen
     python3 -m unittest "${ROOT_DIR}/bench/w4bench/test_w4bench.py"
-    python3 "${ROOT_DIR}/bench/w4bench/reference_oracle.py" --all |
-        tee "${build_dir}/oracle.txt"
+    python3 "${ROOT_DIR}/bench/w4bench/reference_oracle.py" --all \
+        | tee "${build_dir}/oracle.txt"
 
     wat2wasm "${generated_wat}" -o "${generated_wasm}"
     wasm-validate "${generated_wasm}"
@@ -197,13 +197,13 @@ cmd_w4bench() {
     tracked_cartridge_sha256="$(
         sha256sum -- "${cartridge}" | cut -d ' ' -f 1
     )"
-    if [ "${actual_cartridge_sha256}" != "${expected_cartridge_sha256}" ]; then
+    if [[ "${actual_cartridge_sha256}" != "${expected_cartridge_sha256}" ]]; then
         printf 'error: generated W4Bench cartridge differs from frozen calibration\n' >&2
         printf 'expected: %s\nactual:   %s\n' \
             "${expected_cartridge_sha256}" "${actual_cartridge_sha256}" >&2
         exit 1
     fi
-    if [ "${actual_cartridge_sha256}" != "${tracked_cartridge_sha256}" ]; then
+    if [[ "${actual_cartridge_sha256}" != "${tracked_cartridge_sha256}" ]]; then
         printf 'error: %s is stale\n' "${cartridge}" >&2
         exit 1
     fi
@@ -211,7 +211,7 @@ cmd_w4bench() {
     find \
         "${ROOT_DIR}/src/main/java/w4me/wasm" \
         "${ROOT_DIR}/src/main/java/w4me/runtime" \
-        -name '*.java' -print | sort >"${build_dir}/sources.list"
+        -name '*.java' -print | sort > "${build_dir}/sources.list"
     javac \
         -source "${J2ME_SOURCE}" \
         -target "${J2ME_TARGET}" \
@@ -244,10 +244,10 @@ cmd_w4bench() {
 
     java -classpath "${classes_dir}" w4me.wasm.W4BenchOpcodeCoverageSmoke \
         "${ROOT_DIR}/src/main/resources/w4font.bin" \
-        "${cartridge}" |
-        tee "${build_dir}/opcode-coverage.txt"
+        "${cartridge}" \
+        | tee "${build_dir}/opcode-coverage.txt"
     java -classpath "${classes_dir}" w4me.W4BenchRunner \
-        host 0 verify-only >"${build_dir}/verification.txt"
+        host 0 verify-only > "${build_dir}/verification.txt"
     grep -E -- 'w4bench:(coverage|validator-negative|pass).* (median-wall-ms|work-crc|opcodes=|corrupt-result=)' \
         "${build_dir}/verification.txt"
 
@@ -256,26 +256,26 @@ cmd_w4bench() {
 }
 
 case "${1:-}" in
-untangle)
-    shift
-    cmd_untangle "$@"
-    ;;
-corpus)
-    shift
-    cmd_corpus "$@"
-    ;;
-fusions)
-    shift
-    cmd_fusions "$@"
-    ;;
-w4bench)
-    shift
-    cmd_w4bench "$@"
-    ;;
-*)
-    printf '%s\n' \
-        'usage: tools/bench/run.sh <untangle|corpus|fusions|w4bench> [args...]' \
-        >&2
-    exit 1
-    ;;
+    untangle)
+        shift
+        cmd_untangle "$@"
+        ;;
+    corpus)
+        shift
+        cmd_corpus "$@"
+        ;;
+    fusions)
+        shift
+        cmd_fusions "$@"
+        ;;
+    w4bench)
+        shift
+        cmd_w4bench "$@"
+        ;;
+    *)
+        printf '%s\n' \
+            'usage: tools/bench/run.sh <untangle|corpus|fusions|w4bench> [args...]' \
+            >&2
+        exit 1
+        ;;
 esac

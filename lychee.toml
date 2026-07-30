@@ -1,0 +1,13 @@
+accept = [200, 204, 206, 429]
+exclude_all_private = true
+max_concurrency = 8
+max_redirects = 10
+max_retries = 3
+no_progress = true
+retry_wait_time = 2
+timeout = 30
+
+exclude = [
+  "http://localhost",
+  "https://localhost",
+]

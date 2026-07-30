@@ -1,0 +1,5 @@
+# Public SHA-256 checksums for the MicroEmulator CLDC/MIDP API JARs.
+# Keep these exceptions fingerprint-specific so future Containerfile findings
+# remain visible.
+296d5ac6d24dc292e25770c86ab4118ab217c6c8:tools/container/Containerfile:generic-api-key:65
+296d5ac6d24dc292e25770c86ab4118ab217c6c8:tools/container/Containerfile:generic-api-key:67

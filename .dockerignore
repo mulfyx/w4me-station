@@ -1,0 +1,8 @@
+.git
+.local
+build
+dist
+node_modules
+target
+
+*.log

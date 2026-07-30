@@ -1,0 +1,45 @@
+[files]
+extend-exclude = [
+    ".git/",
+    ".local/",
+    ".agents/",
+    ".claude/",
+    ".codex/",
+    "build/",
+    "dist/",
+    "node_modules/",
+    "target/",
+    "*.bin",
+    "*.jar",
+    "*.jpg",
+    "*.png",
+    "*.wasm",
+    "*.zip",
+]
+
+[default]
+# Content-addresses, checksums, and deterministic oracle hashes are data.
+extend-ignore-re = ["\\b[0-9a-f]{7,}\\b"]
+
+[default.extend-identifiers]
+ARGB = "ARGB"
+CLDC = "CLDC"
+FNV = "FNV"
+JVM = "JVM"
+MIDP = "MIDP"
+MMAPI = "MMAPI"
+PCM = "PCM"
+RMS = "RMS"
+W4IR = "W4IR"
+WASM = "WASM"
+
+[default.extend-words]
+ARGB = "ARGB"
+CLDC = "CLDC"
+FNV = "FNV"
+MIDP = "MIDP"
+MMAPI = "MMAPI"
+PCM = "PCM"
+RMS = "RMS"
+W4IR = "W4IR"
+WASM = "WASM"

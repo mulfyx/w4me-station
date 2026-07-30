@@ -1,0 +1,29 @@
+{
+  "name": "w4me-station-quality",
+  "private": true,
+  "description": "Repository-local formatting, linting, and specification tooling for W4ME Station.",
+  "scripts": {
+    "format": "prettier --write --ignore-unknown .",
+    "format:check": "prettier --check --ignore-unknown .",
+    "lint:markdown": "markdownlint-cli2",
+    "lint:commits": "commitlint",
+    "lint:renovate": "renovate-config-validator --strict renovate.json5"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.1",
+    "@commitlint/config-conventional": "21.2.0",
+    "@fission-ai/openspec": "1.7.0",
+    "markdownlint-cli2": "0.23.2",
+    "prettier": "3.9.6",
+    "re2": "1.26.1",
+    "renovate": "44.4.2"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.9"
+  },
+  "engines": {
+    "node": "24.17.0",
+    "npm": "11.13.0"
+  },
+  "packageManager": "npm@11.13.0"
+}

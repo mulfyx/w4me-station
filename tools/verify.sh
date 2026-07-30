@@ -11,26 +11,26 @@ cmd_jar() {
 
     JAR_PATH="${1:-${ROOT_DIR}/dist/w4me-station.jar}"
 
-    if [ ! -f "${JAR_PATH}" ]; then
+    if [[ ! -f "${JAR_PATH}" ]]; then
         printf 'error: JAR not found: %s\n' "${JAR_PATH}" >&2
         exit 1
     fi
     JAD_PATH="${JAR_PATH%.jar}.jad"
-    if [ ! -f "${JAD_PATH}" ]; then
+    if [[ ! -f "${JAD_PATH}" ]]; then
         printf 'error: JAD not found: %s\n' "${JAD_PATH}" >&2
         exit 1
     fi
     case "$(basename -- "${JAR_PATH}")" in
-    w4me-station.jar)
-        expect_jsr75=true
-        ;;
-    w4me-station-base.jar)
-        expect_jsr75=false
-        ;;
-    *)
-        printf 'error: unknown release JAR variant: %s\n' "${JAR_PATH}" >&2
-        exit 1
-        ;;
+        w4me-station.jar)
+            expect_jsr75=true
+            ;;
+        w4me-station-base.jar)
+            expect_jsr75=false
+            ;;
+        *)
+            printf 'error: unknown release JAR variant: %s\n' "${JAR_PATH}" >&2
+            exit 1
+            ;;
     esac
 
     for class_name in w4me.midp.W4Canvas w4me.wasm.WasmInterpreter; do
@@ -48,21 +48,21 @@ cmd_jar() {
     interpreter_dump="$(
         javap -c -p -classpath "${JAR_PATH}" w4me.wasm.WasmInterpreter
     )"
-    if printf '%s\n' "${interpreter_dump}" |
-        grep -E 'putfield.*Field (dispatchesExecuted|compactBlockCalls|compactInstructionsExecuted):' \
-            >/dev/null; then
+    if printf '%s\n' "${interpreter_dump}" \
+        | grep -E 'putfield.*Field (dispatchesExecuted|compactBlockCalls|compactInstructionsExecuted):' \
+            > /dev/null; then
         printf 'error: distributable JAR still writes an optional diagnostic counter\n' >&2
         exit 1
     fi
-    if printf '%s\n' "${interpreter_dump}" |
-        grep -E '(getfield.*Field profilingEnabled:|invoke[^[:space:]]*.*Method profileInstruction:)' \
-            >/dev/null; then
+    if printf '%s\n' "${interpreter_dump}" \
+        | grep -E '(getfield.*Field profilingEnabled:|invoke[^[:space:]]*.*Method profileInstruction:)' \
+            > /dev/null; then
         printf 'error: distributable JAR still executes opcode-profiling support\n' >&2
         exit 1
     fi
     execute_dump="$(
-        printf '%s\n' "${interpreter_dump}" |
-            awk '
+        printf '%s\n' "${interpreter_dump}" \
+            | awk '
                 /^  private void execute\(int,/ {
                     in_method = 1
                 }
@@ -74,8 +74,8 @@ cmd_jar() {
                 }'
     )"
     execute_code_bytes="$(
-        printf '%s\n' "${execute_dump}" |
-            awk '
+        printf '%s\n' "${execute_dump}" \
+            | awk '
                 /^[[:space:]]*[0-9]+:/ {
                     offset = $1
                     found = 1
@@ -95,7 +95,7 @@ cmd_jar() {
         printf 'error: WasmInterpreter.execute main dispatch is not a tableswitch\n' >&2
         exit 1
     fi
-    if [ "${execute_code_bytes}" -gt "${EXECUTE_CODE_LIMIT}" ]; then
+    if [[ "${execute_code_bytes}" -gt "${EXECUTE_CODE_LIMIT}" ]]; then
         printf 'error: WasmInterpreter.execute is %s bytes; maximum %s preserves method headroom\n' \
             "${execute_code_bytes}" "${EXECUTE_CODE_LIMIT}" >&2
         exit 1
@@ -107,7 +107,7 @@ cmd_jar() {
         name="$1"
         expected="$2"
         actual="$(unzip -p "${JAR_PATH}" "${name}" | sha256sum | cut -d ' ' -f 1)"
-        if [ "${actual}" != "${expected}" ]; then
+        if [[ "${actual}" != "${expected}" ]]; then
             printf 'error: packaged %s hash mismatch: expected %s, got %s\n' \
                 "${name}" "${expected}" "${actual}" >&2
             exit 1
@@ -142,32 +142,32 @@ cmd_jar() {
     fi
 
     for metadata_file in "${JAD_PATH}" manifest; do
-        if [ "${metadata_file}" = manifest ]; then
+        if [[ "${metadata_file}" = manifest ]]; then
             metadata="$(unzip -p "${JAR_PATH}" META-INF/MANIFEST.MF)"
         else
             metadata="$(cat -- "${metadata_file}")"
         fi
-        if ! printf '%s\n' "${metadata}" |
-            grep -q '^MIDlet-Version: 1\.1\.0$'; then
+        if ! printf '%s\n' "${metadata}" \
+            | grep -q '^MIDlet-Version: 1\.1\.0$'; then
             printf 'error: %s does not declare MIDlet-Version 1.1.0\n' \
                 "${metadata_file}" >&2
             exit 1
         fi
-        if ! printf '%s\n' "${metadata}" |
-            grep -q '^MIDlet-Info-URL: https://github\.com/mulfyx/w4me-station$'; then
+        if ! printf '%s\n' "${metadata}" \
+            | grep -q '^MIDlet-Info-URL: https://github\.com/mulfyx/w4me-station$'; then
             printf 'error: %s does not declare the public repository URL\n' \
                 "${metadata_file}" >&2
             exit 1
         fi
-        if [ "${expect_jsr75}" = true ]; then
-            if ! printf '%s\n' "${metadata}" |
-                grep -q 'javax\.microedition\.io\.Connector\.file\.read'; then
+        if [[ "${expect_jsr75}" = true ]]; then
+            if ! printf '%s\n' "${metadata}" \
+                | grep -q 'javax\.microedition\.io\.Connector\.file\.read'; then
                 printf 'error: %s full variant does not declare JSR-75 file permission\n' \
                     "${metadata_file}" >&2
                 exit 1
             fi
-        elif printf '%s\n' "${metadata}" |
-            grep -q 'javax\.microedition\.io\.Connector\.file\.read'; then
+        elif printf '%s\n' "${metadata}" \
+            | grep -q 'javax\.microedition\.io\.Connector\.file\.read'; then
             printf 'error: %s base variant declares JSR-75 file permission\n' \
                 "${metadata_file}" >&2
             exit 1
@@ -180,7 +180,7 @@ cmd_jar() {
     else
         has_jsr75=false
     fi
-    if [ "${has_jsr75}" != "${expect_jsr75}" ]; then
+    if [[ "${has_jsr75}" != "${expect_jsr75}" ]]; then
         printf 'error: JSR-75 class presence mismatch: expected %s, got %s\n' \
             "${expect_jsr75}" "${has_jsr75}" >&2
         exit 1
@@ -190,15 +190,15 @@ cmd_jar() {
         exit 1
     fi
 
-    if ! unzip -p "${JAR_PATH}" META-INF/THIRD-PARTY-NOTICES.md |
-        grep -q 'Creative Commons Attribution-NonCommercial-ShareAlike 4.0'; then
+    if ! unzip -p "${JAR_PATH}" META-INF/THIRD-PARTY-NOTICES.md \
+        | grep -q 'Creative Commons Attribution-NonCommercial-ShareAlike 4.0'; then
         printf 'error: packaged third-party notice is missing or incomplete\n' >&2
         exit 1
     fi
 
     forbidden_phone_entry="$(
-        unzip -Z1 "${JAR_PATH}" |
-            awk '
+        unzip -Z1 "${JAR_PATH}" \
+            | awk '
                 /(^|\/)cldc_vm_r(-arm64)?$/ ||
                 /(^|\/)preverify$/ ||
                 /(^|\/)classes\.zip$/ {
@@ -206,42 +206,42 @@ cmd_jar() {
                     exit
                 }'
     )"
-    if [ -n "${forbidden_phone_entry}" ]; then
+    if [[ -n "${forbidden_phone_entry}" ]]; then
         printf 'error: distributable JAR contains phoneME tool: %s\n' \
             "${forbidden_phone_entry}" >&2
         exit 1
     fi
 
     forbidden_diagnostic_entry="$(
-        unzip -Z1 "${JAR_PATH}" |
-            awk '
+        unzip -Z1 "${JAR_PATH}" \
+            | awk '
                 /^w4me\/midp\/Diagnostic.*\.class$/ ||
                 /^w4me\/midp\/PlasmaBenchmarkMidlet\.class$/ {
                     print
                     exit
                 }'
     )"
-    if [ -n "${forbidden_diagnostic_entry}" ]; then
+    if [[ -n "${forbidden_diagnostic_entry}" ]]; then
         printf 'error: distributable JAR contains test MIDlet: %s\n' \
             "${forbidden_diagnostic_entry}" >&2
         exit 1
     fi
 
     forbidden_diagnostic_marker="$(
-        unzip -p "${JAR_PATH}" |
-            strings |
-            grep -E -m 1 -- \
-                'W4ME_(FRAME|INPUT|LAYOUT|LOAD|INSTALL|REPLAY|BENCH)|W4ME-(Diagnostics|Benchmark-Warmup-Frames)' ||
-            true
+        unzip -p "${JAR_PATH}" \
+            | strings \
+            | grep -E -m 1 -- \
+                'W4ME_(FRAME|INPUT|LAYOUT|LOAD|INSTALL|REPLAY|BENCH)|W4ME-(Diagnostics|Benchmark-Warmup-Frames)' \
+            || true
     )"
-    if [ -n "${forbidden_diagnostic_marker}" ]; then
+    if [[ -n "${forbidden_diagnostic_marker}" ]]; then
         printf 'error: distributable JAR contains test diagnostic marker: %s\n' \
             "${forbidden_diagnostic_marker}" >&2
         exit 1
     fi
 
-    if javap -p -classpath "${JAR_PATH}" w4me.runtime.Wasm4Runtime |
-        grep -q -- 'framebufferFnv1a'; then
+    if javap -p -classpath "${JAR_PATH}" w4me.runtime.Wasm4Runtime \
+        | grep -q -- 'framebufferFnv1a'; then
         printf 'error: distributable JAR exposes the test-only framebuffer oracle\n' >&2
         exit 1
     fi
@@ -250,7 +250,7 @@ cmd_jar() {
     declared_jar_size="$(
         sed -n 's/^MIDlet-Jar-Size: //p' "${JAD_PATH}"
     )"
-    if [ "${declared_jar_size}" != "${expected_jar_size}" ]; then
+    if [[ "${declared_jar_size}" != "${expected_jar_size}" ]]; then
         printf 'error: JAD size mismatch: expected %s, got %s\n' \
             "${expected_jar_size}" "${declared_jar_size:-missing}" >&2
         exit 1
@@ -274,10 +274,10 @@ cmd_counterless() {
         "${ROOT_DIR}/src/main/java/w4me/runtime" \
         -name '*.java' \
         ! -path "${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java" \
-        -print | sort >"${OUT_DIR}/sources.list"
+        -print | sort > "${OUT_DIR}/sources.list"
     printf '%s\n' \
         "${ROOT_DIR}/bench/configs/timed/java/w4me/wasm/InterpreterBuildConfig.java" \
-        >>"${OUT_DIR}/sources.list"
+        >> "${OUT_DIR}/sources.list"
 
     javac \
         -source "${J2ME_SOURCE}" \
@@ -306,21 +306,21 @@ cmd_counterless() {
     INTERPRETER_DUMP="$(
         javap -c -p -classpath "${ARTIFACT}" w4me.wasm.WasmInterpreter
     )"
-    if printf '%s\n' "${INTERPRETER_DUMP}" |
-        grep -E 'putfield.*Field (dispatchesExecuted|compactBlockCalls|compactInstructionsExecuted):' \
-            >/dev/null; then
+    if printf '%s\n' "${INTERPRETER_DUMP}" \
+        | grep -E 'putfield.*Field (dispatchesExecuted|compactBlockCalls|compactInstructionsExecuted):' \
+            > /dev/null; then
         printf 'error: counterless artifact still writes a diagnostic counter\n' >&2
         exit 1
     fi
-    if printf '%s\n' "${INTERPRETER_DUMP}" |
-        grep -E '(getfield.*Field profilingEnabled:|invoke[^[:space:]]*.*Method profileInstruction:)' \
-            >/dev/null; then
+    if printf '%s\n' "${INTERPRETER_DUMP}" \
+        | grep -E '(getfield.*Field profilingEnabled:|invoke[^[:space:]]*.*Method profileInstruction:)' \
+            > /dev/null; then
         printf 'error: counterless artifact still executes opcode-profiling support\n' >&2
         exit 1
     fi
     EXECUTE_CODE_BYTES="$(
-        printf '%s\n' "${INTERPRETER_DUMP}" |
-            awk '
+        printf '%s\n' "${INTERPRETER_DUMP}" \
+            | awk '
                 /^  private void execute\(int,/ { in_method = 1; next }
                 in_method && /^  private / { in_method = 0 }
                 in_method && /^[[:space:]]*[0-9]+:/ {
@@ -338,7 +338,7 @@ cmd_counterless() {
         printf 'error: could not measure counterless execute bytecode\n' >&2
         exit 1
     fi
-    if [ "${EXECUTE_CODE_BYTES}" -gt "${EXECUTE_CODE_LIMIT}" ]; then
+    if [[ "${EXECUTE_CODE_BYTES}" -gt "${EXECUTE_CODE_LIMIT}" ]]; then
         printf 'error: counterless execute is %s bytes; maximum %s\n' \
             "${EXECUTE_CODE_BYTES}" "${EXECUTE_CODE_LIMIT}" >&2
         exit 1
@@ -374,16 +374,16 @@ cmd_counterless() {
 }
 
 case "${1:-}" in
-jar)
-    shift
-    cmd_jar "$@"
-    ;;
-counterless)
-    shift
-    cmd_counterless "$@"
-    ;;
-*)
-    printf '%s\n' 'usage: tools/verify.sh <jar|counterless> [args...]' >&2
-    exit 1
-    ;;
+    jar)
+        shift
+        cmd_jar "$@"
+        ;;
+    counterless)
+        shift
+        cmd_counterless "$@"
+        ;;
+    *)
+        printf '%s\n' 'usage: tools/verify.sh <jar|counterless> [args...]' >&2
+        exit 1
+        ;;
 esac

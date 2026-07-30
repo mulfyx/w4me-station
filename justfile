@@ -11,7 +11,27 @@ setup:
 doctor:
     ./tools/toolchain.sh
 
-# Check every project shell script without rewriting it.
+# Format every repository-owned language using its authoritative formatter.
+fmt:
+    ./tools/format.sh
+
+# Verify formatting without rewriting any file.
+fmt-check:
+    ./tools/fmt-check.sh
+
+# Run all fast, blocking format, lint, spec, and repository-contract gates.
+quality:
+    ./tools/lint.sh
+
+# Run Error Prone and SpotBugs against analysis-only Java 8 classfiles.
+analysis:
+    ./tools/analysis.sh
+
+# Scan history/worktree, dependencies, licenses, and commit messages.
+security:
+    ./tools/security.sh
+
+# Check every project source and configuration file without rewriting it.
 lint:
     ./tools/lint.sh
 
@@ -26,6 +46,10 @@ test:
 # Run the complete local correctness gate, including release JAR validation.
 verify: lint test build
     ./tools/verify.sh counterless
+
+# Run external links, Trivy, SBOM, and reproducible release gates.
+nightly:
+    ./tools/nightly.sh
 
 # Build and open the station in KEmulator.
 run: build

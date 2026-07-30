@@ -1,0 +1,15 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated build output is gitignored and contains WAT opcode tokens, not credentials."
+paths = [
+  '''(^|/)build/''',
+]
+
+[[allowlists]]
+description = "Pinned public CLDC and MIDP artifact SHA-256 values are integrity checks, not API keys."
+regexTarget = "line"
+regexes = [
+  '''^\s*&& (?:cldc|midp)_api_sha256='[0-9a-f]{64}' \\\s*$''',
+]

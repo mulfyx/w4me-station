@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionXpathFilter Experimental Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_xpath_experimental_1_2.dtd">
+<suppressions>
+    <!--
+      Keep identifier exceptions narrow. Add an XPath only when a domain term
+      from the approved WASM/W4IR/CLDC/MIDP/MMAPI/RMS/ARGB/PCM/CRC/FNV/JVM
+      vocabulary is rejected by Google Checkstyle.
+    -->
+    <!--
+      The hot execute loop defers its third W4IR word until each opcode needs
+      it. Initializing or splitting this mutable slot changes Java bytecode
+      layout; the declaration cannot remain final because two coalesced
+      handlers advance and reuse it.
+    -->
+    <suppress-xpath checks="VariableDeclarationUsageDistance"
+        files=".*[/\\]WasmInterpreter\.java"
+        query="//VARIABLE_DEF[./IDENT[@text='auxiliary']]" />
+</suppressions>

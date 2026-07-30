@@ -6,7 +6,7 @@ inspect_container_image() {
     image="$1"
     shift
     inspect_error_file="$(mktemp)"
-    if docker image inspect "${image}" "$@" 2>"${inspect_error_file}"; then
+    if docker image inspect "${image}" "$@" 2> "${inspect_error_file}"; then
         rm -f -- "${inspect_error_file}"
         return 0
     fi
