@@ -43,6 +43,16 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
                         midlet.showAudioSettings(source, settings);
                     }
                 });
+        registerSaveStateMenuActions(
+                new SaveStateMenuActions() {
+                    public void saveState(W4Canvas source) {
+                        returnToCanvasForSaveState(source, true);
+                    }
+
+                    public void loadState(W4Canvas source) {
+                        returnToCanvasForSaveState(source, false);
+                    }
+                });
     }
 
     protected void startApp() {
@@ -277,6 +287,18 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
             throw new IllegalStateException("save-state menu actions already registered");
         }
         saveStateMenuActions = actions;
+    }
+
+    private void returnToCanvasForSaveState(
+            W4Canvas source, boolean save) {
+        if (canvas != source || !source.isSystemMenuOpen()) {
+            return;
+        }
+        boolean accepted =
+                save ? source.saveFromSystemMenu() : source.loadFromSystemMenu();
+        if (accepted) {
+            Display.getDisplay(this).setCurrent(source);
+        }
     }
 
     void continueFromSystemMenu(SystemMenuList menu, W4Canvas source) {

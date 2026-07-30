@@ -16,6 +16,14 @@
 - decodes function bodies through bounded local instruction/control arrays,
   removing parse-loop `ObjectList` calls while preserving the existing limits.
 
+### Save states
+
+- adds one temporary Save State/Load State slot to the native in-game menu;
+- restores linear memory, globals, table/passive-data state, logical disk, and
+  APU channel progress only at a frame boundary;
+- replaces repeated saves atomically and clears the slot on restart, library
+  exit, cartridge failure, or MIDlet shutdown.
+
 ### Audio
 
 - specializes constant mono pulse synthesis by hoisting the phase step and

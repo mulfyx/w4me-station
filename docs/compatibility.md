@@ -188,8 +188,10 @@ framebuffer whenever the screen provides enough space.
   cartridge.
 - WebAssembly threads, SIMD, reference types beyond the supported table model,
   multiple memories, and memory growth are not supported.
-- The current disk UI provides the cartridge's WASM-4 disk API; user-facing
-  save-state slots are not implemented.
+- The in-game menu provides one temporary Save State/Load State for the active
+  cartridge. It captures VM memory, globals, table/passive-data state, logical
+  disk, and APU progress between frames. The state has no slot manager and is
+  cleared on Restart Cart, Library, cartridge failure, or MIDlet shutdown.
 - Bluetooth play, workshop browsing, and the remaining menu work remain tracked
   in OpenSpec and are not part of the current release.
 

@@ -180,6 +180,83 @@ public final class WasmModule {
         return memory;
     }
 
+    int snapshotMemoryLength() {
+        return memory.length;
+    }
+
+    int snapshotGlobalCount() {
+        return globals.length;
+    }
+
+    int snapshotTableLength() {
+        return table == null ? -1 : table.length;
+    }
+
+    int snapshotDataSegmentCount() {
+        return dataSegments.length;
+    }
+
+    void captureMutableState(
+            byte[] memoryState,
+            long[] globalState,
+            int[] tableState,
+            byte[][] dataSegmentState) {
+        if (!canRestoreMutableState(
+                memoryState, globalState, tableState, dataSegmentState)) {
+            throw new IllegalArgumentException("module snapshot shape mismatch");
+        }
+        System.arraycopy(memory, 0, memoryState, 0, memory.length);
+        System.arraycopy(globals, 0, globalState, 0, globals.length);
+        if (table != null) {
+            System.arraycopy(table, 0, tableState, 0, table.length);
+        }
+        System.arraycopy(
+                dataSegments,
+                0,
+                dataSegmentState,
+                0,
+                dataSegments.length);
+    }
+
+    boolean canRestoreMutableState(
+            byte[] memoryState,
+            long[] globalState,
+            int[] tableState,
+            byte[][] dataSegmentState) {
+        return memoryState != null
+                && memoryState.length == memory.length
+                && globalState != null
+                && globalState.length == globals.length
+                && ((table == null && tableState == null)
+                        || (table != null
+                                && tableState != null
+                                && tableState.length == table.length))
+                && dataSegmentState != null
+                && dataSegmentState.length == dataSegments.length;
+    }
+
+    void restoreMutableState(
+            byte[] memoryState,
+            long[] globalState,
+            int[] tableState,
+            byte[][] dataSegmentState) {
+        if (!canRestoreMutableState(
+                memoryState, globalState, tableState, dataSegmentState)) {
+            throw new IllegalArgumentException("module snapshot shape mismatch");
+        }
+        System.arraycopy(memoryState, 0, memory, 0, memory.length);
+        System.arraycopy(globalState, 0, globals, 0, globals.length);
+        if (table != null) {
+            System.arraycopy(tableState, 0, table, 0, table.length);
+        }
+        System.arraycopy(
+                dataSegmentState,
+                0,
+                dataSegments,
+                0,
+                dataSegments.length);
+    }
+
     public int exportedFunction(String name) throws WasmException {
         int index;
         for (index = 0; index < exports.length; index++) {

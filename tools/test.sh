@@ -46,6 +46,7 @@ INDIRECT_TYPES_WASM="${TEST_DIR}/wasm-indirect-equivalent-types.wasm"
 INTEGER_COMPACT_WASM="${TEST_DIR}/integer-compact-seven.wasm"
 LOAD_TEE_FUSION_WASM="${TEST_DIR}/i32-load-local-tee-fusion.wasm"
 STATIC_BRANCH_DESCRIPTORS_WASM="${TEST_DIR}/static-branch-descriptors.wasm"
+SAVE_STATE_WASM="${TEST_DIR}/save-state-roundtrip.wasm"
 DEFINED_CALL_ARGUMENTS_WASM="${TEST_DIR}/defined-call-arguments.wasm"
 W4IR_CACHE_METADATA_WASM="${TEST_DIR}/w4ir-cache-metadata-recovery.wasm"
 INTERPRETER_CONFIG_SOURCE="${INTERPRETER_CONFIG_SOURCE:-${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java}"
@@ -77,6 +78,9 @@ wasm-validate "${LOAD_TEE_FUSION_WASM}"
 wat2wasm "${ROOT_DIR}/src/test/resources/static-branch-descriptors.wat" \
     -o "${STATIC_BRANCH_DESCRIPTORS_WASM}"
 wasm-validate "${STATIC_BRANCH_DESCRIPTORS_WASM}"
+wat2wasm "${ROOT_DIR}/src/test/resources/save-state-roundtrip.wat" \
+    -o "${SAVE_STATE_WASM}"
+wasm-validate "${SAVE_STATE_WASM}"
 wat2wasm "${ROOT_DIR}/src/test/resources/defined-call-arguments.wat" \
     -o "${DEFINED_CALL_ARGUMENTS_WASM}"
 wasm-validate "${DEFINED_CALL_ARGUMENTS_WASM}"
@@ -188,6 +192,13 @@ javac \
     "${ROOT_DIR}/src/test/java/w4me/wasm/F32ConstCellCanonicalizationSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/W4IrMalformedDescriptorCacheSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/WasmValueStackPushGuardSmoke.java"
+javac \
+    -source "${J2ME_SOURCE}" \
+    -target "${J2ME_TARGET}" \
+    -Xlint:-options \
+    -classpath "${CLASSES_DIR}" \
+    -d "${CLASSES_DIR}" \
+    "${ROOT_DIR}/src/test/java/w4me/wasm/RuntimeSnapshotSmoke.java"
 
 javac \
     -source "${J2ME_SOURCE}" \
@@ -265,7 +276,9 @@ javac \
     "${ROOT_DIR}/src/main/java/w4me/midp/SystemMenuModel.java" \
     "${ROOT_DIR}/src/main/java/w4me/midp/SystemMenuState.java" \
     "${ROOT_DIR}/src/main/java/w4me/midp/SettingsMenuModel.java" \
-    "${ROOT_DIR}/src/test/java/w4me/midp/SystemMenuSmoke.java"
+    "${ROOT_DIR}/src/main/java/w4me/midp/SingleSaveState.java" \
+    "${ROOT_DIR}/src/test/java/w4me/midp/SystemMenuSmoke.java" \
+    "${ROOT_DIR}/src/test/java/w4me/midp/SingleSaveStateSmoke.java"
 
 java -classpath "${CLASSES_DIR}" w4me.MandelbrotInterpreterSmoke \
     "${ROOT_DIR}/cartridges/mandelbrot.wasm" \
@@ -417,6 +430,9 @@ java -classpath "${CLASSES_DIR}" w4me.wasm.F32ConstCellCanonicalizationSmoke \
 java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.wasm.W4IrMalformedDescriptorCacheSmoke \
     "${W4IR_CACHE_METADATA_WASM}"
 java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.wasm.WasmValueStackPushGuardSmoke
+java -classpath "${CLASSES_DIR}" w4me.wasm.RuntimeSnapshotSmoke \
+    "${ROOT_DIR}/src/main/resources/w4font.bin" \
+    "${SAVE_STATE_WASM}"
 
 java -classpath "${CLASSES_DIR}" w4me.ArgbBandDifferentialSmoke \
     "${ROOT_DIR}/src/main/resources/w4font.bin" \
@@ -441,6 +457,9 @@ java -classpath "${CLASSES_DIR}" w4me.runtime.audio.Wasm4PcmDifferentialSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.AudioSettingsSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.MmapiMidiBackendSmoke
 java -classpath "${CLASSES_DIR}" w4me.midp.SystemMenuSmoke
+java -classpath "${CLASSES_DIR}" w4me.midp.SingleSaveStateSmoke \
+    "${ROOT_DIR}/src/main/resources/w4font.bin" \
+    "${SAVE_STATE_WASM}"
 java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.midp.AudioPreferencesSmoke
 
 java -classpath "${CLASSES_DIR}" w4me.SoundTestSmoke \

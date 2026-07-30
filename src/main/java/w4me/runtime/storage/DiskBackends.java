@@ -4,7 +4,11 @@ public final class DiskBackends {
     private DiskBackends() {}
 
     public static DiskBackend create(byte[] cartridge) {
-        String name = "w4d" + hex8(fnv1a(cartridge));
+        return create(cartridgeIdentity(cartridge));
+    }
+
+    public static DiskBackend create(int cartridgeIdentity) {
+        String name = "w4d" + hex8(cartridgeIdentity);
         try {
             RmsDiskBackend backend = new RmsDiskBackend();
             backend.open(name);
@@ -14,7 +18,10 @@ public final class DiskBackends {
         }
     }
 
-    private static int fnv1a(byte[] bytes) {
+    public static int cartridgeIdentity(byte[] bytes) {
+        if (bytes == null) {
+            throw new NullPointerException();
+        }
         int hash = 0x811c9dc5;
         int index;
         for (index = 0; index < bytes.length; index++) {

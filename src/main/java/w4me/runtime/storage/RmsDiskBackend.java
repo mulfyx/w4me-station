@@ -11,7 +11,7 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 
 /** Recoverable two-generation RMS storage for the WASM-4 1024-byte disk. */
-public final class RmsDiskBackend implements DiskBackend {
+public final class RmsDiskBackend implements SnapshotDiskBackend {
     private static final int MAGIC = 0x57345356;
     private static final int FORMAT_VERSION = 1;
     private static final int HEADER_BYTES = 24;
@@ -47,6 +47,41 @@ public final class RmsDiskBackend implements DiskBackend {
             return 0;
         }
         int count = minimum(size, MAX_BYTES);
+        return replaceRange(source, offset, count) ? count : 0;
+    }
+
+    public int snapshot(byte[] target) {
+        if (!available || store == null || target == null || target.length < MAX_BYTES) {
+            return -1;
+        }
+        try {
+            SaveRecord latest = findLatest();
+            if (latest == null) {
+                return 0;
+            }
+            System.arraycopy(latest.data, 0, target, 0, latest.data.length);
+            return latest.data.length;
+        } catch (OutOfMemoryError unavailable) {
+            return -1;
+        } catch (Throwable failure) {
+            available = false;
+            return -1;
+        }
+    }
+
+    public boolean replace(byte[] source, int length) {
+        if (source == null
+                || length < 0
+                || length > MAX_BYTES
+                || length > source.length
+                || !available
+                || store == null) {
+            return false;
+        }
+        return replaceRange(source, 0, length);
+    }
+
+    private boolean replaceRange(byte[] source, int offset, int count) {
         try {
             SaveRecord previous = findLatest();
             long generation = previous == null ? 1L : previous.generation + 1L;
@@ -61,10 +96,10 @@ public final class RmsDiskBackend implements DiskBackend {
                 throw new IOException("RMS save readback mismatch");
             }
             cleanup(recordId, previous == null ? 0 : previous.recordId);
-            return count;
+            return true;
         } catch (Throwable failure) {
             available = false;
-            return 0;
+            return false;
         }
     }
 

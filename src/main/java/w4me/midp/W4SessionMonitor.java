@@ -65,5 +65,8 @@ interface W4SessionMonitor {
             int controlsTop,
             int controlsHeight);
 
+    void onSaveState(
+            String operation, String outcome, WasmModule module);
+
     void onSessionClosed(String reason);
 }

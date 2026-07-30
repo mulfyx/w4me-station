@@ -12,6 +12,8 @@ final class SystemMenuState {
     static final int MENU_OPEN = 2;
     static final int RESTART_REQUESTED = 3;
     static final int LEAVE_REQUESTED = 4;
+    static final int SAVE_REQUESTED = 5;
+    static final int LOAD_REQUESTED = 6;
 
     volatile int state = RUNNING;
     volatile boolean stopped;
@@ -68,6 +70,23 @@ final class SystemMenuState {
         return true;
     }
 
+    synchronized boolean requestSave() {
+        return requestSaveStateAction(SAVE_REQUESTED);
+    }
+
+    synchronized boolean requestLoad() {
+        return requestSaveStateAction(LOAD_REQUESTED);
+    }
+
+    synchronized void completeSaveStateAction() {
+        if (!stopped
+                && (state == SAVE_REQUESTED || state == LOAD_REQUESTED)) {
+            state = RUNNING;
+            suppressNextGameInput = true;
+            notifyAll();
+        }
+    }
+
     synchronized void completeRestart() {
         if (!stopped && state == RESTART_REQUESTED) {
             state = RUNNING;
@@ -111,5 +130,14 @@ final class SystemMenuState {
         }
         stopped = true;
         notifyAll();
+    }
+
+    private boolean requestSaveStateAction(int requestedState) {
+        if (stopped || state != MENU_OPEN) {
+            return false;
+        }
+        state = requestedState;
+        notifyAll();
+        return true;
     }
 }

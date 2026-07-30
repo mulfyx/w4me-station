@@ -1,6 +1,6 @@
 package w4me.runtime.storage;
 
-public final class MemoryDiskBackend implements DiskBackend {
+public final class MemoryDiskBackend implements SnapshotDiskBackend {
     private final byte[] data = new byte[1024];
     private int length;
 
@@ -15,6 +15,23 @@ public final class MemoryDiskBackend implements DiskBackend {
         System.arraycopy(source, offset, data, 0, count);
         length = count;
         return count;
+    }
+
+    public int snapshot(byte[] target) {
+        if (target == null || target.length < data.length) {
+            return -1;
+        }
+        System.arraycopy(data, 0, target, 0, length);
+        return length;
+    }
+
+    public boolean replace(byte[] source, int size) {
+        if (source == null || size < 0 || size > data.length || size > source.length) {
+            return false;
+        }
+        System.arraycopy(source, 0, data, 0, size);
+        length = size;
+        return true;
     }
 
     public void close() {}

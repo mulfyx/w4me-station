@@ -67,6 +67,7 @@ Further `.wasm` files can be installed from the device.
 - thirteen bundled cartridges plus HTTP(S), RMS, URL, and optional JSR-75 loading;
 - phone keys, keyboard controls, pointer input, and an on-screen touch pad;
 - per-cartridge persistent disk storage with checksummed RMS generations;
+- one temporary in-session Save State/Load State slot from the native game menu;
 - device-dependent MMAPI audio with streamed MIDI, `playTone`, and silent
   fallbacks;
 - global RMS-backed sound On/Off and master-volume controls;
@@ -133,6 +134,11 @@ enough.
 command menu. It contains Automatic/Compatible audio mode, a hard global
 Sound On/Off mute, and master volume when the backend supports it. Confirmed
 settings persist across MIDlet restarts.
+
+The in-game menu also provides one temporary `Save State`/`Load State` slot.
+It is replaced by the next save and is cleared when the cartridge is restarted,
+closed, or returned to the library. It is separate from persistent WASM-4 disk
+storage and does not survive a MIDlet restart.
 
 On the tested Nokia E71, short sound effects work, but continuous music
 stutters. Audio timing and fidelity remain device-dependent; see

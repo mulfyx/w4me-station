@@ -243,6 +243,19 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
                         + closedSessions);
     }
 
+    public void onSaveState(
+            String operation, String outcome, WasmModule module) {
+        System.out.println(
+                "W4ME_SAVE_STATE cart="
+                        + title
+                        + " operation="
+                        + operation
+                        + " outcome="
+                        + outcome
+                        + " framebuffer-fnv1a="
+                        + hex8(FramebufferOracle.fnv1a(module)));
+    }
+
     private void recordBenchmark(
             int frame,
             Wasm4Runtime runtime,

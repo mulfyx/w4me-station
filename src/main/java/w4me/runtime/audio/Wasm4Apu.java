@@ -1,6 +1,11 @@
 package w4me.runtime.audio;
 
 public final class Wasm4Apu {
+    private static final int CHANNEL_COUNT = 4;
+    private static final int CHANNEL_STATE_FIELDS = 11;
+    private static final int SCALAR_STATE_FIELDS = 5;
+    private static final int SNAPSHOT_LENGTH =
+            CHANNEL_COUNT * CHANNEL_STATE_FIELDS + SCALAR_STATE_FIELDS;
     private final AudioBackend backend;
     private final AudioControl control;
     private final int[] frequencyStart = new int[4];
@@ -176,6 +181,62 @@ public final class Wasm4Apu {
         return lastFlags;
     }
 
+    /** Captures cartridge-owned channel, envelope, and diagnostic tone state. */
+    public synchronized int[] snapshotState() {
+        int[] state = new int[SNAPSHOT_LENGTH];
+        int offset = 0;
+        offset = copyToState(frequencyStart, state, offset);
+        offset = copyToState(frequencyEnd, state, offset);
+        offset = copyToState(totalFrames, state, offset);
+        offset = copyToState(elapsedFrames, state, offset);
+        offset = copyToState(attackFrames, state, offset);
+        offset = copyToState(decayFrames, state, offset);
+        offset = copyToState(sustainFrames, state, offset);
+        offset = copyToState(releaseFrames, state, offset);
+        offset = copyToState(sustainVolume, state, offset);
+        offset = copyToState(peakVolume, state, offset);
+        offset = copyToState(channelFlags, state, offset);
+        state[offset++] = toneEventCount;
+        state[offset++] = lastFrequency;
+        state[offset++] = lastDuration;
+        state[offset++] = lastVolume;
+        state[offset] = lastFlags;
+        return state;
+    }
+
+    public synchronized boolean canRestoreState(int[] state) {
+        return state != null && state.length == SNAPSHOT_LENGTH;
+    }
+
+    /**
+     * Restores cartridge-owned APU state without changing user mute, gain, or
+     * menu suspension. An already playing backend tone stays silent until the
+     * cartridge submits its next tone.
+     */
+    public synchronized void restoreState(int[] state) {
+        if (!canRestoreState(state)) {
+            throw new IllegalArgumentException("APU snapshot shape mismatch");
+        }
+        silence();
+        int offset = 0;
+        offset = copyFromState(state, offset, frequencyStart);
+        offset = copyFromState(state, offset, frequencyEnd);
+        offset = copyFromState(state, offset, totalFrames);
+        offset = copyFromState(state, offset, elapsedFrames);
+        offset = copyFromState(state, offset, attackFrames);
+        offset = copyFromState(state, offset, decayFrames);
+        offset = copyFromState(state, offset, sustainFrames);
+        offset = copyFromState(state, offset, releaseFrames);
+        offset = copyFromState(state, offset, sustainVolume);
+        offset = copyFromState(state, offset, peakVolume);
+        offset = copyFromState(state, offset, channelFlags);
+        toneEventCount = state[offset++];
+        lastFrequency = state[offset++];
+        lastDuration = state[offset++];
+        lastVolume = state[offset++];
+        lastFlags = state[offset];
+    }
+
     public int channelFrequency(int channel) {
         requireChannel(channel);
         int end = frequencyEnd[channel];
@@ -258,6 +319,16 @@ public final class Wasm4Apu {
 
     private int effectiveGain() {
         return muted || suspended ? 0 : masterGain;
+    }
+
+    private int copyToState(int[] source, int[] target, int offset) {
+        System.arraycopy(source, 0, target, offset, CHANNEL_COUNT);
+        return offset + CHANNEL_COUNT;
+    }
+
+    private int copyFromState(int[] source, int offset, int[] target) {
+        System.arraycopy(source, offset, target, 0, CHANNEL_COUNT);
+        return offset + CHANNEL_COUNT;
     }
 
     private void silence() {

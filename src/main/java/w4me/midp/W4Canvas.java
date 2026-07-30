@@ -26,6 +26,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
     private volatile boolean running;
     private volatile SystemMenuState menuState = new SystemMenuState();
     private volatile Session activeSession;
+    private final SingleSaveState saveState = new SingleSaveState();
     private Thread worker;
     // Guards every held/pending input pair below. LCDUI delivers key and pointer
     // events on the event thread while the worker samples them once per frame, so
@@ -104,6 +105,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
             activeWorker = worker;
         }
         clearInput();
+        saveState.clear();
         if (activeWorker != null && activeWorker != Thread.currentThread()) {
             activeWorker.interrupt();
             try {
@@ -142,12 +144,14 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 break;
             }
         } catch (Throwable failure) {
+            saveState.clear();
             if (running && !menuState.isStopped()) {
                 status = failure.toString();
                 System.out.println("W4ME_ERROR " + failure.toString());
                 midlet.showCartridgeFailure(this, cartridgeTitle, failure);
             }
         } finally {
+            saveState.clear();
             synchronized (this) {
                 running = false;
                 if (worker == Thread.currentThread()) {
@@ -247,7 +251,8 @@ final class W4Canvas extends GameCanvas implements Runnable {
                             AudioBackends.create(midlet.audioBackendPreference()));
             midlet.configureAudio(audio);
             audio.setDiagnostic(monitor != null && monitor.audioDiagnostics());
-            DiskBackend disk = DiskBackends.create(cartridge);
+            int cartridgeIdentity = DiskBackends.cartridgeIdentity(cartridge);
+            DiskBackend disk = DiskBackends.create(cartridgeIdentity);
             Wasm4Runtime runtime = new Wasm4Runtime(font, audio, disk);
             activeRuntime = runtime;
             runtime.initialize(module);
@@ -260,7 +265,14 @@ final class W4Canvas extends GameCanvas implements Runnable {
             interpreter.setInstructionLimit(150000000L);
             interpreter.invokeCartridgeLifecycle();
             status = null;
-            session = new Session(runtime, module, interpreter, audio);
+            session =
+                    new Session(
+                            runtime,
+                            module,
+                            interpreter,
+                            audio,
+                            cartridgeIdentity,
+                            cartridge.length);
             activeSession = session;
             outcome = runFrames(session);
             return outcome;
@@ -330,12 +342,54 @@ final class W4Canvas extends GameCanvas implements Runnable {
             int requested = menuState.state;
             if (requested == SystemMenuState.RESTART_REQUESTED
                     || requested == SystemMenuState.LEAVE_REQUESTED) {
+                saveState.clear();
                 return requested;
+            }
+            boolean renderAfterMenuAction = false;
+            if (requested == SystemMenuState.SAVE_REQUESTED) {
+                boolean saved =
+                        saveState.save(
+                                session.cartridgeIdentity,
+                                session.cartridgeLength,
+                                session.module,
+                                session.runtime);
+                if (saved) {
+                    showNotification("State saved");
+                } else {
+                    showNotification("State save failed");
+                }
+                reportSaveState(
+                        "save", saved ? "saved" : "failed", session.module);
+                menuState.completeSaveStateAction();
+                renderAfterMenuAction = true;
+            } else if (requested == SystemMenuState.LOAD_REQUESTED) {
+                reportSaveState("load", "before", session.module);
+                int loaded =
+                        saveState.load(
+                                session.cartridgeIdentity,
+                                session.cartridgeLength,
+                                session.module,
+                                session.runtime);
+                if (loaded == SingleSaveState.LOAD_OK) {
+                    showNotification("State loaded");
+                    reportSaveState("load", "loaded", session.module);
+                } else if (loaded == SingleSaveState.LOAD_MISSING) {
+                    showNotification("Need to save a state first");
+                    reportSaveState("load", "missing", session.module);
+                } else {
+                    showNotification("State load failed");
+                    reportSaveState("load", "failed", session.module);
+                }
+                menuState.completeSaveStateAction();
+                renderAfterMenuAction = true;
             }
             if (menuSuspendedAudio) {
                 session.audio.resumeOutput();
                 menuSuspendedAudio = false;
                 clearInput();
+            }
+            if (renderAfterMenuAction) {
+                renderFrame(session.runtime, session.module, false);
             }
 
             long startedAt = System.currentTimeMillis();
@@ -490,12 +544,28 @@ final class W4Canvas extends GameCanvas implements Runnable {
 
     boolean restartFromSystemMenu() {
         clearInput();
-        return menuState.requestRestart();
+        boolean accepted = menuState.requestRestart();
+        if (accepted) {
+            saveState.clear();
+        }
+        return accepted;
     }
 
     void exitFromSystemMenu() {
         clearInput();
-        menuState.requestLeave();
+        if (menuState.requestLeave()) {
+            saveState.clear();
+        }
+    }
+
+    boolean saveFromSystemMenu() {
+        clearInput();
+        return menuState.requestSave();
+    }
+
+    boolean loadFromSystemMenu() {
+        clearInput();
+        return menuState.requestLoad();
     }
 
     boolean isSystemMenuOpen() {
@@ -505,6 +575,13 @@ final class W4Canvas extends GameCanvas implements Runnable {
     private void showNotification(String message) {
         notification = message;
         notificationFrames = 90;
+    }
+
+    private void reportSaveState(
+            String operation, String outcome, WasmModule module) {
+        if (monitor != null) {
+            monitor.onSaveState(operation, outcome, module);
+        }
     }
 
     int audioVolumeCapability() {
@@ -1075,17 +1152,23 @@ final class W4Canvas extends GameCanvas implements Runnable {
         final WasmModule module;
         final WasmInterpreter interpreter;
         final Wasm4Apu audio;
+        final int cartridgeIdentity;
+        final int cartridgeLength;
         private boolean closed;
 
         Session(
                 Wasm4Runtime runtime,
                 WasmModule module,
                 WasmInterpreter interpreter,
-                Wasm4Apu audio) {
+                Wasm4Apu audio,
+                int cartridgeIdentity,
+                int cartridgeLength) {
             this.runtime = runtime;
             this.module = module;
             this.interpreter = interpreter;
             this.audio = audio;
+            this.cartridgeIdentity = cartridgeIdentity;
+            this.cartridgeLength = cartridgeLength;
         }
 
         synchronized void close() {

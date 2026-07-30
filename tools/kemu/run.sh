@@ -327,7 +327,7 @@ cmd_verify_launcher() {
         ! grep -F -q -- '"title":"Paused"' \
             "${RESULT_DIR}/system-menu.json" ||
         ! grep -F -q -- \
-            '"items":["Continue","Settings","Restart Cart","Exit"]' \
+            '"items":["Continue","Save State","Load State","Settings","Restart Cart","Exit"]' \
             "${RESULT_DIR}/system-menu.json"; then
         printf 'error: native LCDUI system menu is incomplete\n' >&2
         exit 1
@@ -337,12 +337,12 @@ cmd_verify_launcher() {
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
 
-    # Restart is the third base action: Continue, Settings, Restart Cart, Exit.
+    # Restart follows Continue, Save, Load, and Settings.
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/restart-menu.json"
-    if ! grep -F -q -- '"selectedIndex":2' \
+    if ! grep -F -q -- '"selectedIndex":4' \
         "${RESULT_DIR}/restart-menu.json"; then
         printf 'error: diagnostic Restart Cart selection is missing\n' >&2
         exit 1
@@ -368,7 +368,7 @@ cmd_verify_launcher() {
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/settings-menu.json"
-    if ! grep -F -q -- '"selectedIndex":1' \
+    if ! grep -F -q -- '"selectedIndex":3' \
         "${RESULT_DIR}/settings-menu.json"; then
         printf 'error: diagnostic Settings selection is missing\n' >&2
         exit 1
@@ -423,12 +423,12 @@ cmd_verify_launcher() {
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
 
-    # Exit is the fourth and final base action.
+    # Exit remains the final action after Save/Load are enabled.
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/exit-menu.json"
-    if ! grep -F -q -- '"selectedIndex":3' \
+    if ! grep -F -q -- '"selectedIndex":5' \
         "${RESULT_DIR}/exit-menu.json"; then
         printf 'error: diagnostic Exit-last selection is missing\n' >&2
         exit 1
@@ -501,6 +501,147 @@ cmd_verify_launcher() {
             'displayable=list items=13 selected=0 native-menu=PASS restart=PASS exit-last=PASS game-settings=PASS library-settings=PASS cleanup=PASS'
     } >"${RESULT_DIR}/receipt.txt"
     printf 'PASS KEmulator launcher native-menu restart exit-last settings origins cleanup\n'
+}
+
+cmd_verify_save_state() {
+    SOURCE_JAR="${1:-${ROOT_DIR}/dist/w4me-station.jar}"
+    RESULT_DIR="${ROOT_DIR}/build/reports/kemu/save-state"
+    TEMP_DIR="$(mktemp -d)"
+
+    cleanup() {
+        "${ROOT_DIR}/tools/kemu/run.sh" session stop >/dev/null 2>&1 || true
+        rm -rf -- "${TEMP_DIR}"
+    }
+    trap cleanup EXIT
+
+    rm -rf -- "${RESULT_DIR}"
+    mkdir -p -- "${RESULT_DIR}"
+
+    run_probe() {
+        probe_name="$1"
+        cartridge_name="$2"
+        midlet_class="$3"
+        probe_dir="${TEMP_DIR}/${probe_name}"
+        result_dir="${RESULT_DIR}/${probe_name}"
+        diagnostic_jar="${probe_dir}/save-state.jar"
+        mkdir -p -- "${probe_dir}" "${result_dir}"
+
+        build_diagnostic_jar \
+            "${SOURCE_JAR}" \
+            "${diagnostic_jar}" \
+            "${probe_dir}/classes" \
+            "W4ME Save State ${cartridge_name}" \
+            "${midlet_class}" \
+            "${ROOT_DIR}/src/test/java/w4me/midp/SaveStateProbeMidlet.java"
+        KEMU_SIZE=240x320 "${ROOT_DIR}/tools/kemu/run.sh" session \
+            start "${diagnostic_jar}" >/dev/null
+        "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1200 >/dev/null
+
+        expected_indices="2 1 2 4 2 5"
+        step=0
+        for expected_index in ${expected_indices}; do
+            step=$((step + 1))
+            "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk \
+                --duration 80 >/dev/null
+            "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+            menu_json="${result_dir}/menu-${step}.json"
+            "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+                >"${menu_json}"
+            if ! grep -F -q -- \
+                '"items":["Continue","Save State","Load State","Settings","Restart Cart","Exit"]' \
+                "${menu_json}" ||
+                ! grep -F -q -- "\"selectedIndex\":${expected_index}" \
+                    "${menu_json}"; then
+                printf 'error: %s save-state menu step %s is incorrect\n' \
+                    "${cartridge_name}" "${step}" >&2
+                exit 1
+            fi
+            snapshot_id="$(
+                sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+                    "${menu_json}"
+            )"
+            if ! [[ "${snapshot_id}" =~ ^[0-9]+$ ]]; then
+                printf 'error: %s menu step %s has no command snapshot\n' \
+                    "${cartridge_name}" "${step}" >&2
+                exit 1
+            fi
+            "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+                --snapshot "${snapshot_id}" >/dev/null
+            if [ "${step}" -eq 4 ]; then
+                "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1600 >/dev/null
+            elif [ "${step}" -eq 2 ]; then
+                "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 800 >/dev/null
+            else
+                "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 400 >/dev/null
+            fi
+        done
+
+        "${ROOT_DIR}/tools/kemu/run.sh" session cmd logs worker --lines 900 \
+            >"${result_dir}/worker.log"
+        "${ROOT_DIR}/tools/kemu/run.sh" session stop >/dev/null
+
+        saved_hash="$(
+            sed -n \
+                's/.*operation=save outcome=saved framebuffer-fnv1a=\([0-9a-f][0-9a-f]*\).*/\1/p' \
+                "${result_dir}/worker.log" |
+                sed -n '1p'
+        )"
+        before_hash="$(
+            sed -n \
+                's/.*operation=load outcome=before framebuffer-fnv1a=\([0-9a-f][0-9a-f]*\).*/\1/p' \
+                "${result_dir}/worker.log" |
+                sed -n '2p'
+        )"
+        loaded_hash="$(
+            sed -n \
+                's/.*operation=load outcome=loaded framebuffer-fnv1a=\([0-9a-f][0-9a-f]*\).*/\1/p' \
+                "${result_dir}/worker.log" |
+                sed -n '1p'
+        )"
+        missing_count="$(
+            grep -F -c -- 'operation=load outcome=missing' \
+                "${result_dir}/worker.log" || true
+        )"
+        if [ -z "${saved_hash}" ] ||
+            [ -z "${before_hash}" ] ||
+            [ -z "${loaded_hash}" ] ||
+            [ "${saved_hash}" != "${loaded_hash}" ] ||
+            [ "${saved_hash}" = "${before_hash}" ] ||
+            [ "${missing_count}" -lt 2 ]; then
+            printf 'error: %s did not complete Save -> mutate -> Load exactly\n' \
+                "${cartridge_name}" >&2
+            exit 1
+        fi
+        if grep -E -q -- 'W4ME_ERROR|Exception in thread' \
+            "${result_dir}/worker.log"; then
+            printf 'error: %s save-state probe reported a runtime failure\n' \
+                "${cartridge_name}" >&2
+            exit 1
+        fi
+        printf 'cart=%s saved=%s mutated=%s loaded=%s missing=%s\n' \
+            "${cartridge_name}" \
+            "${saved_hash}" \
+            "${before_hash}" \
+            "${loaded_hash}" \
+            "${missing_count}" \
+            >"${result_dir}/receipt.txt"
+    }
+
+    run_probe \
+        plasma \
+        "Plasma Cube" \
+        'w4me.midp.SaveStateProbeMidlet$Plasma'
+    run_probe \
+        nyancat \
+        "Nyan Cat" \
+        'w4me.midp.SaveStateProbeMidlet$NyanCat'
+    {
+        printf 'source-jar-sha256=%s\n' \
+            "$(sha256sum -- "${SOURCE_JAR}" | awk '{print $1}')"
+        printf '%s\n' \
+            'carts=2 one-slot=yes persisted=no missing-before-save=yes missing-after-restart=yes state=exact'
+    } >"${RESULT_DIR}/receipt.txt"
+    printf 'PASS KEmulator save-state carts=2 Save-mutate-Load restart-clear\n'
 }
 
 cmd_verify_external() {
@@ -2575,7 +2716,7 @@ list_scenarios() {
     verify)
         printf '%s\n' \
             audio-settings duck external file-picker generic-w4ir install invalid library \
-            launcher plasma rms rubido sound sound-test tankle touch trap untangle \
+            launcher plasma rms rubido save-state sound sound-test tankle touch trap untangle \
             w4ir waternet
         ;;
     bench)

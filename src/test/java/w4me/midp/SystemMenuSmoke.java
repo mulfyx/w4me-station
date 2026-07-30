@@ -49,6 +49,26 @@ public final class SystemMenuSmoke {
 
         assertTrue("second menu request", state.requestMenu());
         assertTrue("second boundary", state.acceptMenuAtFrameBoundary());
+        assertTrue("save request", state.requestSave());
+        assertEquals(
+                "save waits for worker",
+                SystemMenuState.SAVE_REQUESTED,
+                state.state());
+        state.completeSaveStateAction();
+        assertTrue("save confirmation input suppressed", state.consumeInputSuppression());
+
+        assertTrue("third menu request", state.requestMenu());
+        assertTrue("third boundary", state.acceptMenuAtFrameBoundary());
+        assertTrue("load request", state.requestLoad());
+        assertEquals(
+                "load waits for worker",
+                SystemMenuState.LOAD_REQUESTED,
+                state.state());
+        state.completeSaveStateAction();
+        assertTrue("load confirmation input suppressed", state.consumeInputSuppression());
+
+        assertTrue("fourth menu request", state.requestMenu());
+        assertTrue("fourth boundary", state.acceptMenuAtFrameBoundary());
         assertTrue("restart request", state.requestRestart());
         state.stop();
         state.completeRestart();
