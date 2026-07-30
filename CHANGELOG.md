@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Reliability
+
+- checksums complete persisted W4IR function metadata and validates every
+  stored count before it can size an allocation;
+- rejects invalid cached numeric intrinsics and rebuilds the whole cartridge
+  cache through the existing damaged-cache path;
+- keeps fused `f32.const` cells in the same zero-extended representation as
+  ordinary decoded `f32` values.
+
+### Audio
+
+- specializes constant mono pulse synthesis by hoisting the phase step and
+  precomputing the two output levels while preserving byte-exact PCM output.
+
 ## 1.0.4 — 2026-07-29
 
 This release accelerates universal WASM-4 drawing paths and 240-pixel

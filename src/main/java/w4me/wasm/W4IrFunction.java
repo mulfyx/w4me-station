@@ -3,8 +3,15 @@ package w4me.wasm;
 /** Persisted metadata for one decoded W4IR function. */
 public final class W4IrFunction {
     // A multiple of the three-int instruction stride (3 KiB payload).
+    public static final int INSTRUCTION_STRIDE = 3;
     public static final int PAGE_INTS = 768;
     public static final int BRANCH_DESCRIPTOR_STRIDE = 5;
+    public static final int MAX_FUNCTIONS = 4096;
+    public static final int MAX_DECLARED_LOCALS = 4096;
+    public static final int MAX_BRANCH_TARGETS = 4096;
+    public static final int MAX_BRANCH_DESCRIPTORS = 65536;
+    public static final int MAX_INSTRUCTIONS = 32768;
+    public static final int MAX_INTRINSIC = 2;
 
     private final int functionIndex;
     private final int declaredLocalCount;

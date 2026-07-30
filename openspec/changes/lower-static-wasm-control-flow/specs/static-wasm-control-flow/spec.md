@@ -72,7 +72,7 @@ an execution object.
 - **THEN** execution uses the validated legacy control path with identical logical instruction accounting
 
 #### Scenario: Bind cached direct metadata
-- **WHEN** a W4IR v16 function is decoded resident or restored from cache
+- **WHEN** a current-format W4IR function is decoded resident or restored from cache
 - **THEN** the same derived direct metadata is built without changing the persisted format or fingerprint
 
 ### Requirement: Exact stack transfer
@@ -106,7 +106,11 @@ budget checks, trap points, host-visible state, and function-return behavior.
 
 ### Requirement: Persistent W4IR descriptors
 The W4IR cache SHALL persist the complete descriptor representation and SHALL
-atomically reject records from an older or incompatible format.
+atomically reject records from an older, damaged, or incompatible format.
+Function metadata SHALL be checksummed and verified before any persisted length
+or count controls an allocation. Persisted local counts, instruction counts,
+intrinsic identifiers, table lengths, descriptor lengths, and page counts SHALL
+be bounded by the same limits as resident decoding.
 
 #### Scenario: Reopen cached descriptors
 - **WHEN** a function is decoded, written to RMS, reopened, paged, and promoted
@@ -115,6 +119,14 @@ atomically reject records from an older or incompatible format.
 #### Scenario: Encounter an older cache
 - **WHEN** the cartridge cache uses a prior W4IR format
 - **THEN** the cache is discarded and rebuilt rather than partially interpreted
+
+#### Scenario: Encounter damaged function metadata
+- **WHEN** a function metadata record fails its checksum or contains an out-of-range count or intrinsic identifier
+- **THEN** no persisted count controls an unbounded allocation and the complete cartridge cache is discarded and rebuilt
+
+#### Scenario: Bind a cached numeric intrinsic
+- **WHEN** a cached function identifies a numeric f32 intrinsic
+- **THEN** the identifier is in the supported range and the function has exactly one f32 parameter and one f32 result before the intrinsic can execute
 
 ### Requirement: Conservative branch-capable regions
 Compact execution SHALL support descriptor-backed control flow only in a

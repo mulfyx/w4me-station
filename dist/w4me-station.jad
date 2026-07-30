@@ -9,4 +9,4 @@ MicroEdition-Configuration: CLDC-1.1
 MicroEdition-Profile: MIDP-2.0
 MIDlet-Permissions-Opt: javax.microedition.io.Connector.http, javax.microedition.io.Connector.https, javax.microedition.io.Connector.file.read
 MIDlet-Jar-URL: w4me-station.jar
-MIDlet-Jar-Size: 272888
+MIDlet-Jar-Size: 287629

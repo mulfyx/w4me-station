@@ -220,6 +220,15 @@ attempted.
 Resident decode, RMS write, RMS reopen, page load, and promotion MUST expose the
 same descriptor contents.
 
+W4IR v17 additionally appends a checksum to every function metadata record and
+verifies it before parsing any persisted count. The loader applies the resident
+decoder's bounds to declared locals, logical instructions, numeric intrinsic
+identifiers, table lengths, descriptor payloads, and page counts before those
+values can size an allocation. A checksum or bounds failure is reported through
+the existing damaged-cache path, which discards the complete cache and rebuilds
+it from the cartridge. Page records retain their existing independent
+checksums. No cartridge, save, or user data format changes.
+
 ### 9. Keep dense Java dispatch and compilation constraints as invariants
 
 Execution opcode IDs remain dense so `javac` emits `tableswitch`. New handlers
@@ -287,7 +296,7 @@ receipts are intentionally excluded from the public source tree; the measured
 results and rejection decisions remain recorded in this design.
 
 The constant-time retry removes that binary search for ordinary `br` and taken
-`br_if`. It retains W4IR v16 and derives one `pc -> site` table plus four
+`br_if`. It was introduced without changing W4IR v16 and derives one `pc -> site` table plus four
 parallel metadata tables at bind time. The common arity-zero and arity-one path
 is authoritative; function returns, higher arities, `br_table`, and fused
 branches still fall back to the dynamic control stack.
@@ -356,6 +365,9 @@ state.
 5. Keep the dynamic control state for function return, higher arity,
    `br_table`, fused branches, and rollback until a descriptor-complete
    executor passes independently.
+6. Bump the cache to W4IR v17, checksum function metadata before decoding
+   persisted counts, and reject/rebuild the whole cache on checksum, bounds, or
+   intrinsic-signature failure.
 
 Rollback at every stage is the prior authoritative legacy path plus an atomic
 W4IR cache rebuild. No user data or cartridge bytes require migration.

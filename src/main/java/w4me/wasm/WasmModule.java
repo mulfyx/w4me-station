@@ -2,7 +2,7 @@ package w4me.wasm;
 
 public final class WasmModule {
     public static final int W4IR_FORMAT_VERSION =
-            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 16 : 14;
+            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 17 : 15;
     static final int I32 = 0x7f;
     static final int I64 = 0x7e;
     static final int F32 = 0x7d;
@@ -12,7 +12,7 @@ public final class WasmModule {
     static final int BLOCK = 0x02;
     static final int LOOP = 0x03;
     static final int IF = 0x04;
-    static final int W4IR_STRIDE = 3;
+    static final int W4IR_STRIDE = W4IrFunction.INSTRUCTION_STRIDE;
     static final int BRANCH_DESCRIPTOR_STRIDE = 5;
     static final int BRANCH_DESCRIPTOR_TARGET_PC = 0;
     static final int BRANCH_DESCRIPTOR_VALUE_HEIGHT = 1;
@@ -96,16 +96,16 @@ public final class WasmModule {
 
     private static final int PAGE_SIZE = 65536;
     private static final int MAX_TYPES = 4096;
-    private static final int MAX_FUNCTIONS = 4096;
+    private static final int MAX_FUNCTIONS = W4IrFunction.MAX_FUNCTIONS;
     private static final int MAX_GLOBALS = 2048;
     private static final int MAX_TABLE_ELEMENTS = 65536;
-    private static final int MAX_LOCALS = 4096;
+    private static final int MAX_LOCALS = W4IrFunction.MAX_DECLARED_LOCALS;
     private static final int MAX_VALUE_ARITY = 16;
     private static final int MAX_VALUE_STACK = 4096;
     private static final int MAX_CONTROL_STACK = 512;
-    private static final int MAX_BRANCH_TARGETS = 4096;
-    private static final int MAX_BRANCH_DESCRIPTORS = 65536;
-    private static final int MAX_INSTRUCTIONS = 32768;
+    private static final int MAX_BRANCH_TARGETS = W4IrFunction.MAX_BRANCH_TARGETS;
+    private static final int MAX_BRANCH_DESCRIPTORS = W4IrFunction.MAX_BRANCH_DESCRIPTORS;
+    private static final int MAX_INSTRUCTIONS = W4IrFunction.MAX_INSTRUCTIONS;
 
     FuncType[] types;
     ImportedFunction[] imports;
@@ -572,7 +572,13 @@ public final class WasmModule {
                 cachedFunctions = new W4IrFunction[count];
                 int cachedIndex;
                 for (cachedIndex = 0; cachedIndex < count; cachedIndex++) {
-                    cachedFunctions[cachedIndex] = w4irStore.loadFunction(cachedIndex);
+                    W4IrFunction cachedFunction =
+                            w4irStore.loadFunction(cachedIndex);
+                    int typeIndex =
+                            ((Integer) definedFunctionTypes.elementAt(cachedIndex))
+                                    .intValue();
+                    validateCachedFunction(cachedFunction, types[typeIndex]);
+                    cachedFunctions[cachedIndex] = cachedFunction;
                 }
             } catch (WasmException damagedCache) {
                 w4irStore.discard();
@@ -666,6 +672,23 @@ public final class WasmModule {
             w4irCacheHit = true;
         } else if (writingCache) {
             w4irCacheWriting = true;
+        }
+    }
+
+    private void validateCachedFunction(W4IrFunction function, FuncType type)
+            throws WasmException {
+        if (function.declaredLocalCount()
+                > MAX_LOCALS - type.parameters.length) {
+            throw new WasmException("cached function has too many locals");
+        }
+        int intrinsic = function.intrinsic();
+        if ((intrinsic == INTRINSIC_F32_FLOOR
+                        || intrinsic == INTRINSIC_F32_SIN)
+                && (type.parameters.length != 1
+                        || type.parameters[0] != F32
+                        || type.results.length != 1
+                        || type.results[0] != F32)) {
+            throw new WasmException("cached numeric intrinsic has invalid signature");
         }
     }
 

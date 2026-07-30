@@ -47,6 +47,7 @@ INTEGER_COMPACT_WASM="${TEST_DIR}/integer-compact-seven.wasm"
 LOAD_TEE_FUSION_WASM="${TEST_DIR}/i32-load-local-tee-fusion.wasm"
 STATIC_BRANCH_DESCRIPTORS_WASM="${TEST_DIR}/static-branch-descriptors.wasm"
 DEFINED_CALL_ARGUMENTS_WASM="${TEST_DIR}/defined-call-arguments.wasm"
+W4IR_CACHE_METADATA_WASM="${TEST_DIR}/w4ir-cache-metadata-recovery.wasm"
 INTERPRETER_CONFIG_SOURCE="${INTERPRETER_CONFIG_SOURCE:-${ROOT_DIR}/src/main/java/w4me/wasm/InterpreterBuildConfig.java}"
 
 [ -f "${INTERPRETER_CONFIG_SOURCE}" ] || {
@@ -79,6 +80,9 @@ wasm-validate "${STATIC_BRANCH_DESCRIPTORS_WASM}"
 wat2wasm "${ROOT_DIR}/src/test/resources/defined-call-arguments.wat" \
     -o "${DEFINED_CALL_ARGUMENTS_WASM}"
 wasm-validate "${DEFINED_CALL_ARGUMENTS_WASM}"
+wat2wasm "${ROOT_DIR}/src/test/resources/w4ir-cache-metadata-recovery.wat" \
+    -o "${W4IR_CACHE_METADATA_WASM}"
+wasm-validate "${W4IR_CACHE_METADATA_WASM}"
 find "${ROOT_DIR}/src/main/java/w4me/wasm" \
     "${ROOT_DIR}/src/main/java/w4me/runtime" \
     -name '*.java' \
@@ -181,6 +185,7 @@ javac \
     "${ROOT_DIR}/src/test/java/w4me/wasm/I32LoadLocalTeeFusionDifferentialSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/StaticBranchDescriptorSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/DefinedCallArgumentCopySmoke.java" \
+    "${ROOT_DIR}/src/test/java/w4me/wasm/F32ConstCellCanonicalizationSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/W4IrMalformedDescriptorCacheSmoke.java" \
     "${ROOT_DIR}/src/test/java/w4me/wasm/WasmValueStackPushGuardSmoke.java"
 
@@ -399,7 +404,10 @@ java -classpath "${CLASSES_DIR}" w4me.wasm.StaticBranchDescriptorSmoke \
 java -classpath "${CLASSES_DIR}" w4me.wasm.DefinedCallArgumentCopySmoke \
     "${DEFINED_CALL_ARGUMENTS_WASM}"
 
-java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.wasm.W4IrMalformedDescriptorCacheSmoke
+java -classpath "${CLASSES_DIR}" w4me.wasm.F32ConstCellCanonicalizationSmoke \
+    "${W4IR_CACHE_METADATA_WASM}"
+java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.wasm.W4IrMalformedDescriptorCacheSmoke \
+    "${W4IR_CACHE_METADATA_WASM}"
 java -classpath "${CLASSES_DIR}:${MIDP_API_JAR}:${KEMU_HOME}/lib/*" w4me.wasm.WasmValueStackPushGuardSmoke
 
 java -classpath "${CLASSES_DIR}" w4me.ArgbBandDifferentialSmoke \

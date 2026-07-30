@@ -130,12 +130,22 @@ public final class Wasm4Pcm {
             int currentFrequency,
             int currentVolume,
             int encodedFrequency) {
+        if (channels == 1 && channel != 2 && channel != 3) {
+            synthesizeConstantPulseMono(
+                    wav,
+                    sampleCount,
+                    duty,
+                    currentFrequency,
+                    currentVolume);
+            return;
+        }
         double phase = 0.0;
+        double phaseStep = (double) currentFrequency / SAMPLE_RATE;
         int noise = 0x7fff ^ (encodedFrequency & 0x7fff);
         int sample;
         for (sample = 0; sample < sampleCount; sample++) {
             double wave;
-            phase += (double) currentFrequency / SAMPLE_RATE;
+            phase += phaseStep;
             if (channel == 3) {
                 while (phase >= 1.0) {
                     int feedback = (noise ^ (noise >>> 1)) & 1;
@@ -171,6 +181,27 @@ public final class Wasm4Pcm {
             } else {
                 wav[offset] = (byte) pcm;
             }
+        }
+    }
+
+    private static void synthesizeConstantPulseMono(
+            byte[] wav,
+            int sampleCount,
+            double duty,
+            int currentFrequency,
+            int currentVolume) {
+        double phase = 0.0;
+        double phaseStep = (double) currentFrequency / SAMPLE_RATE;
+        int pcmHigh =
+                128 + (int) ((double) currentVolume * 127.0 / 100.0);
+        int pcmLow =
+                128 + (int) ((double) -currentVolume * 127.0 / 100.0);
+        int sample;
+        for (sample = 0; sample < sampleCount; sample++) {
+            phase += phaseStep;
+            phase -= (int) phase;
+            wav[WAV_HEADER_SIZE + sample] =
+                    (byte) (phase < duty ? pcmHigh : pcmLow);
         }
     }
 

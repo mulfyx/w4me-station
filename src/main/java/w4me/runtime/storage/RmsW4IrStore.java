@@ -72,19 +72,41 @@ public final class RmsW4IrStore implements W4IrStore {
         }
         try {
             byte[] record = store.getRecord(functionRecordIds[functionIndex]);
-            DataInputStream input = new DataInputStream(new ByteArrayInputStream(record));
+            int payloadLength = verifyFunctionChecksum(record);
+            DataInputStream input =
+                    new DataInputStream(
+                            new ByteArrayInputStream(record, 0, payloadLength));
             if (input.readInt() != FUNCTION_MAGIC || input.readInt() != functionIndex) {
                 throw new IOException("W4IR function header mismatch");
             }
-            int localCount = input.readInt();
-            int instructionCount = input.readInt();
+            int localCount =
+                    readBoundedCount(
+                            input,
+                            W4IrFunction.MAX_DECLARED_LOCALS,
+                            "declared local count");
+            int instructionCount =
+                    readBoundedCount(
+                            input,
+                            W4IrFunction.MAX_INSTRUCTIONS,
+                            "instruction count");
+            if (instructionCount == 0) {
+                throw new IOException("invalid instruction count");
+            }
             long fingerprint = input.readLong();
-            int intrinsic = input.readInt();
-            int tableCount = readBoundedCount(input, 65535, "branch table count");
+            int intrinsic =
+                    readBoundedCount(
+                            input, W4IrFunction.MAX_INTRINSIC, "numeric intrinsic");
+            int tableCount =
+                    readBoundedCount(
+                            input, instructionCount, "branch table count");
             int[][] branchTables = new int[tableCount][];
             int table;
             for (table = 0; table < tableCount; table++) {
-                int length = readBoundedCount(input, 65535, "branch table length");
+                int length =
+                        readBoundedCount(
+                                input,
+                                W4IrFunction.MAX_BRANCH_TARGETS,
+                                "branch table length");
                 branchTables[table] = new int[length];
                 int index;
                 for (index = 0; index < length; index++) {
@@ -94,7 +116,8 @@ public final class RmsW4IrStore implements W4IrStore {
             int descriptorIntCount =
                     readBoundedCount(
                             input,
-                            65536 * W4IrFunction.BRANCH_DESCRIPTOR_STRIDE,
+                            W4IrFunction.MAX_BRANCH_DESCRIPTORS
+                                    * W4IrFunction.BRANCH_DESCRIPTOR_STRIDE,
                             "branch descriptor data length");
             if (descriptorIntCount % W4IrFunction.BRANCH_DESCRIPTOR_STRIDE != 0) {
                 throw new IOException("invalid branch descriptor data length");
@@ -162,11 +185,17 @@ public final class RmsW4IrStore implements W4IrStore {
                     branchDescriptorPcs,
                     branchDescriptorIndices,
                     branchDescriptorTables);
-            int pageCount = readBoundedCount(input, 65535, "W4IR page count");
+            int instructionsPerPage =
+                    W4IrFunction.PAGE_INTS / W4IrFunction.INSTRUCTION_STRIDE;
+            int maximumPages =
+                    (W4IrFunction.MAX_INSTRUCTIONS + instructionsPerPage - 1)
+                            / instructionsPerPage;
+            int pageCount =
+                    readBoundedCount(input, maximumPages, "W4IR page count");
             int expectedPages =
-                    (instructionCount * 3 + W4IrFunction.PAGE_INTS - 1)
-                            / W4IrFunction.PAGE_INTS;
-            if (instructionCount <= 0 || pageCount != expectedPages) {
+                    (instructionCount + instructionsPerPage - 1)
+                            / instructionsPerPage;
+            if (pageCount != expectedPages) {
                 throw new IOException("W4IR function page count mismatch");
             }
             int[] pageRecordIds = new int[pageCount];
@@ -228,6 +257,17 @@ public final class RmsW4IrStore implements W4IrStore {
                 || functionIndex >= functionRecordIds.length
                 || functionRecordIds[functionIndex] != 0) {
             throw new WasmException("invalid W4IR function write state");
+        }
+        if (declaredLocalCount < 0
+                || declaredLocalCount > W4IrFunction.MAX_DECLARED_LOCALS
+                || code == null
+                || code.length == 0
+                || code.length % W4IrFunction.INSTRUCTION_STRIDE != 0
+                || code.length / W4IrFunction.INSTRUCTION_STRIDE
+                        > W4IrFunction.MAX_INSTRUCTIONS
+                || intrinsic < 0
+                || intrinsic > W4IrFunction.MAX_INTRINSIC) {
+            throw new WasmException("invalid W4IR function metadata");
         }
         validateBranchMetadata(
                 code.length / 3,
@@ -378,7 +418,9 @@ public final class RmsW4IrStore implements W4IrStore {
                 || input.readInt() != cartHash) {
             return false;
         }
-        int count = readBoundedCount(input, 65535, "function count");
+        int count =
+                readBoundedCount(
+                        input, W4IrFunction.MAX_FUNCTIONS, "function count");
         int[] recordIds = new int[count];
         int index;
         for (index = 0; index < count; index++) {
@@ -487,7 +529,11 @@ public final class RmsW4IrStore implements W4IrStore {
             output.writeInt(pageRecordIds[page]);
         }
         output.flush();
-        return bytes.toByteArray();
+        byte[] payload = bytes.toByteArray();
+        byte[] record = new byte[payload.length + 4];
+        System.arraycopy(payload, 0, record, 0, payload.length);
+        writeInt(record, payload.length, checksum(payload, 0, payload.length));
+        return record;
     }
 
     private byte[] encodePage(
@@ -622,6 +668,42 @@ public final class RmsW4IrStore implements W4IrStore {
             throw new IOException("invalid " + label);
         }
         return value;
+    }
+
+    private int verifyFunctionChecksum(byte[] record) throws IOException {
+        if (record == null || record.length < 4) {
+            throw new IOException("truncated W4IR function metadata");
+        }
+        int payloadLength = record.length - 4;
+        int expected = readInt(record, payloadLength);
+        if (checksum(record, 0, payloadLength) != expected) {
+            throw new IOException("W4IR function metadata checksum mismatch");
+        }
+        return payloadLength;
+    }
+
+    private static int checksum(byte[] values, int offset, int length) {
+        int hash = 0x811c9dc5;
+        int index;
+        for (index = 0; index < length; index++) {
+            hash ^= values[offset + index] & 0xff;
+            hash *= 0x01000193;
+        }
+        return hash;
+    }
+
+    private static int readInt(byte[] bytes, int offset) {
+        return ((bytes[offset] & 0xff) << 24)
+                | ((bytes[offset + 1] & 0xff) << 16)
+                | ((bytes[offset + 2] & 0xff) << 8)
+                | (bytes[offset + 3] & 0xff);
+    }
+
+    private static void writeInt(byte[] bytes, int offset, int value) {
+        bytes[offset] = (byte) (value >>> 24);
+        bytes[offset + 1] = (byte) (value >>> 16);
+        bytes[offset + 2] = (byte) (value >>> 8);
+        bytes[offset + 3] = (byte) value;
     }
 
     private static int checksum(int[] values, int offset, int length) {

@@ -451,7 +451,9 @@ public final class WasmInterpreter {
                     || body.intrinsic == WasmModule.INTRINSIC_F32_SIN) {
                 WasmModule.FuncType intrinsicType = module.functionTypes[functionIndex];
                 if (intrinsicType.parameters.length != 1
-                        || intrinsicType.results.length != 1) {
+                        || intrinsicType.parameters[0] != WasmModule.F32
+                        || intrinsicType.results.length != 1
+                        || intrinsicType.results[0] != WasmModule.F32) {
                     throw new WasmTrap("invalid numeric intrinsic signature");
                 }
                 if (valueTop < 1) {
@@ -1690,7 +1692,7 @@ public final class WasmInterpreter {
                     int setConstFirstTarget = operand >>> 16;
                     int setConstSecondTarget = operand & 0xffff;
                     locals[setConstFirstTarget] = pop();
-                    locals[setConstSecondTarget] = auxiliary;
+                    locals[setConstSecondTarget] = auxiliary & 0xffffffffL;
                     executed += 2;
                     pc += 3;
                     break;
@@ -2039,10 +2041,16 @@ public final class WasmInterpreter {
                     pc += 2;
                     break;
                 case WasmModule.W4IR_LOCAL_I32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
-                case WasmModule.W4IR_LOCAL_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
                     auxiliary = code[pageOffset + 2];
                     push(locals[operand]);
                     push(auxiliary);
+                    executed++;
+                    pc += 2;
+                    break;
+                case WasmModule.W4IR_LOCAL_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
+                    auxiliary = code[pageOffset + 2];
+                    push(locals[operand]);
+                    push(auxiliary & 0xffffffffL);
                     executed++;
                     pc += 2;
                     break;
@@ -2080,7 +2088,7 @@ public final class WasmInterpreter {
                     break;
                 case WasmModule.W4IR_LOCAL_SET_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
                     auxiliary = code[pageOffset + 2];
-                    locals[auxiliary] = operand;
+                    locals[auxiliary] = operand & 0xffffffffL;
                     executed++;
                     pc += 2;
                     break;
@@ -2947,7 +2955,7 @@ public final class WasmInterpreter {
                 int firstTarget = operand >>> 16;
                 int secondTarget = operand & 0xffff;
                 locals[firstTarget] = pop();
-                locals[secondTarget] = auxiliary;
+                locals[secondTarget] = auxiliary & 0xffffffffL;
                 return 3;
             case WasmModule.W4IR_LOCAL_LOCAL_F32_LOAD + WasmModule.W4IR_EXECUTION_OFFSET:
                 int loadFirst = operand >>> 16;
@@ -2980,9 +2988,12 @@ public final class WasmInterpreter {
                 push(locals[auxiliary]);
                 return 2;
             case WasmModule.W4IR_LOCAL_I32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
-            case WasmModule.W4IR_LOCAL_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
                 push(locals[operand]);
                 push(auxiliary);
+                return 2;
+            case WasmModule.W4IR_LOCAL_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
+                push(locals[operand]);
+                push(auxiliary & 0xffffffffL);
                 return 2;
             case WasmModule.W4IR_F32_MUL_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
                 pushI32(Float.floatToIntBits(
@@ -3005,7 +3016,7 @@ public final class WasmInterpreter {
                 push(locals[auxiliary]);
                 return 2;
             case WasmModule.W4IR_LOCAL_SET_F32_CONST + WasmModule.W4IR_EXECUTION_OFFSET:
-                locals[auxiliary] = operand;
+                locals[auxiliary] = operand & 0xffffffffL;
                 return 2;
             case WasmModule.W4IR_F32_MUL_LOCAL + WasmModule.W4IR_EXECUTION_OFFSET:
                 binaryF32(0x94);

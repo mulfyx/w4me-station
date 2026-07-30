@@ -22,6 +22,13 @@
 - [x] 3.4 Verify descriptor identity across resident decode, RMS write, RMS reopen, paged execution, and resident promotion
 - [x] 3.5 Add malformed-cache tests for truncated records, invalid descriptor indices, out-of-range targets, invalid heights, invalid arities, and invalid control depths
 
+## 3B. W4IR function-metadata hardening
+
+- [x] 3.6 Bump W4IR to v17 and checksum each complete function metadata record before parsing persisted counts
+- [x] 3.7 Bound persisted declared-local, instruction, intrinsic, table, descriptor, and page metadata before allocation and validate cached f32 intrinsic signatures
+- [x] 3.8 Add adversarial RMS tests for checksum corruption, arithmetic-overflow instruction counts, invalid local counts, and invalid intrinsic identifiers
+- [x] 3.9 Verify automatic cache rejection/rebuild, focused f32-state canonicalization, Java 1.3/CLDC output, full-state routes, and i686/ARM64 deterministic parity
+
 ## 4. Legacy-shadow differential
 
 - [x] 4.1 Add a verification-only descriptor mode that is absent from production timing artifacts
