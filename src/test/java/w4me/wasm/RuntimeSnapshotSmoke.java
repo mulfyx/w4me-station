@@ -3,29 +3,28 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
 import w4me.runtime.storage.MemoryDiskBackend;
 
+/** Provides the runtime snapshot smoke implementation. */
 public final class RuntimeSnapshotSmoke {
     private RuntimeSnapshotSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin save-state-roundtrip.wasm");
+            throw new IllegalArgumentException("usage: font.bin save-state-roundtrip.wasm");
         }
 
         WasmModule module = WasmModule.read(readFile(arguments[1]));
         MemoryDiskBackend disk = new MemoryDiskBackend();
         Wasm4Apu apu = new Wasm4Apu(new RecordingAudio());
-        Wasm4Runtime runtime =
-                new Wasm4Runtime(readFile(arguments[0]), apu, disk);
+        Wasm4Runtime runtime = new Wasm4Runtime(readFile(arguments[0]), apu, disk);
         runtime.initialize(module);
 
-        byte[] originalData = module.dataSegments[0];
+        final byte[] originalData = module.dataSegments[0];
         module.memory[30000] = 42;
         module.globals[0] = 0x1122334455667788L;
         module.table[0] = 0;
@@ -35,12 +34,10 @@ public final class RuntimeSnapshotSmoke {
         apu.tick();
         apu.tick();
 
-        int savedFrequency = apu.channelFrequency(0);
-        int savedVolume = apu.channelVolume(0);
-        int savedEvents = apu.toneEventCount();
-        RuntimeSnapshot snapshot =
-                RuntimeSnapshot.capture(
-                        0x12345678, 321, module, runtime);
+        final int savedFrequency = apu.channelFrequency(0);
+        final int savedVolume = apu.channelVolume(0);
+        final int savedEvents = apu.toneEventCount();
+        final RuntimeSnapshot snapshot = RuntimeSnapshot.capture(0x12345678, 321, module, runtime);
 
         module.memory[30000] = 99;
         module.globals[0] = -1L;
@@ -52,15 +49,10 @@ public final class RuntimeSnapshotSmoke {
         apu.tick();
 
         module.memory[30001] = 55;
-        assertTrue(
-                "identity mismatch rejected",
-                !snapshot.restore(0x12345679, 321, module, runtime));
-        assertEquals(
-                "identity mismatch leaves memory", 55, module.memory[30001] & 0xff);
+        assertTrue("identity mismatch rejected", !snapshot.restore(0x12345679, 321, module, runtime));
+        assertEquals("identity mismatch leaves memory", 55, module.memory[30001] & 0xff);
 
-        assertTrue(
-                "snapshot restore",
-                snapshot.restore(0x12345678, 321, module, runtime));
+        assertTrue("snapshot restore", snapshot.restore(0x12345678, 321, module, runtime));
         assertEquals("memory", 42, module.memory[30000] & 0xff);
         assertEquals("memory neighboring byte", 0, module.memory[30001] & 0xff);
         assertEquals("global", 0x1122334455667788L, module.globals[0]);
@@ -81,8 +73,7 @@ public final class RuntimeSnapshotSmoke {
 
         runtime.close();
         module.close();
-        System.out.println(
-                "PASS save-state memory globals table passive disk APU identity");
+        System.out.println("PASS save-state memory globals table passive disk APU identity");
     }
 
     private static byte[] readFile(String path) throws Exception {
@@ -108,24 +99,28 @@ public final class RuntimeSnapshotSmoke {
 
     private static void assertEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 
     private static void assertEquals(String label, long expected, long actual) {
         if (expected != actual) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 
     private static final class RecordingAudio implements AudioBackend {
-        public void submitTone(int frequency, int duration, int volume, int flags) {}
+        public void submitTone(int frequency, int duration, int volume, int flags) {
+            /* Intentionally no-op. */
+        }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "snapshot-test";

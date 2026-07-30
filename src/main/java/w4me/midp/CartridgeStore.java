@@ -7,7 +7,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Vector;
-
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -35,8 +34,7 @@ final class CartridgeStore {
     }
 
     static CartridgeStore open() throws RecordStoreException {
-        CartridgeStore result =
-                new CartridgeStore(RecordStore.openRecordStore(STORE_NAME, true));
+        CartridgeStore result = new CartridgeStore(RecordStore.openRecordStore(STORE_NAME, true));
         try {
             result.recoverIncompleteDownloads();
             return result;
@@ -54,8 +52,7 @@ final class CartridgeStore {
             while (records.hasNextElement()) {
                 int recordId = records.nextRecordId();
                 try {
-                    CartridgeInfo info =
-                            decode(recordId, store.getRecord(recordId), STATE_COMMITTED, false);
+                    CartridgeInfo info = decode(recordId, store.getRecord(recordId), STATE_COMMITTED, false);
                     entries.addElement(info);
                 } catch (IOException ignored) {
                     // Staging, chunk, and damaged records stay invisible to the library.
@@ -84,8 +81,7 @@ final class CartridgeStore {
         return commitStaged(stageValidated(title, cartridge));
     }
 
-    synchronized int stageValidated(String title, byte[] cartridge)
-            throws IOException, RecordStoreException {
+    synchronized int stageValidated(String title, byte[] cartridge) throws IOException, RecordStoreException {
         requireOpen();
         requireCartridge(cartridge);
         byte[] record = encodeLegacy(title, cartridge, STATE_STAGING);
@@ -111,15 +107,7 @@ final class CartridgeStore {
         int chunkCount = 0;
         int manifestRecordId = 0;
         try {
-            byte[] downloading =
-                    encodeManifest(
-                            safeTitle,
-                            STATE_DOWNLOADING,
-                            0,
-                            0,
-                            0,
-                            chunkRecordIds,
-                            0);
+            byte[] downloading = encodeManifest(safeTitle, STATE_DOWNLOADING, 0, 0, 0, chunkRecordIds, 0);
             manifestRecordId = store.addRecord(downloading, 0, downloading.length);
 
             byte[] buffer = new byte[CHUNK_BYTES];
@@ -144,8 +132,7 @@ final class CartridgeStore {
                 }
                 crc = crc32Update(crc, buffer, 0, count);
                 hash = fnv1aUpdate(hash, buffer, 0, count);
-                byte[] chunk =
-                        encodeChunk(manifestRecordId, chunkCount, buffer, 0, count);
+                byte[] chunk = encodeChunk(manifestRecordId, chunkCount, buffer, 0, count);
                 chunkRecordIds[chunkCount] = store.addRecord(chunk, 0, chunk.length);
                 chunkCount++;
                 total += count;
@@ -154,25 +141,17 @@ final class CartridgeStore {
                 throw new IOException("cartridge stream length mismatch");
             }
             requireCartridge(header, 0, total);
-            byte[] received =
-                    encodeManifest(
-                            safeTitle,
-                            STATE_STAGING,
-                            total,
-                            ~crc,
-                            hash,
-                            chunkRecordIds,
-                            chunkCount);
+            byte[] received = encodeManifest(safeTitle, STATE_STAGING, total, ~crc, hash, chunkRecordIds, chunkCount);
             store.setRecord(manifestRecordId, received, 0, received.length);
             decode(manifestRecordId, store.getRecord(manifestRecordId), STATE_STAGING, false);
             return manifestRecordId;
         } catch (IOException failure) {
             discardRecords(manifestRecordId, chunkRecordIds, chunkCount);
             throw failure;
-        } catch (RecordStoreException failure) {
+        } catch (RecordStoreException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             discardRecords(manifestRecordId, chunkRecordIds, chunkCount);
             throw failure;
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             discardRecords(manifestRecordId, chunkRecordIds, chunkCount);
             throw failure;
         } finally {
@@ -189,8 +168,7 @@ final class CartridgeStore {
         return decode(recordId, store.getRecord(recordId), STATE_STAGING, true).cartridge;
     }
 
-    synchronized CartridgeInfo commitStaged(int recordId)
-            throws IOException, RecordStoreException {
+    synchronized CartridgeInfo commitStaged(int recordId) throws IOException, RecordStoreException {
         requireOpen();
         byte[] record = store.getRecord(recordId);
         CartridgeInfo staged = decode(recordId, record, STATE_STAGING, false);
@@ -211,10 +189,10 @@ final class CartridgeStore {
         try {
             int[] chunks = manifestChunkRecordIds(store.getRecord(recordId));
             discardRecords(recordId, chunks, chunks.length);
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             try {
                 store.deleteRecord(recordId);
-            } catch (Throwable ignored) {
+            } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
                 // An incomplete record remains invisible and can be reclaimed later.
             }
         }
@@ -251,7 +229,8 @@ final class CartridgeStore {
             }
             return recordId;
         } catch (NumberFormatException invalid) {
-            throw new IOException("invalid installed cartridge id");
+            throw new IOException( // NOPMD -- CLDC 1.1 has no cause chaining.
+                    "invalid installed cartridge id");
         }
     }
 
@@ -259,8 +238,7 @@ final class CartridgeStore {
         return location != null && startsWith(location, "rms:");
     }
 
-    private CartridgeInfo findDuplicate(int length, int crc, int hash)
-            throws RecordStoreException {
+    private CartridgeInfo findDuplicate(int length, int crc, int hash) throws RecordStoreException {
         CartridgeInfo[] current = list();
         int index;
         for (index = 0; index < current.length; index++) {
@@ -293,10 +271,11 @@ final class CartridgeStore {
                         parentState = 0;
                     }
                     if (parentState != STATE_STAGING && parentState != STATE_COMMITTED) {
-                        deleteIds[deleteCount++] = recordId;
+                        deleteIds[deleteCount++] = recordId; // NOPMD -- Compact Java 1.3 cursor bytecode.
                     }
                 } else if (manifestState(record) == STATE_DOWNLOADING) {
-                    deleteIds[deleteCount++] = recordId;
+                    deleteIds[deleteCount] = recordId;
+                    deleteCount++;
                 }
             }
         } finally {
@@ -313,18 +292,14 @@ final class CartridgeStore {
     }
 
     private int manifestState(byte[] record) {
-        if (record.length < 12
-                || readInt(record, 0) != MAGIC
-                || readInt(record, 4) != STREAM_VERSION) {
+        if (record.length < 12 || readInt(record, 0) != MAGIC || readInt(record, 4) != STREAM_VERSION) {
             return 0;
         }
         return readInt(record, STATE_OFFSET);
     }
 
     private int chunkParentRecordId(byte[] record) {
-        if (record.length < 12
-                || readInt(record, 0) != CHUNK_MAGIC
-                || readInt(record, 4) != STREAM_VERSION) {
+        if (record.length < 12 || readInt(record, 0) != CHUNK_MAGIC || readInt(record, 4) != STREAM_VERSION) {
             return 0;
         }
         return readInt(record, 8);
@@ -346,13 +321,7 @@ final class CartridgeStore {
     }
 
     private byte[] encodeManifest(
-            String title,
-            int state,
-            int length,
-            int crc,
-            int hash,
-            int[] chunkRecordIds,
-            int chunkCount)
+            String title, int state, int length, int crc, int hash, int[] chunkRecordIds, int chunkCount)
             throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(128 + chunkCount * 4);
         DataOutputStream output = new DataOutputStream(bytes);
@@ -372,8 +341,7 @@ final class CartridgeStore {
         return bytes.toByteArray();
     }
 
-    private byte[] encodeChunk(
-            int manifestRecordId, int chunkIndex, byte[] data, int offset, int length)
+    private byte[] encodeChunk(int manifestRecordId, int chunkIndex, byte[] data, int offset, int length)
             throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(length + 24);
         DataOutputStream output = new DataOutputStream(bytes);
@@ -388,8 +356,7 @@ final class CartridgeStore {
         return bytes.toByteArray();
     }
 
-    private CartridgeInfo decode(
-            int recordId, byte[] record, int requiredState, boolean includeCartridge)
+    private CartridgeInfo decode(int recordId, byte[] record, int requiredState, boolean includeCartridge)
             throws IOException {
         if (record.length < 12) {
             throw new IOException("cartridge record is truncated");
@@ -409,11 +376,7 @@ final class CartridgeStore {
     }
 
     private CartridgeInfo decodeLegacy(
-            int recordId,
-            byte[] record,
-            DataInputStream input,
-            int requiredState,
-            boolean includeCartridge)
+            int recordId, byte[] record, DataInputStream input, int requiredState, boolean includeCartridge)
             throws IOException {
         int state = input.readInt();
         if (state != requiredState) {
@@ -421,8 +384,8 @@ final class CartridgeStore {
         }
         int length = input.readInt();
         int crc = input.readInt();
-        int hash = input.readInt();
-        String title = input.readUTF();
+        final int hash = input.readInt();
+        final String title = input.readUTF();
         if (length < 8 || length > MAX_CARTRIDGE_BYTES || length != input.available()) {
             throw new IOException("invalid cartridge record length");
         }
@@ -442,20 +405,16 @@ final class CartridgeStore {
         return new CartridgeInfo(recordId, title, length, crc, hash, cartridge, 1);
     }
 
-    private CartridgeInfo decodeStream(
-            int recordId,
-            DataInputStream input,
-            int requiredState,
-            boolean includeCartridge)
+    private CartridgeInfo decodeStream(int recordId, DataInputStream input, int requiredState, boolean includeCartridge)
             throws IOException {
         int state = input.readInt();
         if (state != requiredState) {
             throw new IOException("cartridge manifest is not in the required state");
         }
         int length = input.readInt();
-        int expectedCrc = input.readInt();
-        int expectedHash = input.readInt();
-        String title = input.readUTF();
+        final int expectedCrc = input.readInt();
+        final int expectedHash = input.readInt();
+        final String title = input.readUTF();
         int chunkCount = input.readInt();
         int expectedChunks = (length + CHUNK_BYTES - 1) / CHUNK_BYTES;
         if (length < 8
@@ -508,12 +467,10 @@ final class CartridgeStore {
             throw new IOException("cartridge chunk checksum mismatch");
         }
         requireCartridge(header, 0, length);
-        return new CartridgeInfo(
-                recordId, title, length, expectedCrc, expectedHash, cartridge, chunkCount);
+        return new CartridgeInfo(recordId, title, length, expectedCrc, expectedHash, cartridge, chunkCount);
     }
 
-    private byte[] decodeChunk(int manifestRecordId, int chunkIndex, byte[] record)
-            throws IOException {
+    private byte[] decodeChunk(int manifestRecordId, int chunkIndex, byte[] record) throws IOException {
         DataInputStream input = new DataInputStream(new ByteArrayInputStream(record));
         if (input.readInt() != CHUNK_MAGIC
                 || input.readInt() != STREAM_VERSION
@@ -560,7 +517,8 @@ final class CartridgeStore {
         try {
             return store.getRecord(recordId);
         } catch (RecordStoreException failure) {
-            throw new IOException("cannot read cartridge chunk " + recordId);
+            throw new IOException( // NOPMD -- CLDC 1.1 has no cause chaining.
+                    "cannot read cartridge chunk " + recordId);
         }
     }
 
@@ -570,7 +528,7 @@ final class CartridgeStore {
             if (chunkRecordIds[index] > 0) {
                 try {
                     store.deleteRecord(chunkRecordIds[index]);
-                } catch (Throwable ignored) {
+                } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
                     // Best effort rollback; any orphan chunk remains invisible.
                 }
             }
@@ -578,7 +536,7 @@ final class CartridgeStore {
         if (manifestRecordId > 0) {
             try {
                 store.deleteRecord(manifestRecordId);
-            } catch (Throwable ignored) {
+            } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
                 // A non-committed manifest remains invisible.
             }
         }
@@ -596,7 +554,7 @@ final class CartridgeStore {
                 if (value < 0) {
                     break;
                 }
-                buffer[total++] = (byte) value;
+                buffer[total++] = (byte) value; // NOPMD -- Compact Java 1.3 cursor bytecode.
             } else {
                 total += count;
             }
@@ -628,8 +586,7 @@ final class CartridgeStore {
         requireCartridge(cartridge, 0, cartridge.length);
     }
 
-    private static void requireCartridge(byte[] cartridge, int offset, int length)
-            throws IOException {
+    private static void requireCartridge(byte[] cartridge, int offset, int length) throws IOException {
         if (length < 8) {
             throw new IOException("cartridge is shorter than a WebAssembly header");
         }
@@ -726,14 +683,7 @@ final class CartridgeStore {
         final byte[] cartridge;
         final int chunks;
 
-        CartridgeInfo(
-                int recordId,
-                String title,
-                int length,
-                int crc,
-                int hash,
-                byte[] cartridge,
-                int chunks) {
+        CartridgeInfo(int recordId, String title, int length, int crc, int hash, byte[] cartridge, int chunks) {
             this.recordId = recordId;
             this.title = title;
             this.length = length;

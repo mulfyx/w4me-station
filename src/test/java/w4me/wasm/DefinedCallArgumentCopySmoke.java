@@ -6,46 +6,39 @@ import java.io.IOException;
 
 /** Exact defined-call argument, local-frame reuse, recursion, and budget coverage. */
 public final class DefinedCallArgumentCopySmoke {
-    private static final WasmHost NO_HOST =
-            new WasmHost() {
-                public long invoke(
-                        int importId,
-                        long[] valueStack,
-                        int argumentBase,
-                        int argumentCount,
-                        WasmModule module) {
-                    throw new AssertionError("unexpected numeric host call");
-                }
+    private static final WasmHost NO_HOST = new WasmHost() {
+        public long invoke(int importId, long[] valueStack, int argumentBase, int argumentCount, WasmModule module) {
+            throw new AssertionError("unexpected numeric host call");
+        }
 
-                public long invoke(
-                        String moduleName,
-                        String name,
-                        long[] valueStack,
-                        int argumentBase,
-                        int argumentCount,
-                        WasmModule module) {
-                    throw new AssertionError("unexpected string host call");
-                }
-            };
+        public long invoke(
+                String moduleName,
+                String name,
+                long[] valueStack,
+                int argumentBase,
+                int argumentCount,
+                WasmModule module) {
+            throw new AssertionError("unexpected string host call");
+        }
+    };
 
     private DefinedCallArgumentCopySmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 1) {
-            throw new IllegalArgumentException(
-                    "usage: DefinedCallArgumentCopySmoke <module.wasm>");
+            throw new IllegalArgumentException("usage: DefinedCallArgumentCopySmoke <module.wasm>");
         }
         byte[] cartridge = readFile(new File(arguments[0]));
         long logical = verifySuccessfulCalls(cartridge);
         verifyBudgetBoundary(cartridge, logical);
-        System.out.println(
-                "PASS defined-call-arguments"
-                        + " arities=0,1,2,5"
-                        + " raw-types=i32,i64,f32,f64"
-                        + " frame-reuse=sequential,recursive"
-                        + " logical="
-                        + logical
-                        + " budget=exact");
+        System.out.println("PASS defined-call-arguments"
+                + " arities=0,1,2,5"
+                + " raw-types=i32,i64,f32,f64"
+                + " frame-reuse=sequential,recursive"
+                + " logical="
+                + logical
+                + " budget=exact");
     }
 
     private static long verifySuccessfulCalls(byte[] cartridge) throws Exception {
@@ -64,8 +57,7 @@ public final class DefinedCallArgumentCopySmoke {
         }
     }
 
-    private static void verifyBudgetBoundary(byte[] cartridge, long logical)
-            throws Exception {
+    private static void verifyBudgetBoundary(byte[] cartridge, long logical) throws Exception {
         WasmModule allowedModule = WasmModule.read(cartridge);
         try {
             WasmInterpreter allowed = new WasmInterpreter(allowedModule, NO_HOST);
@@ -86,13 +78,10 @@ public final class DefinedCallArgumentCopySmoke {
                 throw new AssertionError("instruction limit accepted logical - 1");
             } catch (WasmTrap expected) {
                 if (!"instruction budget exhausted".equals(expected.getMessage())) {
-                    throw new AssertionError(
+                    throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
                             "wrong instruction-budget trap: " + expected);
                 }
-                assertEquals(
-                        logical,
-                        denied.instructionsExecuted(),
-                        "denied logical");
+                assertEquals(logical, denied.instructionsExecuted(), "denied logical");
             }
         } finally {
             deniedModule.close();
@@ -103,10 +92,7 @@ public final class DefinedCallArgumentCopySmoke {
         assertEquals(0L, readI64(memory, 0), "zero first");
         assertEquals(0L, readI64(memory, 8), "zero reused");
         assertEquals(0x8877665544332211L, readI64(memory, 16), "one i64");
-        assertEquals(
-                (0x89abcdefL << 32) ^ 0x0123456789abcdefL,
-                readI64(memory, 24),
-                "two arguments");
+        assertEquals((0x89abcdefL << 32) ^ 0x0123456789abcdefL, readI64(memory, 24), "two arguments");
 
         assertEquals(0x80000001, readI32(memory, 64), "many first i32");
         assertEquals(0x8877665544332211L, readI64(memory, 72), "many first i64");
@@ -120,14 +106,8 @@ public final class DefinedCallArgumentCopySmoke {
         assertEquals(1L, readI64(memory, 136), "many reused f64");
         assertEquals(0L, readI64(memory, 144), "many reused local");
 
-        assertEquals(
-                0x1011121314151617L + 3L,
-                readI64(memory, 160),
-                "recursive first");
-        assertEquals(
-                0x0f0e0d0c0b0a0908L + 4L,
-                readI64(memory, 168),
-                "recursive reused");
+        assertEquals(0x1011121314151617L + 3L, readI64(memory, 160), "recursive first");
+        assertEquals(0x0f0e0d0c0b0a0908L + 4L, readI64(memory, 168), "recursive reused");
     }
 
     private static int readI32(byte[] memory, int address) {
@@ -151,11 +131,7 @@ public final class DefinedCallArgumentCopySmoke {
     private static void assertEquals(long expected, long actual, String label) {
         if (expected != actual) {
             throw new AssertionError(
-                    label
-                            + ": expected 0x"
-                            + Long.toHexString(expected)
-                            + ", got 0x"
-                            + Long.toHexString(actual));
+                    label + ": expected 0x" + Long.toHexString(expected) + ", got 0x" + Long.toHexString(actual));
         }
     }
 

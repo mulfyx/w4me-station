@@ -1,18 +1,17 @@
 package w4me.wasm;
 
 import java.util.Arrays;
-
 import w4me.runtime.Wasm4Runtime;
 
 /** Complete deterministic opcode and compact-region profile for the generic corpus. */
 public final class GenericCorpusProfiler {
     private GenericCorpusProfiler() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 11) {
-            throw new IllegalArgumentException(
-                    "usage: build-id font plasma duck waternet waternet-input"
-                            + " rubido rubido-input untangle untangle-input game-of-life");
+            throw new IllegalArgumentException("usage: build-id font plasma duck waternet waternet-input"
+                    + " rubido rubido-input untangle untangle-input game-of-life");
         }
         String buildIdentity = arguments[0];
         byte[] font = CorpusWorkload.readFont(arguments, 1);
@@ -21,53 +20,50 @@ public final class GenericCorpusProfiler {
         for (index = 0; index < workloads.length; index++) {
             profile(buildIdentity, font, workloads[index]);
         }
-        System.out.println(
-                "GENERIC_CORPUS_PROFILE_COMPLETE build="
-                        + buildIdentity
-                        + " w4ir-format="
-                        + WasmModule.W4IR_FORMAT_VERSION
-                        + " workloads="
-                        + workloads.length
-                        + " status=PASS");
+        System.out.println("GENERIC_CORPUS_PROFILE_COMPLETE build="
+                + buildIdentity
+                + " w4ir-format="
+                + WasmModule.W4IR_FORMAT_VERSION
+                + " workloads="
+                + workloads.length
+                + " status=PASS");
     }
 
-    private static void profile(
-            String buildIdentity, byte[] font, CorpusWorkload workload) throws Exception {
+    private static void profile(String buildIdentity, byte[] font, CorpusWorkload workload) throws Exception {
         ProfileTotals profile = collectProfile(font, workload);
         TierTotals tier = collectTier(font, workload);
-        System.out.println(
-                "GENERIC_CORPUS_PROFILE build="
-                        + buildIdentity
-                        + " w4ir-format="
-                        + WasmModule.W4IR_FORMAT_VERSION
-                        + " workload="
-                        + workload.name
-                        + " route="
-                        + workload.route
-                        + " cartridge-sha256="
-                        + workload.cartridgeSha256
-                        + " frames="
-                        + workload.inputs.length
-                        + " profile-config={"
-                        + InterpreterVariant.PROFILE.configuration()
-                        + ",profiling=on} tier-config={"
-                        + InterpreterVariant.HOST_IMPORT_ID.configuration()
-                        + ",profiling=off} logical="
-                        + profile.logicalInstructions
-                        + " outer-dispatches="
-                        + profile.outerDispatches
-                        + " tier-logical="
-                        + tier.logicalInstructions
-                        + " tier-outer-dispatches="
-                        + tier.outerDispatches
-                        + " compact-calls="
-                        + tier.compactCalls
-                        + " compact-instructions="
-                        + tier.compactInstructions
-                        + " compact-candidates="
-                        + profile.compactCandidates
-                        + " compact-accepted="
-                        + profile.compactAccepted);
+        System.out.println("GENERIC_CORPUS_PROFILE build="
+                + buildIdentity
+                + " w4ir-format="
+                + WasmModule.W4IR_FORMAT_VERSION
+                + " workload="
+                + workload.name
+                + " route="
+                + workload.route
+                + " cartridge-sha256="
+                + workload.cartridgeSha256
+                + " frames="
+                + workload.inputs.length
+                + " profile-config={"
+                + InterpreterVariant.PROFILE.configuration()
+                + ",profiling=on} tier-config={"
+                + InterpreterVariant.HOST_IMPORT_ID.configuration()
+                + ",profiling=off} logical="
+                + profile.logicalInstructions
+                + " outer-dispatches="
+                + profile.outerDispatches
+                + " tier-logical="
+                + tier.logicalInstructions
+                + " tier-outer-dispatches="
+                + tier.outerDispatches
+                + " compact-calls="
+                + tier.compactCalls
+                + " compact-instructions="
+                + tier.compactInstructions
+                + " compact-candidates="
+                + profile.compactCandidates
+                + " compact-accepted="
+                + profile.compactAccepted);
         printOpcodes(workload, profile);
         printSequences(workload, "pair", profile.pairs, 2);
         printSequences(workload, "triple", profile.triples, 3);
@@ -75,14 +71,12 @@ public final class GenericCorpusProfiler {
         printCompact(workload, profile);
     }
 
-    private static ProfileTotals collectProfile(byte[] font, CorpusWorkload workload)
-            throws Exception {
+    private static ProfileTotals collectProfile(byte[] font, CorpusWorkload workload) throws Exception {
         WasmModule module = InterpreterVariant.PROFILE.read(workload.cartridge);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         try {
             runtime.initialize(module);
-            WasmInterpreter interpreter =
-                    InterpreterVariant.PROFILE.interpreter(module, runtime);
+            WasmInterpreter interpreter = InterpreterVariant.PROFILE.interpreter(module, runtime);
             interpreter.invokeCartridgeLifecycle();
             interpreter.setProfilingEnabled(true);
             ProfileTotals totals = new ProfileTotals(module.functionCount());
@@ -98,14 +92,12 @@ public final class GenericCorpusProfiler {
         }
     }
 
-    private static TierTotals collectTier(byte[] font, CorpusWorkload workload)
-            throws Exception {
+    private static TierTotals collectTier(byte[] font, CorpusWorkload workload) throws Exception {
         WasmModule module = InterpreterVariant.HOST_IMPORT_ID.read(workload.cartridge);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         try {
             runtime.initialize(module);
-            WasmInterpreter interpreter =
-                    InterpreterVariant.HOST_IMPORT_ID.interpreter(module, runtime);
+            WasmInterpreter interpreter = InterpreterVariant.HOST_IMPORT_ID.interpreter(module, runtime);
             interpreter.invokeCartridgeLifecycle();
             TierTotals totals = new TierTotals();
             int frame;
@@ -124,18 +116,9 @@ public final class GenericCorpusProfiler {
     }
 
     private static void update(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            CorpusWorkload.InputState input)
+            WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, CorpusWorkload.InputState input)
             throws Exception {
-        runtime.beginFrame(
-                module,
-                input.gamepad1,
-                input.gamepad2,
-                input.mouseX,
-                input.mouseY,
-                input.mouseButtons);
+        runtime.beginFrame(module, input.gamepad1, input.gamepad2, input.mouseX, input.mouseY, input.mouseButtons);
         interpreter.invoke("update");
         runtime.endFrame();
     }
@@ -146,25 +129,20 @@ public final class GenericCorpusProfiler {
             if (profile.opcodes[opcode] == 0) {
                 continue;
             }
-            System.out.println(
-                    "GENERIC_CORPUS_OPCODE workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " opcode=0x"
-                            + OpcodeNames.hex4(opcode)
-                            + " label="
-                            + OpcodeNames.label(opcode)
-                            + " count="
-                            + profile.opcodes[opcode]);
+            System.out.println("GENERIC_CORPUS_OPCODE workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " opcode=0x"
+                    + OpcodeNames.hex4(opcode)
+                    + " label="
+                    + OpcodeNames.label(opcode)
+                    + " count="
+                    + profile.opcodes[opcode]);
         }
     }
 
-    private static void printSequences(
-            CorpusWorkload workload,
-            String kind,
-            SequenceTotals totals,
-            int width) {
+    private static void printSequences(CorpusWorkload workload, String kind, SequenceTotals totals, int width) {
         long[] keys = totals.sortedKeys();
         int index;
         for (index = 0; index < keys.length; index++) {
@@ -195,76 +173,69 @@ public final class GenericCorpusProfiler {
                 opcodes.append("+0x");
                 opcodes.append(OpcodeNames.hex4(third));
             }
-            System.out.println(
-                    "GENERIC_CORPUS_SEQUENCE workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " kind="
-                            + kind
-                            + " opcodes="
-                            + opcodes
-                            + " labels="
-                            + labels
-                            + " count="
-                            + totals.get(key));
+            System.out.println("GENERIC_CORPUS_SEQUENCE workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " kind="
+                    + kind
+                    + " opcodes="
+                    + opcodes
+                    + " labels="
+                    + labels
+                    + " count="
+                    + totals.get(key));
         }
     }
 
     private static void printFunctions(CorpusWorkload workload, ProfileTotals profile) {
         int function;
         for (function = 0; function < profile.functionCalls.length; function++) {
-            if (profile.functionCalls[function] == 0
-                    && profile.functionDispatches[function] == 0) {
+            if (profile.functionCalls[function] == 0 && profile.functionDispatches[function] == 0) {
                 continue;
             }
-            System.out.println(
-                    "GENERIC_CORPUS_FUNCTION workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " function="
-                            + function
-                            + " entries="
-                            + profile.functionCalls[function]
-                            + " dispatches="
-                            + profile.functionDispatches[function]);
+            System.out.println("GENERIC_CORPUS_FUNCTION workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " function="
+                    + function
+                    + " entries="
+                    + profile.functionCalls[function]
+                    + " dispatches="
+                    + profile.functionDispatches[function]);
         }
     }
 
     private static void printCompact(CorpusWorkload workload, ProfileTotals profile) {
         int reason;
-        for (reason = 0;
-                reason < WasmInterpreter.COMPACT_BREAK_REASON_COUNT;
-                reason++) {
-            System.out.println(
-                    "GENERIC_CORPUS_COMPACT_BREAK workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " reason="
-                            + OpcodeNames.breakReason(reason)
-                            + " ended="
-                            + profile.compactBreaks[reason]
-                            + " rejected="
-                            + profile.compactRejections[reason]);
+        for (reason = 0; reason < WasmInterpreter.COMPACT_BREAK_REASON_COUNT; reason++) {
+            System.out.println("GENERIC_CORPUS_COMPACT_BREAK workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " reason="
+                    + OpcodeNames.breakReason(reason)
+                    + " ended="
+                    + profile.compactBreaks[reason]
+                    + " rejected="
+                    + profile.compactRejections[reason]);
         }
         int opcode;
         for (opcode = 0; opcode < profile.compactBreakOpcodes.length; opcode++) {
             if (profile.compactBreakOpcodes[opcode] == 0) {
                 continue;
             }
-            System.out.println(
-                    "GENERIC_CORPUS_COMPACT_BREAK_OPCODE workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " opcode=0x"
-                            + OpcodeNames.hex4(opcode)
-                            + " label="
-                            + OpcodeNames.label(opcode)
-                            + " count="
-                            + profile.compactBreakOpcodes[opcode]);
+            System.out.println("GENERIC_CORPUS_COMPACT_BREAK_OPCODE workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " opcode=0x"
+                    + OpcodeNames.hex4(opcode)
+                    + " label="
+                    + OpcodeNames.label(opcode)
+                    + " count="
+                    + profile.compactBreakOpcodes[opcode]);
         }
         printLengths(
                 workload,
@@ -278,29 +249,24 @@ public final class GenericCorpusProfiler {
                 profile.compactAcceptedInstructionLengths);
     }
 
-    private static void printLengths(
-            CorpusWorkload workload,
-            String unit,
-            long[] candidates,
-            long[] accepted) {
+    private static void printLengths(CorpusWorkload workload, String unit, long[] candidates, long[] accepted) {
         int length;
         for (length = 0; length < candidates.length; length++) {
             if (candidates[length] == 0 && accepted[length] == 0) {
                 continue;
             }
-            System.out.println(
-                    "GENERIC_CORPUS_COMPACT_LENGTH workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " unit="
-                            + unit
-                            + " length="
-                            + length
-                            + " candidates="
-                            + candidates[length]
-                            + " accepted="
-                            + accepted[length]);
+            System.out.println("GENERIC_CORPUS_COMPACT_LENGTH workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " unit="
+                    + unit
+                    + " length="
+                    + length
+                    + " candidates="
+                    + candidates[length]
+                    + " accepted="
+                    + accepted[length]);
         }
     }
 
@@ -310,11 +276,9 @@ public final class GenericCorpusProfiler {
         private final SequenceTotals triples = new SequenceTotals(4096);
         private final long[] functionCalls;
         private final long[] functionDispatches;
-        private final long[] compactBreaks =
-                new long[WasmInterpreter.COMPACT_BREAK_REASON_COUNT];
+        private final long[] compactBreaks = new long[WasmInterpreter.COMPACT_BREAK_REASON_COUNT];
         private final long[] compactBreakOpcodes = new long[0x10000];
-        private final long[] compactRejections =
-                new long[WasmInterpreter.COMPACT_BREAK_REASON_COUNT];
+        private final long[] compactRejections = new long[WasmInterpreter.COMPACT_BREAK_REASON_COUNT];
         private final long[] compactCandidateDispatchLengths = new long[33];
         private final long[] compactAcceptedDispatchLengths = new long[33];
         private final long[] compactCandidateInstructionLengths = new long[513];
@@ -344,19 +308,17 @@ public final class GenericCorpusProfiler {
                 if (!interpreter.opcodePairSlotUsed(slot)) {
                     continue;
                 }
-                long key =
-                        ((long) interpreter.opcodePairFirstAtSlot(slot) << 16)
-                                | (long) interpreter.opcodePairSecondAtSlot(slot);
+                long key = ((long) interpreter.opcodePairFirstAtSlot(slot) << 16)
+                        | (long) interpreter.opcodePairSecondAtSlot(slot);
                 pairs.add(key, interpreter.opcodePairCountAtSlot(slot));
             }
             for (slot = 0; slot < interpreter.opcodeTripleSlotCount(); slot++) {
                 if (!interpreter.opcodeTripleSlotUsed(slot)) {
                     continue;
                 }
-                long key =
-                        ((long) interpreter.opcodeTripleFirstAtSlot(slot) << 32)
-                                | ((long) interpreter.opcodeTripleSecondAtSlot(slot) << 16)
-                                | (long) interpreter.opcodeTripleThirdAtSlot(slot);
+                long key = ((long) interpreter.opcodeTripleFirstAtSlot(slot) << 32)
+                        | ((long) interpreter.opcodeTripleSecondAtSlot(slot) << 16)
+                        | (long) interpreter.opcodeTripleThirdAtSlot(slot);
                 triples.add(key, interpreter.opcodeTripleCountAtSlot(slot));
             }
             int function;
@@ -370,8 +332,7 @@ public final class GenericCorpusProfiler {
                 long count = interpreter.compactProfileBreakCount(reason);
                 compactBreaks[reason] += count;
                 frameBreaks += count;
-                compactRejections[reason] +=
-                        interpreter.compactProfileRejectionCount(reason);
+                compactRejections[reason] += interpreter.compactProfileRejectionCount(reason);
             }
             for (opcode = 0; opcode < compactBreakOpcodes.length; opcode++) {
                 long count = interpreter.compactProfileBreakOpcodeCount(opcode);
@@ -388,8 +349,7 @@ public final class GenericCorpusProfiler {
             for (length = 0; length < compactCandidateDispatchLengths.length; length++) {
                 compactCandidateDispatchLengths[length] +=
                         interpreter.compactProfileCandidateDispatchLengthCount(length);
-                compactAcceptedDispatchLengths[length] +=
-                        interpreter.compactProfileAcceptedDispatchLengthCount(length);
+                compactAcceptedDispatchLengths[length] += interpreter.compactProfileAcceptedDispatchLengthCount(length);
             }
             for (length = 0; length < compactCandidateInstructionLengths.length; length++) {
                 compactCandidateInstructionLengths[length] +=
@@ -452,7 +412,7 @@ public final class GenericCorpusProfiler {
             int slot;
             for (slot = 0; slot < used.length; slot++) {
                 if (used[slot]) {
-                    result[output++] = keys[slot];
+                    result[output++] = keys[slot]; // NOPMD -- Compact Java 1.3 cursor bytecode.
                 }
             }
             Arrays.sort(result);
@@ -460,7 +420,7 @@ public final class GenericCorpusProfiler {
         }
 
         private int findSlot(long key) {
-            int mask = keys.length - 1;
+            final int mask = keys.length - 1;
             int mixed = (int) (key ^ (key >>> 32));
             mixed ^= mixed >>> 16;
             mixed *= 0x7feb352d;
@@ -476,8 +436,8 @@ public final class GenericCorpusProfiler {
 
         private void resize() {
             long[] oldKeys = keys;
-            long[] oldCounts = counts;
-            boolean[] oldUsed = used;
+            final long[] oldCounts = counts;
+            final boolean[] oldUsed = used;
             keys = new long[oldKeys.length << 1];
             counts = new long[keys.length];
             used = new boolean[keys.length];

@@ -8,5 +8,6 @@ final class InterpreterBuildConfig {
     static final boolean DESCRIPTOR_SHADOW = false;
     static final boolean INLINE_BRANCH_FAST_PATH = false;
     static final boolean DIRECT_BRANCH_FAST_PATH = true;
+
     private InterpreterBuildConfig() {}
 }

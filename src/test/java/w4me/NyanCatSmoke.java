@@ -3,7 +3,6 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
@@ -17,6 +16,7 @@ public final class NyanCatSmoke {
     private static final int EXPECTED_CHANNEL_MASK = 0x0f;
     private static final int EXPECTED_FRAMEBUFFER_FNV1A = 0x69daa7ed;
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin nyancat.wasm");
@@ -40,19 +40,15 @@ public final class NyanCatSmoke {
         assertEquals("tone event count", EXPECTED_TONES, apu.toneEventCount());
         assertEquals("backend calls", EXPECTED_TONES, backend.calls);
         assertEquals("channel mask", EXPECTED_CHANNEL_MASK, backend.channelMask);
-        assertEquals(
-                "framebuffer FNV-1a",
-                EXPECTED_FRAMEBUFFER_FNV1A,
-                FramebufferOracle.fnv1a(module));
-        System.out.println(
-                "PASS nyancat frames="
-                        + FRAME_COUNT
-                        + " tones="
-                        + backend.calls
-                        + " channels=0x"
-                        + Integer.toHexString(backend.channelMask)
-                        + " framebuffer-fnv1a="
-                        + Integer.toHexString(FramebufferOracle.fnv1a(module)));
+        assertEquals("framebuffer FNV-1a", EXPECTED_FRAMEBUFFER_FNV1A, FramebufferOracle.fnv1a(module));
+        System.out.println("PASS nyancat frames="
+                + FRAME_COUNT
+                + " tones="
+                + backend.calls
+                + " channels=0x"
+                + Integer.toHexString(backend.channelMask)
+                + " framebuffer-fnv1a="
+                + Integer.toHexString(FramebufferOracle.fnv1a(module)));
         apu.close();
     }
 
@@ -86,9 +82,13 @@ public final class NyanCatSmoke {
             channelMask |= 1 << (flags & 3);
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.util.StringTokenizer;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
@@ -15,7 +14,9 @@ import w4me.runtime.storage.DiskBackend;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the WASM 4 corpus replay smoke implementation. */
 public final class Wasm4CorpusReplaySmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 8) {
             throw new IllegalArgumentException(
@@ -26,8 +27,8 @@ public final class Wasm4CorpusReplaySmoke {
         assertEquals(arguments[7] + " cartridge SHA-256", arguments[6], sha256(cartridge));
         InputTrace trace = readInputTrace(arguments[2]);
         OracleReceipt[] oracle = readOracle(arguments[3]);
-        ToneReceipt[] tones = readTones(arguments[4]);
-        DiskReceipt[] disks = readDisks(arguments[5]);
+        final ToneReceipt[] tones = readTones(arguments[4]);
+        final DiskReceipt[] disks = readDisks(arguments[5]);
 
         WasmModule module = WasmModule.read(cartridge);
         RecordingBackend audio = new RecordingBackend();
@@ -44,17 +45,12 @@ public final class Wasm4CorpusReplaySmoke {
             InputState state = trace.states[frame];
             audio.frame = frame;
             disk.frame = frame;
-            runtime.beginFrame(
-                    module,
-                    state.gamepad,
-                    state.mouseX,
-                    state.mouseY,
-                    state.mouseButtons);
+            runtime.beginFrame(module, state.gamepad, state.mouseX, state.mouseY, state.mouseButtons);
             interpreter.invoke("update");
             runtime.endFrame();
 
             if (oracleIndex < oracle.length && oracle[oracleIndex].frame == frame) {
-                checkReceipt(module, runtime, state, oracle[oracleIndex]);
+                checkReceipt(module, state, oracle[oracleIndex]);
                 oracleIndex++;
             }
         }
@@ -66,37 +62,26 @@ public final class Wasm4CorpusReplaySmoke {
         runtime.close();
         module.close();
 
-        System.out.println(
-                "PASS corpus="
-                        + arguments[7]
-                        + " frames="
-                        + trace.length
-                        + " checkpoints="
-                        + oracle.length
-                        + " tones="
-                        + tones.length
-                        + " disk-events="
-                        + disks.length
-                        + " framebuffer=exact");
+        System.out.println("PASS corpus="
+                + arguments[7]
+                + " frames="
+                + trace.length
+                + " checkpoints="
+                + oracle.length
+                + " tones="
+                + tones.length
+                + " disk-events="
+                + disks.length
+                + " framebuffer=exact");
     }
 
-    private static void checkReceipt(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            InputState state,
-            OracleReceipt expected) throws Exception {
-        byte[] memory = module.memory();
+    private static void checkReceipt(WasmModule module, InputState state, OracleReceipt expected) throws Exception {
+        final byte[] memory = module.memory();
         assertEquals("gamepad at frame " + expected.frame, expected.gamepad, state.gamepad);
         assertEquals("mouse x at frame " + expected.frame, expected.mouseX, state.mouseX);
         assertEquals("mouse y at frame " + expected.frame, expected.mouseY, state.mouseY);
-        assertEquals(
-                "mouse buttons at frame " + expected.frame,
-                expected.mouseButtons,
-                state.mouseButtons);
-        assertEquals(
-                "framebuffer SHA-256 at frame " + expected.frame,
-                expected.sha256,
-                framebufferSha256(module));
+        assertEquals("mouse buttons at frame " + expected.frame, expected.mouseButtons, state.mouseButtons);
+        assertEquals("framebuffer SHA-256 at frame " + expected.frame, expected.sha256, framebufferSha256(module));
         assertEquals(
                 "framebuffer FNV-1a at frame " + expected.frame,
                 expected.fnv1a,
@@ -108,18 +93,9 @@ public final class Wasm4CorpusReplaySmoke {
                     expected.palette[index],
                     readI32(memory, Wasm4Runtime.PALETTE + index * 4));
         }
-        assertEquals(
-                "gamepad memory at frame " + expected.frame,
-                state.gamepad,
-                memory[Wasm4Runtime.GAMEPAD1] & 0xff);
-        assertEquals(
-                "mouse x memory at frame " + expected.frame,
-                state.mouseX,
-                readI16(memory, Wasm4Runtime.MOUSE_X));
-        assertEquals(
-                "mouse y memory at frame " + expected.frame,
-                state.mouseY,
-                readI16(memory, Wasm4Runtime.MOUSE_Y));
+        assertEquals("gamepad memory at frame " + expected.frame, state.gamepad, memory[Wasm4Runtime.GAMEPAD1] & 0xff);
+        assertEquals("mouse x memory at frame " + expected.frame, state.mouseX, readI16(memory, Wasm4Runtime.MOUSE_X));
+        assertEquals("mouse y memory at frame " + expected.frame, state.mouseY, readI16(memory, Wasm4Runtime.MOUSE_Y));
         assertEquals(
                 "mouse buttons memory at frame " + expected.frame,
                 state.mouseButtons,
@@ -129,10 +105,7 @@ public final class Wasm4CorpusReplaySmoke {
     private static InputTrace readInputTrace(String path) throws Exception {
         BufferedReader input = new BufferedReader(new FileReader(path));
         try {
-            assertEquals(
-                    "input trace header",
-                    "frame,gamepad,mouse_x,mouse_y,mouse_buttons,action",
-                    input.readLine());
+            assertEquals("input trace header", "frame,gamepad,mouse_x,mouse_y,mouse_buttons,action", input.readLine());
             InputState[] events = new InputState[128];
             int[] frames = new int[128];
             int count = 0;
@@ -167,7 +140,9 @@ public final class Wasm4CorpusReplaySmoke {
             int frame;
             for (frame = 0; frame < states.length; frame++) {
                 if (event < count && frames[event] == frame) {
-                    current = events[event++];
+                    current = events[
+                            event++]; // NOPMD -- Cursor mutation stays adjacent to the access to preserve compact Java
+                    // 1.3 bytecode.
                 }
                 states[frame] = current;
             }
@@ -203,12 +178,12 @@ public final class Wasm4CorpusReplaySmoke {
                 }
                 StringTokenizer fields = fields(line, 12, "corpus oracle");
                 int frame = Integer.parseInt(fields.nextToken());
-                int gamepad = Integer.parseInt(fields.nextToken());
-                int mouseX = Integer.parseInt(fields.nextToken());
-                int mouseY = Integer.parseInt(fields.nextToken());
-                int mouseButtons = Integer.parseInt(fields.nextToken());
-                String sha256 = fields.nextToken();
-                String fnv1a = fields.nextToken();
+                final int gamepad = Integer.parseInt(fields.nextToken());
+                final int mouseX = Integer.parseInt(fields.nextToken());
+                final int mouseY = Integer.parseInt(fields.nextToken());
+                final int mouseButtons = Integer.parseInt(fields.nextToken());
+                final String sha256 = fields.nextToken();
+                final String fnv1a = fields.nextToken();
                 int[] palette = new int[4];
                 int index;
                 for (index = 0; index < palette.length; index++) {
@@ -219,16 +194,8 @@ public final class Wasm4CorpusReplaySmoke {
                     throw new IllegalArgumentException("invalid oracle frame: " + frame);
                 }
                 checkInput(gamepad, mouseX, mouseY, mouseButtons);
-                receipts[count++] =
-                        new OracleReceipt(
-                                frame,
-                                gamepad,
-                                mouseX,
-                                mouseY,
-                                mouseButtons,
-                                sha256,
-                                fnv1a,
-                                palette);
+                receipts[count++] = // NOPMD -- Compact Java 1.3 cursor bytecode.
+                        new OracleReceipt(frame, gamepad, mouseX, mouseY, mouseButtons, sha256, fnv1a, palette);
                 previousFrame = frame;
             }
             return exactOracle(receipts, count);
@@ -240,10 +207,7 @@ public final class Wasm4CorpusReplaySmoke {
     private static ToneReceipt[] readTones(String path) throws Exception {
         BufferedReader input = new BufferedReader(new FileReader(path));
         try {
-            assertEquals(
-                    "tone header",
-                    "frame,frequency,duration,volume,flags",
-                    input.readLine());
+            assertEquals("tone header", "frame,frequency,duration,volume,flags", input.readLine());
             ToneReceipt[] receipts = new ToneReceipt[128];
             int count = 0;
             String line;
@@ -252,13 +216,12 @@ public final class Wasm4CorpusReplaySmoke {
                     continue;
                 }
                 StringTokenizer fields = fields(line, 5, "tone oracle");
-                receipts[count++] =
-                        new ToneReceipt(
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()));
+                receipts[count++] = new ToneReceipt( // NOPMD -- Compact Java 1.3 cursor bytecode.
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()));
             }
             ToneReceipt[] exact = new ToneReceipt[count];
             System.arraycopy(receipts, 0, exact, 0, count);
@@ -271,10 +234,7 @@ public final class Wasm4CorpusReplaySmoke {
     private static DiskReceipt[] readDisks(String path) throws Exception {
         BufferedReader input = new BufferedReader(new FileReader(path));
         try {
-            assertEquals(
-                    "disk header",
-                    "frame,operation,address,size,result,data_hex",
-                    input.readLine());
+            assertEquals("disk header", "frame,operation,address,size,result,data_hex", input.readLine());
             DiskReceipt[] receipts = new DiskReceipt[32];
             int count = 0;
             String line;
@@ -283,14 +243,13 @@ public final class Wasm4CorpusReplaySmoke {
                     continue;
                 }
                 StringTokenizer fields = fields(line, 6, "disk oracle");
-                receipts[count++] =
-                        new DiskReceipt(
-                                Integer.parseInt(fields.nextToken()),
-                                fields.nextToken(),
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()),
-                                Integer.parseInt(fields.nextToken()),
-                                fields.nextToken());
+                receipts[count++] = new DiskReceipt( // NOPMD -- Compact Java 1.3 cursor bytecode.
+                        Integer.parseInt(fields.nextToken()),
+                        fields.nextToken(),
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()),
+                        Integer.parseInt(fields.nextToken()),
+                        fields.nextToken());
             }
             DiskReceipt[] exact = new DiskReceipt[count];
             System.arraycopy(receipts, 0, exact, 0, count);
@@ -469,13 +428,7 @@ public final class Wasm4CorpusReplaySmoke {
         private final int result;
         private final String dataHex;
 
-        private DiskReceipt(
-                int frame,
-                String operation,
-                int address,
-                int size,
-                int result,
-                String dataHex) {
+        private DiskReceipt(int frame, String operation, int address, int size, int result, String dataHex) {
             this.frame = frame;
             this.operation = operation;
             this.address = address;
@@ -506,9 +459,13 @@ public final class Wasm4CorpusReplaySmoke {
             calls++;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";
@@ -550,23 +507,20 @@ public final class Wasm4CorpusReplaySmoke {
             return count;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";
         }
 
-        private void record(
-                String operation,
-                int address,
-                int size,
-                int result,
-                String dataHex) {
+        private void record(String operation, int address, int size, int result, String dataHex) {
             if (eventCount >= events.length) {
                 throw new IllegalStateException("too many disk events");
             }
-            events[eventCount++] =
-                    new DiskReceipt(frame, operation, address, size, result, dataHex);
+            events[eventCount] = new DiskReceipt(frame, operation, address, size, result, dataHex);
+            eventCount++;
         }
 
         private void check(DiskReceipt[] expected) {
@@ -582,14 +536,10 @@ public final class Wasm4CorpusReplaySmoke {
                 assertEquals("disk result " + index, left.result, right.result);
                 assertEquals("disk data " + index, left.dataHex, right.dataHex);
             }
-            if (expected.length == 0
-                    || !"write".equals(expected[expected.length - 1].operation)) {
+            if (expected.length == 0 || !"write".equals(expected[expected.length - 1].operation)) {
                 assertEquals("final disk bytes", 0, length);
             } else {
-                assertEquals(
-                        "final disk data",
-                        expected[expected.length - 1].dataHex,
-                        hex(data, 0, length));
+                assertEquals("final disk data", expected[expected.length - 1].dataHex, hex(data, 0, length));
             }
         }
     }

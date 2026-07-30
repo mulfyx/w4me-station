@@ -1,7 +1,6 @@
 package w4me.runtime.audio;
 
 import java.io.ByteArrayInputStream;
-
 import javax.microedition.media.Manager;
 import javax.microedition.media.Player;
 import javax.microedition.media.control.VolumeControl;
@@ -9,16 +8,11 @@ import javax.microedition.media.control.VolumeControl;
 /**
  * Approximate four-channel WASM-4 audio as one Standard MIDI File Player.
  *
- * <p>Some physical MMAPI implementations expose {@code device://midi} and
- * accept MIDIControl events while silently dropping them. A data-backed MIDI
- * Player uses the ordinary media playback path instead. Keeping all logical
- * channels in one SMF also avoids requiring concurrent Player mixing.
+ * <p>Some physical MMAPI implementations expose {@code device://midi} and accept MIDIControl events while silently
+ * dropping them. A data-backed MIDI Player uses the ordinary media playback path instead. Keeping all logical channels
+ * in one SMF also avoids requiring concurrent Player mixing.
  */
-public final class MmapiMidiBackend
-        implements AudioBackend,
-                AudioControl,
-                AudioBackendStatus,
-                AudioDiagnostics {
+public final class MmapiMidiBackend implements AudioBackend, AudioControl, AudioBackendStatus, AudioDiagnostics {
     private static final int CHANNEL_COUNT = 4;
     private static final int MIDI_PERCUSSION_CHANNEL = 9;
     private static final int NOTE_ON = 0x90;
@@ -30,17 +24,12 @@ public final class MmapiMidiBackend
     private static final int TICKS_PER_QUARTER = 60;
 
     private static final int[] MIDI_FREQUENCIES = {
-        8, 9, 9, 10, 10, 11, 12, 12, 13, 14, 15, 15, 16, 17, 18, 19,
-        21, 22, 23, 24, 26, 28, 29, 31, 33, 35, 37, 39, 41, 44, 46, 49,
-        52, 55, 58, 62, 65, 69, 73, 78, 82, 87, 92, 98, 104, 110, 117,
-        123, 131, 139, 147, 156, 165, 175, 185, 196, 208, 220, 233, 247,
-        262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523,
-        554, 587, 622, 659, 698, 740, 784, 831, 880, 932, 988, 1047,
-        1109, 1175, 1245, 1319, 1397, 1480, 1568, 1661, 1760, 1865,
-        1976, 2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322,
-        3520, 3729, 3951, 4186, 4435, 4699, 4978, 5274, 5588, 5920,
-        6272, 6645, 7040, 7459, 7902, 8372, 8870, 9397, 9956, 10548,
-        11175, 11840, 12544
+        8, 9, 9, 10, 10, 11, 12, 12, 13, 14, 15, 15, 16, 17, 18, 19, 21, 22, 23, 24, 26, 28, 29, 31, 33, 35, 37, 39, 41,
+        44, 46, 49, 52, 55, 58, 62, 65, 69, 73, 78, 82, 87, 92, 98, 104, 110, 117, 123, 131, 139, 147, 156, 165, 175,
+        185, 196, 208, 220, 233, 247, 262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523, 554, 587, 622,
+        659, 698, 740, 784, 831, 880, 932, 988, 1047, 1109, 1175, 1245, 1319, 1397, 1480, 1568, 1661, 1760, 1865, 1976,
+        2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951, 4186, 4435, 4699, 4978, 5274, 5588,
+        5920, 6272, 6645, 7040, 7459, 7902, 8372, 8870, 9397, 9956, 10548, 11175, 11840, 12544
     };
 
     private final MidiPlayerFactory playerFactory;
@@ -57,8 +46,9 @@ public final class MmapiMidiBackend
     private boolean midiStarted;
     private boolean dirty;
     private String midiFailureReason;
-    private boolean diagnostic;
+    private volatile boolean diagnostic;
 
+    /** Creates a new MMAPI midi backend. */
     public MmapiMidiBackend() {
         playerFactory = new MmapiMidiPlayerFactory();
         midiAvailable = true;
@@ -72,18 +62,19 @@ public final class MmapiMidiBackend
         }
     }
 
+    /** Performs the submit tone operation. */
     public synchronized void submitTone(int frequency, int duration, int volume, int flags) {
         if (!midiAvailable) {
             fallback.submitTone(frequency, duration, volume, flags);
             return;
         }
 
-        int channel = flags & 3;
+        final int channel = flags & 3;
         int sustain = duration & 0xff;
         int release = (duration >>> 8) & 0xff;
         int decay = (duration >>> 16) & 0xff;
         int attack = (duration >>> 24) & 0xff;
-        int frames = attack + decay + sustain + release;
+        final int frames = attack + decay + sustain + release;
         boolean noteMode = (flags & 0x40) != 0;
         int start = decodeFrequency(frequency & 0xffff, noteMode);
         int end = decodeFrequency((frequency >>> 16) & 0xffff, noteMode);
@@ -96,10 +87,8 @@ public final class MmapiMidiBackend
             peakVolume = 100;
         }
         peakVolume = clamp(peakVolume, 0, 100);
-        int playbackVolume =
-                attack > 0 || decay > 0
-                        ? (peakVolume > sustainVolume ? peakVolume : sustainVolume)
-                        : sustainVolume;
+        final int playbackVolume =
+                attack > 0 || decay > 0 ? (peakVolume > sustainVolume ? peakVolume : sustainVolume) : sustainVolume;
 
         frequencyStart[channel] = start;
         frequencyEnd[channel] = end;
@@ -111,6 +100,7 @@ public final class MmapiMidiBackend
         dirty = true;
     }
 
+    /** Performs the tick operation. */
     public synchronized void tick() {
         if (!midiAvailable) {
             fallback.tick();
@@ -121,7 +111,7 @@ public final class MmapiMidiBackend
             dirty = false;
             try {
                 restartPlayback();
-            } catch (Throwable unavailable) {
+            } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
                 disableMidi();
                 replayActiveOnFallback();
             }
@@ -140,11 +130,13 @@ public final class MmapiMidiBackend
         fallback.tick();
     }
 
+    /** Performs the close operation. */
     public synchronized void close() {
         closePlayback();
         fallback.close();
     }
 
+    /** Performs the grade operation. */
     public String grade() {
         if (!midiAvailable) {
             return fallback.grade();
@@ -152,26 +144,25 @@ public final class MmapiMidiBackend
         return midiStarted ? "C-smf4" : "C-smf4-ready";
     }
 
+    /** Performs the active profile name operation. */
     public String activeProfileName() {
-        return midiAvailable
-                ? AudioBackends.PROFILE_MIDI
-                : AudioBackends.activeProfileName(fallback);
+        return midiAvailable ? AudioBackends.PROFILE_MIDI : AudioBackends.activeProfileName(fallback);
     }
 
+    /** Performs the fallback reason operation. */
     public String fallbackReason() {
         if (midiAvailable) {
             return null;
         }
         String nested = AudioBackends.fallbackReason(fallback);
-        return nested == null
-                ? midiFailureReason
-                : midiFailureReason + "; " + nested;
+        return nested == null ? midiFailureReason : midiFailureReason + "; " + nested;
     }
 
     public void setAudioDiagnostics(boolean enabled) {
         diagnostic = enabled;
     }
 
+    /** Performs the silence operation. */
     public synchronized void silence() {
         int channel;
         for (channel = 0; channel < CHANNEL_COUNT; channel++) {
@@ -184,10 +175,9 @@ public final class MmapiMidiBackend
         fallback.silence();
     }
 
+    /** Performs the volume capability operation. */
     public int volumeCapability() {
-        return midiAvailable
-                ? VOLUME_CONTINUOUS
-                : fallback.volumeCapability();
+        return midiAvailable ? VOLUME_CONTINUOUS : fallback.volumeCapability();
     }
 
     int activeChannels() {
@@ -217,7 +207,7 @@ public final class MmapiMidiBackend
 
     private byte[] buildSequence() {
         if (!hasActiveChannels()) {
-            return null;
+            return null; // NOPMD -- Null is the established no-result sentinel and avoids a CLDC heap allocation.
         }
 
         MidiWriter writer = new MidiWriter(192);
@@ -242,9 +232,9 @@ public final class MmapiMidiBackend
         writer.writeByte(0);
 
         writer.writeAscii("MTrk");
-        int trackLengthOffset = writer.position();
+        final int trackLengthOffset = writer.position();
         writer.writeInt(0);
-        int trackStart = writer.position();
+        final int trackStart = writer.position();
 
         int[] notes = new int[CHANNEL_COUNT];
         int[] endTicks = new int[CHANNEL_COUNT];
@@ -256,10 +246,7 @@ public final class MmapiMidiBackend
             }
             int midiChannel = midiChannel(channel);
             int frequency = currentFrequency(channel);
-            int note =
-                    channel == 3
-                            ? percussionNote(frequency)
-                            : frequencyToMidi(frequency);
+            int note = channel == 3 ? percussionNote(frequency) : frequencyToMidi(frequency);
             notes[channel] = note;
             endTicks[channel] = totalFrames[channel] - elapsedFrames[channel];
 
@@ -288,17 +275,13 @@ public final class MmapiMidiBackend
         while (remaining > 0) {
             int nextTick = Integer.MAX_VALUE;
             for (channel = 0; channel < CHANNEL_COUNT; channel++) {
-                if (notes[channel] >= 0
-                        && !ended[channel]
-                        && endTicks[channel] < nextTick) {
+                if (notes[channel] >= 0 && !ended[channel] && endTicks[channel] < nextTick) {
                     nextTick = endTicks[channel];
                 }
             }
             boolean firstAtTick = true;
             for (channel = 0; channel < CHANNEL_COUNT; channel++) {
-                if (notes[channel] < 0
-                        || ended[channel]
-                        || endTicks[channel] != nextTick) {
+                if (notes[channel] < 0 || ended[channel] || endTicks[channel] != nextTick) {
                     continue;
                 }
                 writer.writeVariable(firstAtTick ? nextTick - previousTick : 0);
@@ -327,11 +310,7 @@ public final class MmapiMidiBackend
         if (end == start || total == 0) {
             return start;
         }
-        return start
-                + (int)
-                        ((long) (end - start)
-                                * elapsedFrames[channel]
-                                / total);
+        return start + (int) ((long) (end - start) * elapsedFrames[channel] / total);
     }
 
     private boolean hasActiveChannels() {
@@ -453,7 +432,7 @@ public final class MmapiMidiBackend
         if (current != null) {
             try {
                 current.close();
-            } catch (Throwable ignored) {
+            } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
                 // Best effort after a replacement, failure, or MIDlet shutdown.
             }
         }
@@ -472,14 +451,11 @@ public final class MmapiMidiBackend
             Player player = null;
             String phase = "create";
             long started = diagnostic ? System.currentTimeMillis() : 0;
-            long created = started;
-            long realized = started;
-            long prefetched = started;
+            long created;
+            long realized;
+            long prefetched;
             try {
-                player =
-                        Manager.createPlayer(
-                                new ByteArrayInputStream(midi),
-                                "audio/midi");
+                player = Manager.createPlayer(new ByteArrayInputStream(midi), "audio/midi");
                 created = diagnostic ? System.currentTimeMillis() : 0;
                 phase = "realize";
                 player.realize();
@@ -500,26 +476,27 @@ public final class MmapiMidiBackend
                     throw new IllegalStateException("MMAPI MIDI player did not start");
                 }
                 if (diagnostic) {
-                    System.out.println(
-                            "W4ME_MIDI_LIFECYCLE bytes="
-                                    + midi.length
-                                    + " create-ms="
-                                    + (created - started)
-                                    + " realize-ms="
-                                    + (realized - created)
-                                    + " prefetch-ms="
-                                    + (prefetched - realized)
-                                    + " start-ms="
-                                    + (playerStarted - prefetched)
-                                    + " total-ms="
-                                    + (playerStarted - started));
+                    System.out.println("W4ME_MIDI_LIFECYCLE bytes="
+                            + midi.length
+                            + " create-ms="
+                            + (created - started)
+                            + " realize-ms="
+                            + (realized - created)
+                            + " prefetch-ms="
+                            + (prefetched - realized)
+                            + " start-ms="
+                            + (playerStarted - prefetched)
+                            + " total-ms="
+                            + (playerStarted - started));
                 }
                 return new MmapiMidiPlayback(player);
             } catch (Exception failure) {
                 reportMidiLifecycleFailure(phase, failure);
                 closePlayer(player);
                 throw failure;
-            } catch (Error failure) {
+            } catch (Error failure) { // NOPMD -- Java 1.3 has no multi-catch syntax for the equivalent recovery
+                // branches. Optional Java ME APIs and device implementations can fail with
+                // linkage or VM errors.
                 reportMidiLifecycleFailure(phase, failure);
                 closePlayer(player);
                 throw failure;
@@ -529,11 +506,7 @@ public final class MmapiMidiBackend
 
     private void reportMidiLifecycleFailure(String phase, Throwable failure) {
         if (diagnostic) {
-            System.out.println(
-                    "W4ME_MIDI_LIFECYCLE_FAILURE phase="
-                            + phase
-                            + " error="
-                            + failure.toString());
+            System.out.println("W4ME_MIDI_LIFECYCLE_FAILURE phase=" + phase + " error=" + failure.toString());
         }
     }
 
@@ -555,12 +528,12 @@ public final class MmapiMidiBackend
         }
         try {
             player.stop();
-        } catch (Throwable ignored) {
+        } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
             // Some implementations already stop a player when media ends.
         }
         try {
             player.close();
-        } catch (Throwable ignored) {
+        } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
             // Best effort after an incomplete MMAPI state transition.
         }
     }
@@ -586,7 +559,7 @@ public final class MmapiMidiBackend
 
         private void writeByte(int value) {
             ensure(1);
-            data[length++] = (byte) value;
+            data[length++] = (byte) value; // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
 
         private void writeShort(int value) {

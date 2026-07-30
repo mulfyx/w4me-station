@@ -4,15 +4,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the sound test smoke implementation. */
 public final class SoundTestSmoke {
     private static final String EXPECTED_FRAMEBUFFER =
             "a5b0708798680b369af307c6c4b3f63f275f87943339a9fdb2a86c84afe4b22f";
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin sound-test.wasm");
@@ -28,11 +29,7 @@ public final class SoundTestSmoke {
         runtime.endFrame();
         String actual = framebufferSha256(module);
         if (!EXPECTED_FRAMEBUFFER.equals(actual)) {
-            throw new AssertionError(
-                    "sound-test framebuffer: expected "
-                            + EXPECTED_FRAMEBUFFER
-                            + ", got "
-                            + actual);
+            throw new AssertionError("sound-test framebuffer: expected " + EXPECTED_FRAMEBUFFER + ", got " + actual);
         }
         System.out.println("PASS sound-test framebuffer-sha256=" + actual);
     }

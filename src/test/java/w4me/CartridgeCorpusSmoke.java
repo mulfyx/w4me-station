@@ -1,24 +1,23 @@
 package w4me;
 
-import java.io.ByteArrayOutputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.security.MessageDigest;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the cartridge corpus smoke implementation. */
 public final class CartridgeCorpusSmoke {
-    private static final String DUCK_FINAL_FRAME =
-            "6337e3f491e31a78714896d0232618fe5ad8c713239fc253eb5b4c985f72f91a";
+    private static final String DUCK_FINAL_FRAME = "6337e3f491e31a78714896d0232618fe5ad8c713239fc253eb5b4c985f72f91a";
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 4) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin duck.wasm plasma.wasm plasma-frames.csv");
+            throw new IllegalArgumentException("usage: font.bin duck.wasm plasma.wasm plasma-frames.csv");
         }
         byte[] font = readFile(arguments[0]);
         runDuck(font, readFile(arguments[1]));
@@ -49,8 +48,7 @@ public final class CartridgeCorpusSmoke {
         System.out.println("PASS duck-maze level=1 framebuffer-sha256=" + frameHash);
     }
 
-    private static void runPlasma(byte[] font, byte[] cartridge, String[] expectedFrames)
-            throws Exception {
+    private static void runPlasma(byte[] font, byte[] cartridge, String[] expectedFrames) throws Exception {
         WasmModule module = WasmModule.read(cartridge);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
@@ -78,7 +76,8 @@ public final class CartridgeCorpusSmoke {
                 if (firstComma < 0 || lastComma <= firstComma || count >= frames.length) {
                     throw new IllegalArgumentException("invalid Plasma oracle row: " + line);
                 }
-                frames[count++] = line.substring(firstComma + 1, lastComma);
+                frames[count] = line.substring(firstComma + 1, lastComma);
+                count++;
             }
             if (count != frames.length) {
                 throw new IllegalArgumentException("expected 60 Plasma oracle frames, got " + count);
@@ -90,22 +89,16 @@ public final class CartridgeCorpusSmoke {
     }
 
     private static void frames(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad,
-            int count) throws Exception {
+            WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad, int count)
+            throws Exception {
         int index;
         for (index = 0; index < count; index++) {
             frame(module, runtime, interpreter, gamepad);
         }
     }
 
-    private static void frame(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad) throws Exception {
+    private static void frame(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad)
+            throws Exception {
         runtime.beginFrame(module, gamepad, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();

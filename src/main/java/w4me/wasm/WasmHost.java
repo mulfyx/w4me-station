@@ -1,5 +1,6 @@
 package w4me.wasm;
 
+/** Provides the WASM host implementation. */
 public interface WasmHost {
     int IMPORT_TEXT_UTF8 = 0;
     int IMPORT_TEXT = 1;
@@ -19,18 +20,10 @@ public interface WasmHost {
     int IMPORT_TRACE_UTF8 = 15;
     int IMPORT_TRACE_UTF16 = 16;
 
-    long invoke(
-            int importId,
-            long[] valueStack,
-            int argumentBase,
-            int argumentCount,
-            WasmModule wasmModule);
+    /** Performs the invoke operation. */
+    long invoke(int importId, long[] valueStack, int argumentBase, int argumentCount, WasmModule wasmModule);
 
+    /** Performs the invoke operation. */
     long invoke(
-            String module,
-            String name,
-            long[] valueStack,
-            int argumentBase,
-            int argumentCount,
-            WasmModule wasmModule);
+            String module, String name, long[] valueStack, int argumentBase, int argumentCount, WasmModule wasmModule);
 }

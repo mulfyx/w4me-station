@@ -16,12 +16,7 @@ final class CorpusWorkload {
     final String cartridgeSha256;
     final InputState[] inputs;
 
-    private CorpusWorkload(
-            String name,
-            String route,
-            byte[] cartridge,
-            String cartridgeSha256,
-            InputState[] inputs) {
+    private CorpusWorkload(String name, String route, byte[] cartridge, String cartridgeSha256, InputState[] inputs) {
         this.name = name;
         this.route = route;
         this.cartridge = cartridge;
@@ -31,8 +26,7 @@ final class CorpusWorkload {
 
     static CorpusWorkload[] readAll(String[] arguments, int firstArgument) throws Exception {
         if (arguments.length - firstArgument != 10) {
-            throw new IllegalArgumentException(
-                    "expected font, five carts, three input traces, and Game of Life cart");
+            throw new IllegalArgumentException("expected font, five carts, three input traces, and Game of Life cart");
         }
         byte[] plasma = readFile(arguments[firstArgument + 1]);
         byte[] duck = readFile(arguments[firstArgument + 2]);
@@ -51,26 +45,14 @@ final class CorpusWorkload {
                     "browser-route-" + sha256(readFile(arguments[firstArgument + 4])),
                     waternet,
                     waternetRoute),
-            workload(
-                    "waternet",
-                    "idle-60-v1",
-                    waternet,
-                    idle(60, 0, 32767, 32767)),
-            workload(
-                    "rubido",
-                    "browser-route-" + sha256(readFile(arguments[firstArgument + 6])),
-                    rubido,
-                    rubidoRoute),
+            workload("waternet", "idle-60-v1", waternet, idle(60, 0, 32767, 32767)),
+            workload("rubido", "browser-route-" + sha256(readFile(arguments[firstArgument + 6])), rubido, rubidoRoute),
             workload(
                     "untangle",
                     "browser-route-" + sha256(readFile(arguments[firstArgument + 8])),
                     untangle,
                     untangleRoute),
-            workload(
-                    "game-of-life-zig-edition",
-                    "idle-1-v1",
-                    gameOfLife,
-                    idle(1, 0, 32767, 32767))
+            workload("game-of-life-zig-edition", "idle-1-v1", gameOfLife, idle(1, 0, 32767, 32767))
         };
     }
 
@@ -78,13 +60,12 @@ final class CorpusWorkload {
         return readFile(arguments[firstArgument]);
     }
 
-    private static CorpusWorkload workload(
-            String name, String route, byte[] cartridge, InputState[] inputs) throws Exception {
+    private static CorpusWorkload workload(String name, String route, byte[] cartridge, InputState[] inputs)
+            throws Exception {
         return new CorpusWorkload(name, route, cartridge, sha256(cartridge), inputs);
     }
 
-    private static InputState[] idle(
-            int frames, int gamepad, int mouseX, int mouseY) {
+    private static InputState[] idle(int frames, int gamepad, int mouseX, int mouseY) {
         InputState[] result = new InputState[frames];
         int frame;
         for (frame = 0; frame < result.length; frame++) {
@@ -96,9 +77,9 @@ final class CorpusWorkload {
     private static InputState[] duckLevelOne() {
         InputState[] result = new InputState[155];
         int frame = 0;
-        result[frame++] = new InputState(0, 0, 0, 0, 0);
-        result[frame++] = new InputState(1, 0, 0, 0, 0);
-        result[frame++] = new InputState(0, 0, 0, 0, 0);
+        result[frame++] = new InputState(0, 0, 0, 0, 0); // NOPMD -- Compact Java 1.3 cursor bytecode.
+        result[frame++] = new InputState(1, 0, 0, 0, 0); // NOPMD -- Compact Java 1.3 cursor bytecode.
+        result[frame++] = new InputState(0, 0, 0, 0, 0); // NOPMD -- Compact Java 1.3 cursor bytecode.
         frame = fillGamepad(result, frame, 128, 32);
         frame = fillGamepad(result, frame, 32, 24);
         frame = fillGamepad(result, frame, 128, 16);
@@ -110,11 +91,10 @@ final class CorpusWorkload {
         return result;
     }
 
-    private static int fillGamepad(
-            InputState[] result, int frame, int gamepad, int count) {
+    private static int fillGamepad(InputState[] result, int frame, int gamepad, int count) {
         int index;
         for (index = 0; index < count; index++) {
-            result[frame++] = new InputState(gamepad, 0, 0, 0, 0);
+            result[frame++] = new InputState(gamepad, 0, 0, 0, 0); // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
         return frame;
     }
@@ -122,10 +102,7 @@ final class CorpusWorkload {
     private static InputState[] readInputTrace(String path) throws Exception {
         BufferedReader input = new BufferedReader(new FileReader(path));
         try {
-            requireEquals(
-                    "input trace header",
-                    "frame,gamepad,mouse_x,mouse_y,mouse_buttons,action",
-                    input.readLine());
+            requireEquals("input trace header", "frame,gamepad,mouse_x,mouse_y,mouse_buttons,action", input.readLine());
             InputState[] events = new InputState[1024];
             int[] frames = new int[events.length];
             int count = 0;
@@ -140,10 +117,10 @@ final class CorpusWorkload {
                     throw new IllegalArgumentException("invalid input trace row: " + line);
                 }
                 int frame = Integer.parseInt(fields.nextToken());
-                int gamepad = Integer.parseInt(fields.nextToken());
-                int mouseX = Integer.parseInt(fields.nextToken());
-                int mouseY = Integer.parseInt(fields.nextToken());
-                int mouseButtons = Integer.parseInt(fields.nextToken());
+                final int gamepad = Integer.parseInt(fields.nextToken());
+                final int mouseX = Integer.parseInt(fields.nextToken());
+                final int mouseY = Integer.parseInt(fields.nextToken());
+                final int mouseButtons = Integer.parseInt(fields.nextToken());
                 fields.nextToken();
                 if (frame <= previousFrame) {
                     throw new IllegalArgumentException("invalid input frame: " + frame);
@@ -162,7 +139,9 @@ final class CorpusWorkload {
             int frame;
             for (frame = 0; frame < result.length; frame++) {
                 if (event < count && frames[event] == frame) {
-                    current = events[event++];
+                    current = events[
+                            event++]; // NOPMD -- Cursor mutation stays adjacent to the access to preserve compact Java
+                    // 1.3 bytecode.
                 }
                 result[frame] = current;
             }
@@ -207,8 +186,7 @@ final class CorpusWorkload {
 
     private static void requireEquals(String label, String expected, String actual) {
         if (expected == null ? actual != null : !expected.equals(actual)) {
-            throw new IllegalArgumentException(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new IllegalArgumentException(label + ": expected " + expected + ", got " + actual);
         }
     }
 
@@ -219,12 +197,7 @@ final class CorpusWorkload {
         final int mouseY;
         final int mouseButtons;
 
-        private InputState(
-                int gamepad1,
-                int gamepad2,
-                int mouseX,
-                int mouseY,
-                int mouseButtons) {
+        private InputState(int gamepad1, int gamepad2, int mouseX, int mouseY, int mouseButtons) {
             this.gamepad1 = gamepad1;
             this.gamepad2 = gamepad2;
             this.mouseX = mouseX;

@@ -3,13 +3,13 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 
 /** Focused same-build differential for the seven integer compact opcodes. */
 public final class IntegerCompactSevenDifferentialSmoke {
     private IntegerCompactSevenDifferentialSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin integer-compact-seven.wasm");
@@ -24,11 +24,10 @@ public final class IntegerCompactSevenDifferentialSmoke {
             throw new AssertionError("unexpected success-path trap: " + current.trap);
         }
         if (candidate.compactInstructions <= current.compactInstructions) {
-            throw new AssertionError(
-                    "seven-opcode candidate did not expand compact execution: current="
-                            + current.compactInstructions
-                            + " candidate="
-                            + candidate.compactInstructions);
+            throw new AssertionError("seven-opcode candidate did not expand compact execution: current="
+                    + current.compactInstructions
+                    + " candidate="
+                    + candidate.compactInstructions);
         }
 
         long firstBudget = current.instructions - 40;
@@ -48,22 +47,17 @@ public final class IntegerCompactSevenDifferentialSmoke {
                 run(font, cartridge, "trap_store", 200000000L, false),
                 run(font, cartridge, "trap_store", 200000000L, true));
 
-        System.out.println(
-                "PASS integer-compact-seven logical="
-                        + current.instructions
-                        + " current-compact="
-                        + current.compactInstructions
-                        + " candidate-compact="
-                        + candidate.compactInstructions
-                        + " budget-cases=42 traps=load,store state=exact");
+        System.out.println("PASS integer-compact-seven logical="
+                + current.instructions
+                + " current-compact="
+                + current.compactInstructions
+                + " candidate-compact="
+                + candidate.compactInstructions
+                + " budget-cases=42 traps=load,store state=exact");
     }
 
     private static Result run(
-            byte[] font,
-            byte[] cartridge,
-            String function,
-            long instructionLimit,
-            boolean integerCompactOpcodes)
+            byte[] font, byte[] cartridge, String function, long instructionLimit, boolean integerCompactOpcodes)
             throws Exception {
         WasmModule module = WasmModule.read(cartridge, null, false);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
@@ -79,14 +73,13 @@ public final class IntegerCompactSevenDifferentialSmoke {
         } catch (WasmTrap error) {
             trap = error.getMessage();
         }
-        Result result =
-                new Result(
-                        module.memory,
-                        module.globals,
-                        module.table,
-                        trap,
-                        interpreter.instructionsExecuted(),
-                        interpreter.compactInstructionsExecuted());
+        Result result = new Result(
+                module.memory,
+                module.globals,
+                module.table,
+                trap,
+                interpreter.instructionsExecuted(),
+                interpreter.compactInstructionsExecuted());
         module.close();
         runtime.close();
         return result;
@@ -95,10 +88,7 @@ public final class IntegerCompactSevenDifferentialSmoke {
     private static void assertEquivalent(String label, Result current, Result candidate) {
         requireEquals(label, "trap", current.trap, candidate.trap);
         requireEquals(
-                label,
-                "instructions",
-                Long.toString(current.instructions),
-                Long.toString(candidate.instructions));
+                label, "instructions", Long.toString(current.instructions), Long.toString(candidate.instructions));
         compareBytes(label, "memory", current.memory, candidate.memory);
         compareLongs(label, "globals", current.globals, candidate.globals);
         compareInts(label, "table", current.table, candidate.table);
@@ -140,11 +130,9 @@ public final class IntegerCompactSevenDifferentialSmoke {
         }
     }
 
-    private static void requireEquals(
-            String label, String field, String expected, String actual) {
+    private static void requireEquals(String label, String field, String expected, String actual) {
         if (expected == null ? actual != null : !expected.equals(actual)) {
-            throw new AssertionError(
-                    label + " " + field + " expected=" + expected + " actual=" + actual);
+            throw new AssertionError(label + " " + field + " expected=" + expected + " actual=" + actual);
         }
     }
 

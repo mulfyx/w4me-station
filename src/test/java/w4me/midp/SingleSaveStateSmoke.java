@@ -3,18 +3,18 @@ package w4me.midp;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.RuntimeSnapshot;
 import w4me.wasm.WasmModule;
 
+/** Provides the single save state smoke implementation. */
 public final class SingleSaveStateSmoke {
     private SingleSaveStateSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin save-state-roundtrip.wasm");
+            throw new IllegalArgumentException("usage: font.bin save-state-roundtrip.wasm");
         }
 
         final int identity = 0x13572468;
@@ -29,54 +29,31 @@ public final class SingleSaveStateSmoke {
                 SingleSaveState.LOAD_MISSING,
                 missing.load(identity, cartridgeLength, module, runtime));
 
-        SingleSaveState slot =
-                new SingleSaveState(
-                        new SingleSaveState.SnapshotFactory() {
-                            private int calls;
+        SingleSaveState slot = new SingleSaveState(new SingleSaveState.SnapshotFactory() {
+            private int calls;
 
-                            public RuntimeSnapshot capture(
-                                    int sourceIdentity,
-                                    int sourceLength,
-                                    WasmModule sourceModule,
-                                    Wasm4Runtime sourceRuntime) {
-                                calls++;
-                                if (calls == 2) {
-                                    throw new OutOfMemoryError(
-                                            "injected low-heap failure");
-                                }
-                                return RuntimeSnapshot.capture(
-                                        sourceIdentity,
-                                        sourceLength,
-                                        sourceModule,
-                                        sourceRuntime);
-                            }
-                        });
+            public RuntimeSnapshot capture(
+                    int sourceIdentity, int sourceLength, WasmModule sourceModule, Wasm4Runtime sourceRuntime) {
+                calls++;
+                if (calls == 2) {
+                    throw new OutOfMemoryError("injected low-heap failure");
+                }
+                return RuntimeSnapshot.capture(sourceIdentity, sourceLength, sourceModule, sourceRuntime);
+            }
+        });
 
         module.memory()[31000] = 21;
-        assertTrue(
-                "initial save",
-                slot.save(identity, cartridgeLength, module, runtime));
+        assertTrue("initial save", slot.save(identity, cartridgeLength, module, runtime));
         module.memory()[31000] = 84;
-        assertTrue(
-                "failed replacement",
-                !slot.save(identity, cartridgeLength, module, runtime));
+        assertTrue("failed replacement", !slot.save(identity, cartridgeLength, module, runtime));
         assertTrue("old snapshot retained", slot.hasState());
         assertEquals(
                 "identity mismatch",
                 SingleSaveState.LOAD_FAILED,
                 slot.load(identity + 1, cartridgeLength, module, runtime));
-        assertEquals(
-                "mismatch leaves current memory",
-                84,
-                module.memory()[31000] & 0xff);
-        assertEquals(
-                "load after OOM",
-                SingleSaveState.LOAD_OK,
-                slot.load(identity, cartridgeLength, module, runtime));
-        assertEquals(
-                "old snapshot restored",
-                21,
-                module.memory()[31000] & 0xff);
+        assertEquals("mismatch leaves current memory", 84, module.memory()[31000] & 0xff);
+        assertEquals("load after OOM", SingleSaveState.LOAD_OK, slot.load(identity, cartridgeLength, module, runtime));
+        assertEquals("old snapshot restored", 21, module.memory()[31000] & 0xff);
 
         slot.clear();
         assertTrue("clear removes snapshot", !slot.hasState());
@@ -86,8 +63,7 @@ public final class SingleSaveStateSmoke {
                 slot.load(identity, cartridgeLength, module, runtime));
         runtime.close();
         module.close();
-        System.out.println(
-                "PASS single-save-state missing OOM atomic-replacement identity clear");
+        System.out.println("PASS single-save-state missing OOM atomic-replacement identity clear");
     }
 
     private static byte[] readFile(String path) throws Exception {
@@ -113,8 +89,7 @@ public final class SingleSaveStateSmoke {
 
     private static void assertEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 }

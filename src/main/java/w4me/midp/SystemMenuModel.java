@@ -9,20 +9,11 @@ final class SystemMenuModel {
     static final int ACTION_RESTART = 4;
     static final int ACTION_EXIT = 5;
 
-    private static final int[] BASE_ACTIONS = {
-        ACTION_CONTINUE, ACTION_SETTINGS, ACTION_RESTART, ACTION_EXIT
-    };
+    private static final int[] BASE_ACTIONS = {ACTION_CONTINUE, ACTION_SETTINGS, ACTION_RESTART, ACTION_EXIT};
     private static final int[] SAVE_STATE_ACTIONS = {
-        ACTION_CONTINUE,
-        ACTION_SAVE_STATE,
-        ACTION_LOAD_STATE,
-        ACTION_SETTINGS,
-        ACTION_RESTART,
-        ACTION_EXIT
+        ACTION_CONTINUE, ACTION_SAVE_STATE, ACTION_LOAD_STATE, ACTION_SETTINGS, ACTION_RESTART, ACTION_EXIT
     };
-    private static final String[] LABELS = {
-        "Continue", "Save State", "Load State", "Settings", "Restart Cart", "Exit"
-    };
+    private static final String[] LABELS = {"Continue", "Save State", "Load State", "Settings", "Restart Cart", "Exit"};
 
     private final int[] actions;
 

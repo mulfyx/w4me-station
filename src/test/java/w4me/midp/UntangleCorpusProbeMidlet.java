@@ -3,7 +3,6 @@ package w4me.midp;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
@@ -12,12 +11,11 @@ import w4me.runtime.storage.DiskBackend;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the untangle corpus probe midlet implementation. */
 public final class UntangleCorpusProbeMidlet extends MIDlet {
     private static final int[] CHECKPOINT_FRAMES = {
-        0, 1, 2, 3, 4, 5, 6, 69, 70, 71, 149, 150, 151, 152,
-        153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164,
-        165, 166, 167, 168, 169, 173, 178, 183, 193, 194, 250, 300,
-        350, 367, 368, 369, 370, 384, 385, 386, 400
+        0, 1, 2, 3, 4, 5, 6, 69, 70, 71, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164,
+        165, 166, 167, 168, 169, 173, 178, 183, 193, 194, 250, 300, 350, 367, 368, 369, 370, 384, 385, 386, 400
     };
     private static final int[] CHECKPOINT_FNV1A = {
         0x324b94f5, 0x1052deb9, 0x342c89ed, 0x5c9c6fd6, 0xccb694fc,
@@ -31,12 +29,11 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
         0xc82187ab, 0xc82187ab, 0xc82187ab, 0x4e4a617b, 0x64061e59,
         0xbc0231d9, 0xbc0231d9
     };
-    private static final int[] PALETTE = {
-        0x00e0f8cf, 0x0086c06c, 0x00306850, 0x00071821
-    };
+    private static final int[] PALETTE = {0x00e0f8cf, 0x0086c06c, 0x00306850, 0x00071821};
 
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -53,11 +50,7 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
             RecordingBackend audio = new RecordingBackend();
             Wasm4Apu apu = new Wasm4Apu(audio);
             RecordingDisk disk = new RecordingDisk();
-            runtime =
-                    new Wasm4Runtime(
-                            ResourceLoader.read("/w4font.bin"),
-                            apu,
-                            disk);
+            runtime = new Wasm4Runtime(ResourceLoader.read("/w4font.bin"), apu, disk);
             runtime.initialize(module);
             WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
             interpreter.invokeCartridgeLifecycle();
@@ -67,34 +60,24 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
             for (frame = 0; frame < 401; frame++) {
                 audio.frame = frame;
                 disk.frame = frame;
-                runtime.beginFrame(
-                        module,
-                        0,
-                        mouseX(frame),
-                        mouseY(frame),
-                        mouseButtons(frame));
+                runtime.beginFrame(module, 0, mouseX(frame), mouseY(frame), mouseButtons(frame));
                 interpreter.invoke("update");
                 runtime.endFrame();
-                if (checkpoint < CHECKPOINT_FRAMES.length
-                        && CHECKPOINT_FRAMES[checkpoint] == frame) {
+                if (checkpoint < CHECKPOINT_FRAMES.length && CHECKPOINT_FRAMES[checkpoint] == frame) {
                     int actual = FramebufferOracle.fnv1a(module);
-                    requireEquals(
-                            "framebuffer at frame " + frame,
-                            CHECKPOINT_FNV1A[checkpoint],
-                            actual);
+                    requireEquals("framebuffer at frame " + frame, CHECKPOINT_FNV1A[checkpoint], actual);
                     checkPalette(module.memory(), frame);
                     checkInput(module.memory(), frame);
-                    System.out.println(
-                            "W4ME_UNTANGLE_FRAME frame="
-                                    + frame
-                                    + " mouse="
-                                    + mouseX(frame)
-                                    + ","
-                                    + mouseY(frame)
-                                    + ","
-                                    + mouseButtons(frame)
-                                    + " framebuffer-fnv1a="
-                                    + hex8(actual));
+                    System.out.println("W4ME_UNTANGLE_FRAME frame="
+                            + frame
+                            + " mouse="
+                            + mouseX(frame)
+                            + ","
+                            + mouseY(frame)
+                            + ","
+                            + mouseButtons(frame)
+                            + " framebuffer-fnv1a="
+                            + hex8(actual));
                     checkpoint++;
                 }
             }
@@ -103,12 +86,11 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
             requireEquals("APU tone count", 0, apu.toneEventCount());
             audio.check();
             disk.check();
-            System.out.println(
-                    "W4ME_UNTANGLE_PROBE frames=401 checkpoints=47 tones=0"
-                            + " disk-read=1/0 disk-write=1/1"
-                            + " framebuffer-fnv1a=bc0231d9");
+            System.out.println("W4ME_UNTANGLE_PROBE frames=401 checkpoints=47 tones=0"
+                    + " disk-read=1/0 disk-write=1/1"
+                    + " framebuffer-fnv1a=bc0231d9");
             result.append("PASS\n401 frames\n47 exact checkpoints\nlevel 0 solved");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_UNTANGLE_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -122,9 +104,15 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private static int mouseX(int frame) {
         if (frame == 0) {
@@ -211,18 +199,10 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
 
     private static void checkInput(byte[] memory, int frame) {
         requireEquals("gamepad at frame " + frame, 0, memory[Wasm4Runtime.GAMEPAD1] & 0xff);
+        requireEquals("mouse x at frame " + frame, mouseX(frame), readI16(memory, Wasm4Runtime.MOUSE_X));
+        requireEquals("mouse y at frame " + frame, mouseY(frame), readI16(memory, Wasm4Runtime.MOUSE_Y));
         requireEquals(
-                "mouse x at frame " + frame,
-                mouseX(frame),
-                readI16(memory, Wasm4Runtime.MOUSE_X));
-        requireEquals(
-                "mouse y at frame " + frame,
-                mouseY(frame),
-                readI16(memory, Wasm4Runtime.MOUSE_Y));
-        requireEquals(
-                "mouse buttons at frame " + frame,
-                mouseButtons(frame),
-                memory[Wasm4Runtime.MOUSE_BUTTONS] & 0xff);
+                "mouse buttons at frame " + frame, mouseButtons(frame), memory[Wasm4Runtime.MOUSE_BUTTONS] & 0xff);
     }
 
     private static int readI32(byte[] memory, int address) {
@@ -238,8 +218,7 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
 
     private static void requireEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new IllegalStateException(
-                    label + ": expected " + hex8(expected) + ", got " + hex8(actual));
+            throw new IllegalStateException(label + ": expected " + hex8(expected) + ", got " + hex8(actual));
         }
     }
 
@@ -263,9 +242,13 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
             throw new IllegalStateException("unexpected tone at frame " + frame);
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";
@@ -314,7 +297,9 @@ public final class UntangleCorpusProbeMidlet extends MIDlet {
             return count;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

@@ -14,11 +14,7 @@ final class SettingsList extends List implements CommandListener {
     private final Command openCommand = new Command("Open", Command.ITEM, 1);
     private final Command backCommand = new Command("Back", Command.BACK, 1);
 
-    SettingsList(
-            W4MeMidlet midlet,
-            W4Canvas source,
-            SystemMenuList systemMenu,
-            SettingsMenuModel model) {
+    SettingsList(W4MeMidlet midlet, W4Canvas source, SystemMenuList systemMenu, SettingsMenuModel model) {
         super("Settings", List.IMPLICIT);
         this.midlet = midlet;
         this.source = source;
@@ -37,8 +33,7 @@ final class SettingsList extends List implements CommandListener {
         if (command == openCommand || command == List.SELECT_COMMAND) {
             int selected = getSelectedIndex();
             if (selected >= 0 && selected < model.size()) {
-                midlet.showSettingsCategory(
-                        this, source, model.categoryAt(selected));
+                midlet.showSettingsCategory(this, source, model.categoryAt(selected));
             }
         } else if (command == backCommand) {
             midlet.finishSettings(this, source, systemMenu);

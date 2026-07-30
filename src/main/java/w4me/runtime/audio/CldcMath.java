@@ -1,9 +1,8 @@
 package w4me.runtime.audio;
 
 /**
- * CLDC 1.1 replacements for Math.pow and Math.log, which do not exist on
- * CLDC. Both are deterministic: they use only Math.sqrt, Double bit access,
- * and double arithmetic.
+ * CLDC 1.1 replacements for Math.pow and Math.log, which do not exist on CLDC. Both are deterministic: they use only
+ * Math.sqrt, Double bit access, and double arithmetic.
  */
 final class CldcMath {
     /** ROOT_CHAIN[k] is 2 raised to the power 2^-(k+1). */
@@ -39,18 +38,16 @@ final class CldcMath {
     }
 
     /**
-     * Returns the base-2 logarithm of a positive value. Non-positive values
-     * return a large negative number so integer conversions clamp low, which
-     * matches how the former Math.log expressions collapsed under clamping.
+     * Returns the base-2 logarithm of a positive value. Non-positive values return a large negative number so integer
+     * conversions clamp low, which matches how the former Math.log expressions collapsed under clamping.
      */
     static double logBase2(double value) {
-        if (!(value > 0.0)) {
+        if (value <= 0.0) {
             return -1.0e9;
         }
         long bits = Double.doubleToLongBits(value);
         int exponent = (int) ((bits >>> 52) & 0x7ff) - 1023;
-        double mantissa =
-                Double.longBitsToDouble((bits & 0x000fffffffffffffL) | 0x3ff0000000000000L);
+        double mantissa = Double.longBitsToDouble((bits & 0x000fffffffffffffL) | 0x3ff0000000000000L);
         double result = exponent;
         double bit = 0.5;
         int index;

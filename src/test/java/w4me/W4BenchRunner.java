@@ -2,20 +2,17 @@ package w4me;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 import w4me.wasm.WasmTrap;
 
 /**
- * Deterministic WASM cartridge benchmark runner for the native no-JIT
- * phoneME rig.  The cartridge owns the workload; this runner only resets it,
- * times {@code run}, and validates the result record outside that interval.
+ * Deterministic WASM cartridge benchmark runner for the native no-JIT phoneME rig. The cartridge owns the workload;
+ * this runner only resets it, times {@code run}, and validates the result record outside that interval.
  *
- * <p>The generated {@link W4BenchProfile} is the frozen contract.  It is
- * deliberately a Java 1.3/CLDC-only class so this runner can execute under
- * the same VM that is used for performance acceptance.</p>
+ * <p>The generated {@link W4BenchProfile} is the frozen contract. It is deliberately a Java 1.3/CLDC-only class so this
+ * runner can execute under the same VM that is used for performance acceptance.
  */
 public final class W4BenchRunner {
     public static final String CARTRIDGE_RESOURCE = "/w4bench-v1.wasm";
@@ -37,16 +34,14 @@ public final class W4BenchRunner {
     private W4BenchRunner() {}
 
     /**
-     * Arguments: candidate sample [timed|verify-only].  Candidate is an
-     * opaque receipt label and is intentionally not used to select any
-     * interpreter behaviour.
+     * Arguments: candidate sample [timed|verify-only]. Candidate is an opaque receipt label and is intentionally not
+     * used to select any interpreter behaviour.
      */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2 && arguments.length != 3) {
-            throw new IllegalArgumentException(
-                    "usage: candidate sample [timed|verify-only]");
+            throw new IllegalArgumentException("usage: candidate sample [timed|verify-only]");
         }
-        String candidate = requireToken(arguments[0], "candidate");
+        final String candidate = requireToken(arguments[0], "candidate");
         int sample = Integer.parseInt(arguments[1]);
         if (sample < 0) {
             throw new IllegalArgumentException("sample must be non-negative");
@@ -56,8 +51,7 @@ public final class W4BenchRunner {
             if ("verify-only".equals(arguments[2])) {
                 timerRequired = false;
             } else if (!"timed".equals(arguments[2])) {
-                throw new IllegalArgumentException(
-                        "mode must be timed or verify-only");
+                throw new IllegalArgumentException("mode must be timed or verify-only");
             }
         }
 
@@ -74,27 +68,19 @@ public final class W4BenchRunner {
                 long[] samples = new long[W4BenchProfile.REPETITIONS];
                 int canonicalCrc = 0;
                 int iteration;
-                for (iteration = 0;
-                        iteration < W4BenchProfile.WARMUPS + W4BenchProfile.REPETITIONS;
-                        iteration++) {
+                for (iteration = 0; iteration < W4BenchProfile.WARMUPS + W4BenchProfile.REPETITIONS; iteration++) {
                     RunResult result = runOnce(context, testIndex);
                     if (iteration == 0) {
                         canonicalCrc = result.crc32;
                         if (testIndex == 0) {
-                            verifyValidatorRejectsCorruption(
-                                    context.module.memory(), testIndex, candidate, sample);
+                            verifyValidatorRejectsCorruption(context.module.memory(), testIndex, candidate, sample);
                         }
                     } else if (canonicalCrc != result.crc32) {
-                        throw fail(
-                                testIndex,
-                                "non-deterministic-crc",
-                                hex8(canonicalCrc),
-                                hex8(result.crc32));
+                        throw fail(testIndex, "non-deterministic-crc", hex8(canonicalCrc), hex8(result.crc32));
                     }
                     if (iteration >= W4BenchProfile.WARMUPS) {
                         int rep = iteration - W4BenchProfile.WARMUPS;
-                        if (timerRequired
-                                && result.elapsedMs < W4BenchProfile.MIN_TIMED_MS) {
+                        if (timerRequired && result.elapsedMs < W4BenchProfile.MIN_TIMED_MS) {
                             throw fail(
                                     testIndex,
                                     "timer-resolution",
@@ -102,59 +88,55 @@ public final class W4BenchRunner {
                                     Long.toString(result.elapsedMs));
                         }
                         samples[rep] = result.elapsedMs;
-                        System.out.println(
-                                "w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
-                                        + " profile-crc="
-                                        + hex8(W4BenchProfile.PROFILE_CRC32)
-                                        + " candidate=" + candidate
-                                        + " sample=" + sample
-                                        + " test-id=" + W4BenchProfile.TEST_IDS[testIndex]
-                                        + " test=" + W4BenchProfile.TEST_NAMES[testIndex]
-                                        + " rep=" + rep
-                                        + " wall-ms=" + result.elapsedMs
-                                        + " actual-crc=" + hex8(result.crc32));
-                    } else {
-                        System.out.println(
-                                "w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
-                                        + " profile-crc="
-                                        + hex8(W4BenchProfile.PROFILE_CRC32)
-                                        + " candidate=" + candidate
-                                        + " sample=" + sample
-                                        + " test-id=" + W4BenchProfile.TEST_IDS[testIndex]
-                                        + " test=" + W4BenchProfile.TEST_NAMES[testIndex]
-                                        + " phase=warmup"
-                                        + " wall-ms=" + result.elapsedMs
-                                        + " actual-crc=" + hex8(result.crc32));
-                    }
-                }
-                actualCrcs[testIndex] = canonicalCrc;
-                medians[testIndex] = median(samples);
-                System.out.println(
-                        "w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
-                                + " profile-crc=" + hex8(W4BenchProfile.PROFILE_CRC32)
+                        System.out.println("w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
+                                + " profile-crc="
+                                + hex8(W4BenchProfile.PROFILE_CRC32)
                                 + " candidate=" + candidate
                                 + " sample=" + sample
                                 + " test-id=" + W4BenchProfile.TEST_IDS[testIndex]
                                 + " test=" + W4BenchProfile.TEST_NAMES[testIndex]
-                                + " median-wall-ms=" + medians[testIndex]
-                                + " actual-crc=" + hex8(canonicalCrc));
+                                + " rep=" + rep
+                                + " wall-ms=" + result.elapsedMs
+                                + " actual-crc=" + hex8(result.crc32));
+                    } else {
+                        System.out.println("w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
+                                + " profile-crc="
+                                + hex8(W4BenchProfile.PROFILE_CRC32)
+                                + " candidate=" + candidate
+                                + " sample=" + sample
+                                + " test-id=" + W4BenchProfile.TEST_IDS[testIndex]
+                                + " test=" + W4BenchProfile.TEST_NAMES[testIndex]
+                                + " phase=warmup"
+                                + " wall-ms=" + result.elapsedMs
+                                + " actual-crc=" + hex8(result.crc32));
+                    }
+                }
+                actualCrcs[testIndex] = canonicalCrc;
+                medians[testIndex] = median(samples);
+                System.out.println("w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
+                        + " profile-crc=" + hex8(W4BenchProfile.PROFILE_CRC32)
+                        + " candidate=" + candidate
+                        + " sample=" + sample
+                        + " test-id=" + W4BenchProfile.TEST_IDS[testIndex]
+                        + " test=" + W4BenchProfile.TEST_NAMES[testIndex]
+                        + " median-wall-ms=" + medians[testIndex]
+                        + " actual-crc=" + hex8(canonicalCrc));
             } finally {
                 context.close();
             }
         }
         int workCrc = workCrc32(actualCrcs);
-        System.out.println(
-                "w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
-                        + " profile-crc=" + hex8(W4BenchProfile.PROFILE_CRC32)
-                        + " contract-crc=" + hex8(W4BenchProfile.CONTRACT_CRC32)
-                        + " candidate=" + candidate
-                        + " sample=" + sample
-                        + " w4ir-format=" + WasmModule.W4IR_FORMAT_VERSION
-                        + " tests=" + actualCrcs.length
-                        + " samples=" + W4BenchProfile.REPETITIONS
-                        + " minimum-timed-ms=" + W4BenchProfile.MIN_TIMED_MS
-                        + " mode=" + (timerRequired ? "timed" : "verify-only")
-                        + " work-crc=" + hex8(workCrc));
+        System.out.println("w4bench:pass profile=" + W4BenchProfile.PROFILE_ID
+                + " profile-crc=" + hex8(W4BenchProfile.PROFILE_CRC32)
+                + " contract-crc=" + hex8(W4BenchProfile.CONTRACT_CRC32)
+                + " candidate=" + candidate
+                + " sample=" + sample
+                + " w4ir-format=" + WasmModule.W4IR_FORMAT_VERSION
+                + " tests=" + actualCrcs.length
+                + " samples=" + W4BenchProfile.REPETITIONS
+                + " minimum-timed-ms=" + W4BenchProfile.MIN_TIMED_MS
+                + " mode=" + (timerRequired ? "timed" : "verify-only")
+                + " work-crc=" + hex8(workCrc));
     }
 
     private static Context createContext(byte[] cartridge, byte[] font) throws Exception {
@@ -167,8 +149,8 @@ public final class W4BenchRunner {
         return new Context(module, runtime, interpreter);
     }
 
-    private static void verifyOpcodeSweep(
-            byte[] cartridge, byte[] font, String candidate, int sample) throws Exception {
+    private static void verifyOpcodeSweep(byte[] cartridge, byte[] font, String candidate, int sample)
+            throws Exception {
         Context context = createContext(cartridge, font);
         try {
             context.interpreter.invoke("validate_all");
@@ -185,31 +167,15 @@ public final class W4BenchRunner {
                     "coverage-contract-crc",
                     W4BenchProfile.CONTRACT_CRC32,
                     readU32Le(memory, offset + HEADER_CONTRACT_CRC32));
-            requireField(
-                    -1,
-                    "coverage-test-id",
-                    0x8000,
-                    readU32Le(memory, offset + HEADER_TEST_ID));
-            requireField(
-                    -1,
-                    "coverage-workload",
-                    0,
-                    readU32Le(memory, offset + HEADER_WORKLOAD_UNITS));
-            requireField(
-                    -1,
-                    "coverage-status",
-                    RESULT_STATUS_PASS,
-                    readU32Le(memory, offset + HEADER_STATUS));
+            requireField(-1, "coverage-test-id", 0x8000, readU32Le(memory, offset + HEADER_TEST_ID));
+            requireField(-1, "coverage-workload", 0, readU32Le(memory, offset + HEADER_WORKLOAD_UNITS));
+            requireField(-1, "coverage-status", RESULT_STATUS_PASS, readU32Le(memory, offset + HEADER_STATUS));
             requireField(
                     -1,
                     "coverage-test-id",
                     W4BenchProfile.VALIDATION_TEST_ID,
                     readU32Le(memory, offset + HEADER_TEST_ID));
-            requireField(
-                    -1,
-                    "coverage-workload-units",
-                    0,
-                    readU32Le(memory, offset + HEADER_WORKLOAD_UNITS));
+            requireField(-1, "coverage-workload-units", 0, readU32Le(memory, offset + HEADER_WORKLOAD_UNITS));
             requireField(
                     -1,
                     "coverage-payload-low",
@@ -237,20 +203,18 @@ public final class W4BenchRunner {
             if (!trapped) {
                 throw new IllegalStateException("trap_unreachable returned normally");
             }
-            System.out.println(
-                    "w4bench:coverage profile=" + W4BenchProfile.PROFILE_ID
-                            + " candidate=" + candidate
-                            + " sample=" + sample
-                            + " opcodes=190 expected-traps=1 semantic-sentinel=exact");
+            System.out.println("w4bench:coverage profile=" + W4BenchProfile.PROFILE_ID
+                    + " candidate=" + candidate
+                    + " sample=" + sample
+                    + " opcodes=190 expected-traps=1 semantic-sentinel=exact");
         } finally {
             context.close();
         }
     }
 
     /**
-     * Reset, prepare, report, and validation are outside the timed interval.
-     * The interval includes the interpreter's normal export invocation
-     * boundary around the selected {@code run_*} function.
+     * Reset, prepare, report, and validation are outside the timed interval. The interval includes the interpreter's
+     * normal export invocation boundary around the selected {@code run_*} function.
      */
     private static RunResult runOnce(Context context, int testIndex) throws Exception {
         WasmInterpreter interpreter = context.interpreter;
@@ -274,8 +238,7 @@ public final class W4BenchRunner {
         interpreter.setInstructionLimit(W4BenchProfile.INSTRUCTION_LIMIT);
     }
 
-    private static void verifyValidatorRejectsCorruption(
-            byte[] memory, int testIndex, String candidate, int sample) {
+    private static void verifyValidatorRejectsCorruption(byte[] memory, int testIndex, String candidate, int sample) {
         int corruptOffset = W4BenchProfile.RESULT_OFFSET + 24;
         memory[corruptOffset] ^= 1;
         boolean rejected = false;
@@ -289,11 +252,10 @@ public final class W4BenchRunner {
         if (!rejected) {
             throw new IllegalStateException("W4Bench validator accepted a corrupt result");
         }
-        System.out.println(
-                "w4bench:validator-negative profile=" + W4BenchProfile.PROFILE_ID
-                        + " candidate=" + candidate
-                        + " sample=" + sample
-                        + " corrupt-result=rejected");
+        System.out.println("w4bench:validator-negative profile=" + W4BenchProfile.PROFILE_ID
+                + " candidate=" + candidate
+                + " sample=" + sample
+                + " corrupt-result=rejected");
     }
 
     static int validateResult(byte[] memory, int testIndex) {
@@ -316,26 +278,15 @@ public final class W4BenchRunner {
                 W4BenchProfile.CONTRACT_CRC32,
                 readU32Le(memory, offset + HEADER_CONTRACT_CRC32));
         requireField(
-                testIndex,
-                "test-id",
-                W4BenchProfile.TEST_IDS[testIndex],
-                readU32Le(memory, offset + HEADER_TEST_ID));
+                testIndex, "test-id", W4BenchProfile.TEST_IDS[testIndex], readU32Le(memory, offset + HEADER_TEST_ID));
         requireField(
                 testIndex,
                 "workload-units",
                 W4BenchProfile.WORKLOAD_UNITS[testIndex],
                 readU32Le(memory, offset + HEADER_WORKLOAD_UNITS));
-        requireField(
-                testIndex,
-                "status",
-                RESULT_STATUS_PASS,
-                readU32Le(memory, offset + HEADER_STATUS));
+        requireField(testIndex, "status", RESULT_STATUS_PASS, readU32Le(memory, offset + HEADER_STATUS));
         int actual = crc32(memory, offset, length);
-        requireField(
-                testIndex,
-                "result-crc",
-                W4BenchProfile.EXPECTED_CRC32[testIndex],
-                actual);
+        requireField(testIndex, "result-crc", W4BenchProfile.EXPECTED_CRC32[testIndex], actual);
         return actual;
     }
 
@@ -410,8 +361,7 @@ public final class W4BenchRunner {
 
     private static void verifyProfileShape() {
         if (!"FROZEN".equals(W4BenchProfile.PROFILE_STATE)) {
-            throw new IllegalStateException(
-                    "authoritative W4Bench timing requires a FROZEN profile");
+            throw new IllegalStateException("authoritative W4Bench timing requires a FROZEN profile");
         }
         int tests = W4BenchProfile.TEST_IDS.length;
         if (tests == 0
@@ -461,14 +411,12 @@ public final class W4BenchRunner {
         }
     }
 
-    private static IllegalStateException fail(
-            int testIndex, String field, String expected, String actual) {
-        return new IllegalStateException(
-                "w4bench:fail profile=" + W4BenchProfile.PROFILE_ID
-                        + " test-index=" + testIndex
-                        + " field=" + field
-                        + " expected=" + expected
-                        + " actual=" + actual);
+    private static IllegalStateException fail(int testIndex, String field, String expected, String actual) {
+        return new IllegalStateException("w4bench:fail profile=" + W4BenchProfile.PROFILE_ID
+                + " test-index=" + testIndex
+                + " field=" + field
+                + " expected=" + expected
+                + " actual=" + actual);
     }
 
     private static String hex8(int value) {
@@ -483,7 +431,7 @@ public final class W4BenchRunner {
     }
 
     private static byte[] readResource(String path) throws Exception {
-        InputStream input = W4BenchRunner.class.getResourceAsStream(path);
+        InputStream input = W4BenchRunner.class.getResourceAsStream(path); // NOPMD -- Closed in the finally block.
         if (input == null) {
             throw new IllegalStateException("missing classpath resource: " + path);
         }

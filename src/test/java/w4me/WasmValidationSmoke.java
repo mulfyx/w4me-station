@@ -4,17 +4,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-import w4me.wasm.WasmException;
 import w4me.wasm.W4IrFunction;
 import w4me.wasm.W4IrStore;
+import w4me.wasm.WasmException;
 import w4me.wasm.WasmModule;
 
+/** Provides the WASM validation smoke implementation. */
 public final class WasmValidationSmoke {
     private static final byte[] HEADER = bytes(0x00, 0x61, 0x73, 0x6d, 0x01, 0, 0, 0);
 
     private WasmValidationSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 1) {
             throw new IllegalArgumentException("expected a valid cartridge path");
@@ -27,49 +28,28 @@ public final class WasmValidationSmoke {
 
         expect("invalid WebAssembly magic", replaceHeaderByte(minimalModule(0, normalBody()), 0, 1));
         expect("64 KiB limit", new byte[65537]);
-        expect(
-                "duplicate section 1",
-                concat(new byte[][] {
-                    HEADER,
-                    section(1, bytes(0)),
-                    section(1, bytes(0))
-                }));
-        expect(
-                "unsupported function import env.evil",
-                concat(new byte[][] {
-                    HEADER,
-                    typeSection(0),
-                    section(2, bytes(1, 3, 'e', 'n', 'v', 4, 'e', 'v', 'i', 'l', 0, 0))
-                }));
-        expect(
-                "invalid signature for function import env.rect",
-                concat(new byte[][] {
-                    HEADER,
-                    typeSection(0),
-                    section(2, bytes(1, 3, 'e', 'n', 'v', 4, 'r', 'e', 'c', 't', 0, 0))
-                }));
+        expect("duplicate section 1", concat(new byte[][] {HEADER, section(1, bytes(0)), section(1, bytes(0))}));
+        expect("unsupported function import env.evil", concat(new byte[][] {
+            HEADER, typeSection(0), section(2, bytes(1, 3, 'e', 'n', 'v', 4, 'e', 'v', 'i', 'l', 0, 0))
+        }));
+        expect("invalid signature for function import env.rect", concat(new byte[][] {
+            HEADER, typeSection(0), section(2, bytes(1, 3, 'e', 'n', 'v', 4, 'r', 'e', 'c', 't', 0, 0))
+        }));
         expect("function export index is out of range", minimalModule(2, normalBody()));
         expect("export update must have signature () -> ()", moduleWithParameter());
         expect("local index is out of range", minimalModule(0, bytes(4, 0, 0x20, 1, 0x0b)));
         expect("branch depth is out of range", minimalModule(0, bytes(4, 0, 0x0c, 1, 0x0b)));
-        expect(
-                "signed LEB128 overflow",
-                minimalModule(
-                        0,
-                        bytes(9, 0, 0x41, 0x80, 0x80, 0x80, 0x80, 0x10, 0x1a, 0x0b)));
+        expect("signed LEB128 overflow", minimalModule(0, bytes(9, 0, 0x41, 0x80, 0x80, 0x80, 0x80, 0x10, 0x1a, 0x0b)));
         expect("duplicate export name: update", moduleWithDuplicateExport());
         expect("memory limits cannot accept", moduleWithInvalidMemoryLimits());
         expect("operand stack underflow", minimalModule(0, bytes(3, 0, 0x1a, 0x0b)));
         expect(
                 "operand stack type mismatch: expected i32, got i64",
                 minimalModule(0, bytes(5, 0, 0x42, 0, 0x45, 0x0b)));
-        expect(
-                "operand stack has extra values at control boundary",
-                minimalModule(0, bytes(4, 0, 0x41, 0, 0x0b)));
+        expect("operand stack has extra values at control boundary", minimalModule(0, bytes(4, 0, 0x41, 0, 0x0b)));
         verifyInvalidModuleCannotCommitW4Ir();
 
-        System.out.println(
-                "PASS wasm validation negative-cases=14 valid-cases=2 cache-commit-gate=PASS");
+        System.out.println("PASS wasm validation negative-cases=14 valid-cases=2 cache-commit-gate=PASS");
     }
 
     private static void verifyInvalidModuleCannotCommitW4Ir() throws Exception {
@@ -79,10 +59,12 @@ public final class WasmValidationSmoke {
             throw new AssertionError("invalid module unexpectedly passed validation");
         } catch (WasmException expected) {
             if (!store.began || !store.wroteFunction) {
-                throw new AssertionError("W4IR staging path was not exercised");
+                throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
+                        "W4IR staging path was not exercised");
             }
             if (store.committed) {
-                throw new AssertionError("W4IR committed before whole-module validation");
+                throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
+                        "W4IR committed before whole-module validation");
             }
         }
     }
@@ -165,7 +147,7 @@ public final class WasmValidationSmoke {
             throw new AssertionError("expected validation failure containing: " + message);
         } catch (WasmException expected) {
             if (expected.getMessage().indexOf(message) < 0) {
-                throw new AssertionError(
+                throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
                         "expected validation failure containing '"
                                 + message
                                 + "', got '"
@@ -215,46 +197,25 @@ public final class WasmValidationSmoke {
         return new byte[] {(byte) a, (byte) b, (byte) c, (byte) d, (byte) e, (byte) f};
     }
 
-    private static byte[] bytes(int a, int b, int c, int d, int e, int f, int g) {
-        return new byte[] {
-            (byte) a, (byte) b, (byte) c, (byte) d, (byte) e, (byte) f, (byte) g
-        };
-    }
-
-    private static byte[] bytes(
-            int a, int b, int c, int d, int e, int f, int g, int h) {
+    private static byte[] bytes(int a, int b, int c, int d, int e, int f, int g, int h) {
         return new byte[] {
             (byte) a, (byte) b, (byte) c, (byte) d,
             (byte) e, (byte) f, (byte) g, (byte) h
         };
     }
 
-    private static byte[] bytes(
-            int a, int b, int c, int d, int e, int f, int g, int h, int i) {
-        return new byte[] {
-            (byte) a, (byte) b, (byte) c, (byte) d, (byte) e,
-            (byte) f, (byte) g, (byte) h, (byte) i
-        };
+    private static byte[] bytes(int a, int b, int c, int d, int e, int f, int g, int h, int i) {
+        return new byte[] {(byte) a, (byte) b, (byte) c, (byte) d, (byte) e, (byte) f, (byte) g, (byte) h, (byte) i};
     }
 
-    private static byte[] bytes(
-            int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
+    private static byte[] bytes(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
         return new byte[] {
             (byte) a, (byte) b, (byte) c, (byte) d, (byte) e,
             (byte) f, (byte) g, (byte) h, (byte) i, (byte) j
         };
     }
 
-    private static byte[] bytes(
-            int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k) {
-        return new byte[] {
-            (byte) a, (byte) b, (byte) c, (byte) d, (byte) e, (byte) f,
-            (byte) g, (byte) h, (byte) i, (byte) j, (byte) k
-        };
-    }
-
-    private static byte[] bytes(
-            int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l) {
+    private static byte[] bytes(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l) {
         return new byte[] {
             (byte) a, (byte) b, (byte) c, (byte) d, (byte) e, (byte) f,
             (byte) g, (byte) h, (byte) i, (byte) j, (byte) k, (byte) l
@@ -326,8 +287,12 @@ public final class WasmValidationSmoke {
             return 0;
         }
 
-        public void discard() {}
+        public void discard() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
     }
 }

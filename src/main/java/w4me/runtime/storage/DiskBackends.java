@@ -1,23 +1,27 @@
 package w4me.runtime.storage;
 
+/** Provides the disk backends implementation. */
 public final class DiskBackends {
     private DiskBackends() {}
 
+    /** Performs the create operation. */
     public static DiskBackend create(byte[] cartridge) {
         return create(cartridgeIdentity(cartridge));
     }
 
+    /** Performs the create operation. */
     public static DiskBackend create(int cartridgeIdentity) {
         String name = "w4d" + hex8(cartridgeIdentity);
         try {
             RmsDiskBackend backend = new RmsDiskBackend();
             backend.open(name);
             return backend;
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return new MemoryDiskBackend();
         }
     }
 
+    /** Performs the cartridge identity operation. */
     public static int cartridgeIdentity(byte[] bytes) {
         if (bytes == null) {
             throw new NullPointerException();

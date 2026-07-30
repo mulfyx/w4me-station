@@ -3,14 +3,15 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 
+/** Provides the W4IR direct intrinsic differential smoke implementation. */
 public final class W4IrDirectIntrinsicDifferentialSmoke {
     private static final int FRAMES = 60;
 
     private W4IrDirectIntrinsicDifferentialSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin plasma.wasm");
@@ -18,7 +19,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         byte[] font = readFile(arguments[0]);
         byte[] cartridge = readFile(arguments[1]);
         assertDenseOpcodeMap();
-        int[] storedSites = verifyCachedSpecialization(font, cartridge);
+        final int[] storedSites = verifyCachedSpecialization(font, cartridge);
 
         WasmModule directModule = WasmModule.read(cartridge, null, true);
         WasmModule ordinaryModule = WasmModule.read(cartridge, null, true);
@@ -45,13 +46,12 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
             update(ordinaryModule, ordinaryRuntime, ordinary);
             assertState(frame, directModule, ordinaryModule);
             if (direct.instructionsExecuted() != ordinary.instructionsExecuted()) {
-                throw new AssertionError(
-                        "instruction accounting mismatch at frame "
-                                + frame
-                                + ": direct="
-                                + direct.instructionsExecuted()
-                                + ", ordinary="
-                                + ordinary.instructionsExecuted());
+                throw new AssertionError("instruction accounting mismatch at frame "
+                        + frame
+                        + ": direct="
+                        + direct.instructionsExecuted()
+                        + ", ordinary="
+                        + ordinary.instructionsExecuted());
             }
             if (direct.fastPathCalls() != 0 || ordinary.fastPathCalls() != 0) {
                 throw new AssertionError("numeric intrinsic differential used a fast path");
@@ -60,34 +60,31 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
             ordinaryDispatches += ordinary.dispatchesExecuted();
         }
         if (directDispatches >= ordinaryDispatches) {
-            throw new AssertionError(
-                    "direct numeric intrinsics did not reduce dispatches: direct="
-                            + directDispatches
-                            + ", ordinary="
-                            + ordinaryDispatches);
+            throw new AssertionError("direct numeric intrinsics did not reduce dispatches: direct="
+                    + directDispatches
+                    + ", ordinary="
+                    + ordinaryDispatches);
         }
 
         directModule.close();
         ordinaryModule.close();
         directRuntime.close();
         ordinaryRuntime.close();
-        System.out.println(
-                "PASS W4IR-direct-intrinsic differential frames="
-                        + FRAMES
-                        + " dense-map=exact cached-stream=exact cached-frames="
-                        + FRAMES
-                        + " memory=65536 globals=exact floor-sites="
-                        + storedSites[0]
-                        + " sin-sites="
-                        + storedSites[1]
-                        + " direct-dispatches="
-                        + directDispatches
-                        + " ordinary-dispatches="
-                        + ordinaryDispatches);
+        System.out.println("PASS W4IR-direct-intrinsic differential frames="
+                + FRAMES
+                + " dense-map=exact cached-stream=exact cached-frames="
+                + FRAMES
+                + " memory=65536 globals=exact floor-sites="
+                + storedSites[0]
+                + " sin-sites="
+                + storedSites[1]
+                + " direct-dispatches="
+                + directDispatches
+                + " ordinary-dispatches="
+                + ordinaryDispatches);
     }
 
-    private static int[] verifyCachedSpecialization(byte[] font, byte[] cartridge)
-            throws Exception {
+    private static int[] verifyCachedSpecialization(byte[] font, byte[] cartridge) throws Exception {
         MemoryW4IrStore store = new MemoryW4IrStore();
         WasmModule built = WasmModule.read(cartridge, store, true);
         if (!"RMS-build".equals(built.w4irStatus())) {
@@ -96,10 +93,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         int[] sites = store.numericIntrinsicSites();
         if (sites[0] == 0 || sites[1] == 0) {
             throw new AssertionError(
-                    "staged W4IR is missing numeric intrinsic sites: floor="
-                            + sites[0]
-                            + ", sin="
-                            + sites[1]);
+                    "staged W4IR is missing numeric intrinsic sites: floor=" + sites[0] + ", sin=" + sites[1]);
         }
         built.close();
 
@@ -127,10 +121,8 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
             update(cached, cachedRuntime, cachedInterpreter);
             update(resident, residentRuntime, residentInterpreter);
             assertState(frame, cached, resident);
-            if (cachedInterpreter.instructionsExecuted()
-                    != residentInterpreter.instructionsExecuted()) {
-                throw new AssertionError(
-                        "cached intrinsic instruction accounting mismatch at frame " + frame);
+            if (cachedInterpreter.instructionsExecuted() != residentInterpreter.instructionsExecuted()) {
+                throw new AssertionError("cached intrinsic instruction accounting mismatch at frame " + frame);
             }
         }
         if (store.pageFaults() == 0) {
@@ -148,27 +140,14 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         for (opcode = 0; opcode <= 0xc4; opcode++) {
             assertOpcodeRoundTrip(opcode, opcode);
         }
-        for (opcode = WasmModule.ORIGINAL_BULK_FIRST;
-                opcode <= WasmModule.ORIGINAL_BULK_LAST;
-                opcode++) {
-            assertOpcodeRoundTrip(
-                    opcode,
-                    WasmModule.EXECUTION_BULK_FIRST
-                            + opcode
-                            - WasmModule.ORIGINAL_BULK_FIRST);
+        for (opcode = WasmModule.ORIGINAL_BULK_FIRST; opcode <= WasmModule.ORIGINAL_BULK_LAST; opcode++) {
+            assertOpcodeRoundTrip(opcode, WasmModule.EXECUTION_BULK_FIRST + opcode - WasmModule.ORIGINAL_BULK_FIRST);
         }
-        for (opcode = WasmModule.ORIGINAL_W4IR_FIRST;
-                opcode <= WasmModule.ORIGINAL_W4IR_LAST;
-                opcode++) {
-            assertOpcodeRoundTrip(
-                    opcode,
-                    WasmModule.EXECUTION_W4IR_FIRST
-                            + opcode
-                            - WasmModule.ORIGINAL_W4IR_FIRST);
+        for (opcode = WasmModule.ORIGINAL_W4IR_FIRST; opcode <= WasmModule.ORIGINAL_W4IR_LAST; opcode++) {
+            assertOpcodeRoundTrip(opcode, WasmModule.EXECUTION_W4IR_FIRST + opcode - WasmModule.ORIGINAL_W4IR_FIRST);
         }
         if (WasmModule.EXECUTION_BULK_FIRST != 0xc5
-                || WasmModule.EXECUTION_W4IR_FIRST
-                        != WasmModule.EXECUTION_BULK_LAST + 1
+                || WasmModule.EXECUTION_W4IR_FIRST != WasmModule.EXECUTION_BULK_LAST + 1
                 || WasmModule.EXECUTION_W4IR_LAST != 0x103) {
             throw new AssertionError("execution opcode domains are not contiguous");
         }
@@ -177,23 +156,21 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
     private static void assertOpcodeRoundTrip(int original, int execution) {
         int actualExecution = WasmModule.executionOpcode(original);
         if (actualExecution != execution) {
-            throw new AssertionError(
-                    "execution opcode mismatch for 0x"
-                            + Integer.toHexString(original)
-                            + ": expected 0x"
-                            + Integer.toHexString(execution)
-                            + ", got 0x"
-                            + Integer.toHexString(actualExecution));
+            throw new AssertionError("execution opcode mismatch for 0x"
+                    + Integer.toHexString(original)
+                    + ": expected 0x"
+                    + Integer.toHexString(execution)
+                    + ", got 0x"
+                    + Integer.toHexString(actualExecution));
         }
         int actualOriginal = WasmModule.originalOpcode(actualExecution);
         if (actualOriginal != original) {
-            throw new AssertionError(
-                    "original opcode mismatch for 0x"
-                            + Integer.toHexString(actualExecution)
-                            + ": expected 0x"
-                            + Integer.toHexString(original)
-                            + ", got 0x"
-                            + Integer.toHexString(actualOriginal));
+            throw new AssertionError("original opcode mismatch for 0x"
+                    + Integer.toHexString(actualExecution)
+                    + ": expected 0x"
+                    + Integer.toHexString(original)
+                    + ", got 0x"
+                    + Integer.toHexString(actualOriginal));
         }
     }
 
@@ -202,15 +179,12 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
             throw new AssertionError("cached W4IR function count mismatch");
         }
         int functionIndex;
-        for (functionIndex = 0;
-                functionIndex < resident.functions.length;
-                functionIndex++) {
+        for (functionIndex = 0; functionIndex < resident.functions.length; functionIndex++) {
             WasmModule.FunctionBody residentBody = resident.functions[functionIndex];
             WasmModule.FunctionBody cachedBody = cached.functions[functionIndex];
             if (residentBody == null || cachedBody == null) {
                 if (residentBody != cachedBody) {
-                    throw new AssertionError(
-                            "cached W4IR imported-function mismatch at " + functionIndex);
+                    throw new AssertionError("cached W4IR imported-function mismatch at " + functionIndex);
                 }
                 continue;
             }
@@ -218,16 +192,11 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
                     || residentBody.instructionCount() != cachedBody.instructionCount()
                     || residentBody.fingerprint != cachedBody.fingerprint
                     || residentBody.intrinsic != cachedBody.intrinsic) {
-                throw new AssertionError(
-                        "cached W4IR metadata mismatch at function " + functionIndex);
+                throw new AssertionError("cached W4IR metadata mismatch at function " + functionIndex);
             }
-            assertBranchTables(
-                    functionIndex, residentBody.branchTables, cachedBody.branchTables);
+            assertBranchTables(functionIndex, residentBody.branchTables, cachedBody.branchTables);
             assertInts(
-                    functionIndex,
-                    "branch descriptors",
-                    residentBody.branchDescriptors,
-                    cachedBody.branchDescriptors);
+                    functionIndex, "branch descriptors", residentBody.branchDescriptors, cachedBody.branchDescriptors);
             assertInts(
                     functionIndex,
                     "branch descriptor PCs",
@@ -238,10 +207,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
                     "branch descriptor indices",
                     residentBody.branchDescriptorIndices,
                     cachedBody.branchDescriptorIndices);
-            assertBranchTables(
-                    functionIndex,
-                    residentBody.branchDescriptorTables,
-                    cachedBody.branchDescriptorTables);
+            assertBranchTables(functionIndex, residentBody.branchDescriptorTables, cachedBody.branchDescriptorTables);
             int codeLength = residentBody.instructionCount() * WasmModule.W4IR_STRIDE;
             int offset;
             for (offset = 0; offset < codeLength; offset++) {
@@ -249,71 +215,50 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
                 int cachedValue = cachedPage[offset - cachedBody.codePageBase(offset)];
                 if (residentBody.code[offset] != cachedValue) {
                     throw new AssertionError(
-                            "cached W4IR code mismatch at function "
-                                    + functionIndex
-                                    + ", int "
-                                    + offset);
+                            "cached W4IR code mismatch at function " + functionIndex + ", int " + offset);
                 }
             }
         }
     }
 
-    private static void assertBranchTables(
-            int functionIndex, int[][] resident, int[][] cached) {
+    private static void assertBranchTables(int functionIndex, int[][] resident, int[][] cached) {
         if (resident.length != cached.length) {
-            throw new AssertionError(
-                    "cached W4IR branch-table count mismatch at function " + functionIndex);
+            throw new AssertionError("cached W4IR branch-table count mismatch at function " + functionIndex);
         }
         int table;
         for (table = 0; table < resident.length; table++) {
             if (resident[table].length != cached[table].length) {
                 throw new AssertionError(
-                        "cached W4IR branch-table length mismatch at function "
-                                + functionIndex
-                                + ", table "
-                                + table);
+                        "cached W4IR branch-table length mismatch at function " + functionIndex + ", table " + table);
             }
             int index;
             for (index = 0; index < resident[table].length; index++) {
                 if (resident[table][index] != cached[table][index]) {
-                    throw new AssertionError(
-                            "cached W4IR branch-table mismatch at function "
-                                    + functionIndex
-                                    + ", table "
-                                    + table
-                                    + ", index "
-                                    + index);
+                    throw new AssertionError("cached W4IR branch-table mismatch at function "
+                            + functionIndex
+                            + ", table "
+                            + table
+                            + ", index "
+                            + index);
                 }
             }
         }
     }
 
-    private static void assertInts(
-            int functionIndex, String label, int[] resident, int[] cached) {
+    private static void assertInts(int functionIndex, String label, int[] resident, int[] cached) {
         if (resident.length != cached.length) {
-            throw new AssertionError(
-                    "cached W4IR "
-                            + label
-                            + " length mismatch at function "
-                            + functionIndex);
+            throw new AssertionError("cached W4IR " + label + " length mismatch at function " + functionIndex);
         }
         int index;
         for (index = 0; index < resident.length; index++) {
             if (resident[index] != cached[index]) {
                 throw new AssertionError(
-                        "cached W4IR "
-                                + label
-                                + " mismatch at function "
-                                + functionIndex
-                                + ", index "
-                                + index);
+                        "cached W4IR " + label + " mismatch at function " + functionIndex + ", index " + index);
             }
         }
     }
 
-    private static void update(
-            WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter)
-            throws Exception {
+    private static void update(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter) throws Exception {
         runtime.beginFrame(module, 0, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();
@@ -323,8 +268,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         int index;
         for (index = 0; index < expected.memory.length; index++) {
             if (expected.memory[index] != actual.memory[index]) {
-                throw new AssertionError(
-                        "memory mismatch at frame " + frame + ", address " + index);
+                throw new AssertionError("memory mismatch at frame " + frame + ", address " + index);
             }
         }
         if (expected.globals.length != actual.globals.length) {
@@ -332,8 +276,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         }
         for (index = 0; index < expected.globals.length; index++) {
             if (expected.globals[index] != actual.globals[index]) {
-                throw new AssertionError(
-                        "global mismatch at frame " + frame + ", index " + index);
+                throw new AssertionError("global mismatch at frame " + frame + ", index " + index);
             }
         }
         if (expected.table.length != actual.table.length) {
@@ -341,8 +284,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
         }
         for (index = 0; index < expected.table.length; index++) {
             if (expected.table[index] != actual.table[index]) {
-                throw new AssertionError(
-                        "table mismatch at frame " + frame + ", index " + index);
+                throw new AssertionError("table mismatch at frame " + frame + ", index " + index);
             }
         }
     }
@@ -397,9 +339,7 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
                 int[][] branchDescriptorTables,
                 long fingerprint,
                 int intrinsic) {
-            int pageCount =
-                    (code.length + W4IrFunction.PAGE_INTS - 1)
-                            / W4IrFunction.PAGE_INTS;
+            int pageCount = (code.length + W4IrFunction.PAGE_INTS - 1) / W4IrFunction.PAGE_INTS;
             pages[functionIndex] = new int[pageCount][];
             int[] pageIds = new int[pageCount];
             int page;
@@ -413,19 +353,18 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
                 System.arraycopy(code, offset, pages[functionIndex][page], 0, length);
                 pageIds[page] = page + 1;
             }
-            functions[functionIndex] =
-                    new W4IrFunction(
-                            functionIndex,
-                            declaredLocalCount,
-                            code.length / WasmModule.W4IR_STRIDE,
-                            cloneTables(branchTables),
-                            (int[]) branchDescriptors.clone(),
-                            (int[]) branchDescriptorPcs.clone(),
-                            (int[]) branchDescriptorIndices.clone(),
-                            cloneTables(branchDescriptorTables),
-                            fingerprint,
-                            intrinsic,
-                            pageIds);
+            functions[functionIndex] = new W4IrFunction(
+                    functionIndex,
+                    declaredLocalCount,
+                    code.length / WasmModule.W4IR_STRIDE,
+                    cloneTables(branchTables),
+                    (int[]) branchDescriptors.clone(),
+                    (int[]) branchDescriptorPcs.clone(),
+                    (int[]) branchDescriptorIndices.clone(),
+                    cloneTables(branchDescriptorTables),
+                    fingerprint,
+                    intrinsic,
+                    pageIds);
         }
 
         public void commit() throws WasmException {
@@ -457,7 +396,9 @@ public final class W4IrDirectIntrinsicDifferentialSmoke {
             complete = false;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         int[] numericIntrinsicSites() {
             int floor = 0;

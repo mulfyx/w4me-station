@@ -2,15 +2,14 @@ package w4me.midp;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.game.GameCanvas;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackends;
 import w4me.runtime.audio.Wasm4Apu;
 import w4me.runtime.storage.DiskBackend;
 import w4me.runtime.storage.DiskBackends;
 import w4me.runtime.storage.W4IrStores;
-import w4me.wasm.WasmInterpreter;
 import w4me.wasm.W4IrStore;
+import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
 final class W4Canvas extends GameCanvas implements Runnable {
@@ -23,9 +22,9 @@ final class W4Canvas extends GameCanvas implements Runnable {
     private static final int BUTTON_UP = 64;
     private static final int BUTTON_DOWN = 128;
 
-    private volatile boolean running;
-    private volatile SystemMenuState menuState = new SystemMenuState();
-    private volatile Session activeSession;
+    private volatile boolean running; // NOPMD -- Required cross-thread visibility.
+    private volatile SystemMenuState menuState = new SystemMenuState(); // NOPMD -- Required cross-thread visibility.
+    private volatile Session activeSession; // NOPMD -- Required cross-thread visibility.
     private final SingleSaveState saveState = new SingleSaveState();
     private Thread worker;
     // Guards every held/pending input pair below. LCDUI delivers key and pointer
@@ -37,24 +36,24 @@ final class W4Canvas extends GameCanvas implements Runnable {
     // reported for exactly one frame. This is the model GameCanvas already applies
     // to the game keys; it does not cover the inputs below, so W4Canvas applies it
     // itself rather than dropping events MIDP has already delivered.
-    private volatile int extraButtons;
+    private volatile int extraButtons; // NOPMD -- Required cross-thread visibility.
     private int pendingExtraButtons;
-    private volatile int extraGamepad2;
+    private volatile int extraGamepad2; // NOPMD -- Required cross-thread visibility.
     private int pendingExtraGamepad2;
-    private volatile int pointerX = 0x7fff;
-    private volatile int pointerY = 0x7fff;
-    private volatile int pointerButtons;
+    private volatile int pointerX = 0x7fff; // NOPMD -- Required cross-thread visibility.
+    private volatile int pointerY = 0x7fff; // NOPMD -- Required cross-thread visibility.
+    private volatile int pointerButtons; // NOPMD -- Required cross-thread visibility.
     private int pendingPointerButtons;
     private int pendingPointerX = 0x7fff;
     private int pendingPointerY = 0x7fff;
-    private volatile int touchButtons;
+    private volatile int touchButtons; // NOPMD -- Required cross-thread visibility.
     private int pendingTouchButtons;
     private int frameGamepad1;
     private int frameGamepad2;
     private int framePointerButtons;
     private int framePointerX = 0x7fff;
     private int framePointerY = 0x7fff;
-    private boolean touchControlGesture;
+    private volatile boolean touchControlGesture; // NOPMD -- LCDUI event thread and game worker both clear this.
     private final W4MeMidlet midlet;
     private final String cartridgeResource;
     private final String cartridgeTitle;
@@ -63,16 +62,12 @@ final class W4Canvas extends GameCanvas implements Runnable {
     private String notification;
     private int notificationFrames;
     private int[] bandPixels;
-    private int[] xMap;
-    private int[] yMap;
+    private int[] horizontalMap;
+    private int[] verticalMap;
     private int renderSide;
     private boolean bandRenderer;
 
-    W4Canvas(
-            W4MeMidlet midlet,
-            String cartridgeResource,
-            String cartridgeTitle,
-            W4SessionMonitor monitor) {
+    W4Canvas(W4MeMidlet midlet, String cartridgeResource, String cartridgeTitle, W4SessionMonitor monitor) {
         super(false);
         this.midlet = midlet;
         this.cartridgeResource = cartridgeResource;
@@ -106,7 +101,8 @@ final class W4Canvas extends GameCanvas implements Runnable {
         }
         clearInput();
         saveState.clear();
-        if (activeWorker != null && activeWorker != Thread.currentThread()) {
+        if (activeWorker != null
+                && activeWorker != Thread.currentThread()) { // NOPMD -- Intentional identity-token comparison.
             activeWorker.interrupt();
             try {
                 activeWorker.join();
@@ -115,8 +111,8 @@ final class W4Canvas extends GameCanvas implements Runnable {
             }
         }
         synchronized (this) {
-            if (worker == activeWorker
-                    && (activeWorker == null || !activeWorker.isAlive())) {
+            boolean sameWorker = worker == activeWorker; // NOPMD -- Intentional identity-token comparison.
+            if (sameWorker && (activeWorker == null || !activeWorker.isAlive())) {
                 worker = null;
             }
         }
@@ -124,26 +120,24 @@ final class W4Canvas extends GameCanvas implements Runnable {
 
     public void run() {
         boolean leaveToLibrary = false;
+        boolean continueSession = true;
         try {
-            while (running && !menuState.isStopped()) {
+            while (continueSession && running && !menuState.isStopped()) {
                 int outcome = runSession();
-                if (outcome == SystemMenuState.RESTART_REQUESTED
-                        && running
-                        && !menuState.isStopped()) {
+                if (outcome == SystemMenuState.RESTART_REQUESTED && running && !menuState.isStopped()) {
                     status = "Restarting " + cartridgeTitle + "...";
-                    notification = null;
-                    notificationFrames = 0;
+                    clearNotification();
                     renderStatus();
                     menuState.completeRestart();
                     showNotification("Restarted");
-                    continue;
+                } else {
+                    if (outcome == SystemMenuState.LEAVE_REQUESTED) {
+                        leaveToLibrary = true;
+                    }
+                    continueSession = false;
                 }
-                if (outcome == SystemMenuState.LEAVE_REQUESTED) {
-                    leaveToLibrary = true;
-                }
-                break;
             }
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             saveState.clear();
             if (running && !menuState.isStopped()) {
                 status = failure.toString();
@@ -154,7 +148,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
             saveState.clear();
             synchronized (this) {
                 running = false;
-                if (worker == Thread.currentThread()) {
+                if (worker == Thread.currentThread()) { // NOPMD -- Intentional identity-token comparison.
                     worker = null;
                 }
             }
@@ -181,58 +175,42 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 if (monitor != null) {
                     monitor.onInstallState("DOWNLOADING", 0, 0, 0, 0);
                 }
-                stagedRecordId =
-                        ResourceLoader.stage(installStore, cartridgeTitle, cartridgeResource);
+                stagedRecordId = ResourceLoader.stage(installStore, cartridgeTitle, cartridgeResource);
                 cartridge = installStore.readStaged(stagedRecordId);
                 status = "Validating " + cartridgeTitle + "...";
                 repaint();
                 if (monitor != null) {
                     monitor.onInstallState(
-                            "RECEIVED",
-                            stagedRecordId,
-                            cartridge.length,
-                            (cartridge.length + 2047) / 2048,
-                            0);
+                            "RECEIVED", stagedRecordId, cartridge.length, (cartridge.length + 2047) / 2048, 0);
                     monitor.onInstallState("VALIDATING", 0, 0, 0, 0);
                 }
             } else {
                 cartridge = ResourceLoader.read(cartridgeResource);
             }
-            byte[] font = ResourceLoader.read("/w4font.bin");
-            boolean fastPathsEnabled =
-                    !"true".equals(midlet.getAppProperty("W4ME-Disable-Fast-Paths"));
-            boolean extendedFusionsEnabled =
-                    !"true".equals(midlet.getAppProperty("W4ME-Disable-Extended-Fusions"));
-            boolean compactExecutorEnabled =
+            final byte[] font = ResourceLoader.read("/w4font.bin");
+            final boolean fastPathsEnabled = !"true".equals(midlet.getAppProperty("W4ME-Disable-Fast-Paths"));
+            boolean extendedFusionsEnabled = !"true".equals(midlet.getAppProperty("W4ME-Disable-Extended-Fusions"));
+            final boolean compactExecutorEnabled =
                     !"true".equals(midlet.getAppProperty("W4ME-Disable-Compact-Executor"));
-            boolean traceExecutorEnabled =
-                    !"true".equals(midlet.getAppProperty("W4ME-Disable-Trace-Executor"));
-            boolean directNumericIntrinsicsEnabled =
-                    !"true".equals(
-                            midlet.getAppProperty("W4ME-Disable-Direct-Numeric-Intrinsics"));
-            W4IrStore w4irStore =
-                    extendedFusionsEnabled ? W4IrStores.create(cartridge) : null;
+            final boolean traceExecutorEnabled = !"true".equals(midlet.getAppProperty("W4ME-Disable-Trace-Executor"));
+            final boolean directNumericIntrinsicsEnabled =
+                    !"true".equals(midlet.getAppProperty("W4ME-Disable-Direct-Numeric-Intrinsics"));
+            W4IrStore w4irStore = extendedFusionsEnabled ? W4IrStores.create(cartridge) : null;
             if (isExternalCartridge() && monitor != null) {
                 monitor.onInstallState("TRANSLATING", 0, 0, 0, 0);
             }
-            WasmModule module =
-                    WasmModule.read(cartridge, w4irStore, extendedFusionsEnabled);
+            WasmModule module = WasmModule.read(cartridge, w4irStore, extendedFusionsEnabled);
             activeModule = module;
             if (isExternalCartridge()) {
                 status = "Committing " + cartridgeTitle + "...";
                 repaint();
-                CartridgeStore.CartridgeInfo installed =
-                        installStore.commitStaged(stagedRecordId);
+                final CartridgeStore.CartridgeInfo installed = installStore.commitStaged(stagedRecordId);
                 stagedRecordId = 0;
                 installStore.close();
                 installStore = null;
                 if (monitor != null) {
                     monitor.onInstallState(
-                            "COMMITTED",
-                            installed.recordId,
-                            installed.length,
-                            installed.chunks,
-                            installed.hash);
+                            "COMMITTED", installed.recordId, installed.length, installed.chunks, installed.hash);
                 }
             }
             if (monitor != null) {
@@ -246,13 +224,9 @@ final class W4Canvas extends GameCanvas implements Runnable {
                         traceExecutorEnabled,
                         directNumericIntrinsicsEnabled);
             }
-            audio =
-                    new Wasm4Apu(
-                            AudioBackends.create(midlet.audioBackendPreference()));
+            audio = new Wasm4Apu(AudioBackends.create(midlet.audioBackendPreference()));
             midlet.configureAudio(audio);
-            audio.setDiagnostic(
-                    midlet.audioDiagnosticsEnabled()
-                            || (monitor != null && monitor.audioDiagnostics()));
+            audio.setDiagnostic(midlet.audioDiagnosticsEnabled() || (monitor != null && monitor.audioDiagnostics()));
             int cartridgeIdentity = DiskBackends.cartridgeIdentity(cartridge);
             DiskBackend disk = DiskBackends.create(cartridgeIdentity);
             Wasm4Runtime runtime = new Wasm4Runtime(font, audio, disk);
@@ -262,19 +236,11 @@ final class W4Canvas extends GameCanvas implements Runnable {
             interpreter.setFastPathsEnabled(fastPathsEnabled);
             interpreter.setCompactExecutorEnabled(compactExecutorEnabled);
             interpreter.setTraceExecutorEnabled(traceExecutorEnabled);
-            interpreter.setDirectNumericIntrinsicsEnabled(
-                    directNumericIntrinsicsEnabled);
+            interpreter.setDirectNumericIntrinsicsEnabled(directNumericIntrinsicsEnabled);
             interpreter.setInstructionLimit(150000000L);
             interpreter.invokeCartridgeLifecycle();
             status = null;
-            session =
-                    new Session(
-                            runtime,
-                            module,
-                            interpreter,
-                            audio,
-                            cartridgeIdentity,
-                            cartridge.length);
+            session = new Session(runtime, module, interpreter, audio, cartridgeIdentity, cartridge.length);
             activeSession = session;
             outcome = runFrames(session);
             return outcome;
@@ -297,7 +263,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
                     activeModule.close();
                 }
             }
-            if (activeSession == session) {
+            if (activeSession == session) { // NOPMD -- Intentional identity-token comparison.
                 activeSession = null;
             }
             if (session != null && monitor != null) {
@@ -327,8 +293,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
         int windowPresentedFrames = 0;
         boolean menuSuspendedAudio = false;
         while (running && !menuState.stopped) {
-            if (menuState.state == SystemMenuState.MENU_REQUESTED
-                    && menuState.acceptMenuAtFrameBoundary()) {
+            if (menuState.state == SystemMenuState.MENU_REQUESTED && menuState.acceptMenuAtFrameBoundary()) {
                 clearInput();
                 session.audio.suspendOutput();
                 menuSuspendedAudio = true;
@@ -342,36 +307,26 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 break;
             }
             int requested = menuState.state;
-            if (requested == SystemMenuState.RESTART_REQUESTED
-                    || requested == SystemMenuState.LEAVE_REQUESTED) {
+            if (requested == SystemMenuState.RESTART_REQUESTED || requested == SystemMenuState.LEAVE_REQUESTED) {
                 saveState.clear();
                 return requested;
             }
             boolean renderAfterMenuAction = false;
             if (requested == SystemMenuState.SAVE_REQUESTED) {
-                boolean saved =
-                        saveState.save(
-                                session.cartridgeIdentity,
-                                session.cartridgeLength,
-                                session.module,
-                                session.runtime);
+                boolean saved = saveState.save(
+                        session.cartridgeIdentity, session.cartridgeLength, session.module, session.runtime);
                 if (saved) {
                     showNotification("State saved");
                 } else {
                     showNotification("State save failed");
                 }
-                reportSaveState(
-                        "save", saved ? "saved" : "failed", session.module);
+                reportSaveState("save", saved ? "saved" : "failed", session.module);
                 menuState.completeSaveStateAction();
                 renderAfterMenuAction = true;
             } else if (requested == SystemMenuState.LOAD_REQUESTED) {
                 reportSaveState("load", "before", session.module);
-                int loaded =
-                        saveState.load(
-                                session.cartridgeIdentity,
-                                session.cartridgeLength,
-                                session.module,
-                                session.runtime);
+                int loaded = saveState.load(
+                        session.cartridgeIdentity, session.cartridgeLength, session.module, session.runtime);
                 if (loaded == SingleSaveState.LOAD_OK) {
                     showNotification("State loaded");
                     reportSaveState("load", "loaded", session.module);
@@ -394,7 +349,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 renderFrame(session.runtime, session.module, false);
             }
 
-            long startedAt = System.currentTimeMillis();
+            final long startedAt = System.currentTimeMillis();
             sampleInput();
             int gamepad = frameGamepad1;
             int gamepad2 = frameGamepad2;
@@ -403,12 +358,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 gamepad2 = monitor.gamepad2(frameNumber, gamepad2);
             }
             session.runtime.beginFrame(
-                    session.module,
-                    gamepad,
-                    gamepad2,
-                    framePointerX,
-                    framePointerY,
-                    framePointerButtons);
+                    session.module, gamepad, gamepad2, framePointerX, framePointerY, framePointerButtons);
             if (monitor != null) {
                 monitor.onInput(
                         frameNumber,
@@ -423,8 +373,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
             session.runtime.endFrame();
             long updatedAt = System.currentTimeMillis();
             boolean presented =
-                    (monitor != null && monitor.renderEveryFrame())
-                            || frameNumber % presentationDivisor == 0;
+                    (monitor != null && monitor.renderEveryFrame()) || frameNumber % presentationDivisor == 0;
             if (presented) {
                 renderFrame(session.runtime, session.module, false);
                 windowPresentedFrames++;
@@ -432,24 +381,19 @@ final class W4Canvas extends GameCanvas implements Runnable {
             long finishedAt = System.currentTimeMillis();
             long updateElapsed = updatedAt - startedAt;
             long renderElapsed = finishedAt - updatedAt;
-            long elapsed = finishedAt - startedAt;
+            final long elapsed = finishedAt - startedAt;
             windowUpdateMillis += updateElapsed;
             windowRenderMillis += renderElapsed;
-            if ((monitor == null || !monitor.renderEveryFrame())
-                    && frameNumber % 30 == 29) {
-                presentationDivisor =
-                        adaptPresentationDivisor(
-                                presentationDivisor,
-                                windowUpdateMillis / 30,
-                                windowPresentedFrames == 0
-                                        ? 0
-                                        : windowRenderMillis / windowPresentedFrames);
+            if ((monitor == null || !monitor.renderEveryFrame()) && frameNumber % 30 == 29) {
+                presentationDivisor = adaptPresentationDivisor(
+                        presentationDivisor,
+                        windowUpdateMillis / 30,
+                        windowPresentedFrames == 0 ? 0 : windowRenderMillis / windowPresentedFrames);
                 windowUpdateMillis = 0;
                 windowRenderMillis = 0;
                 windowPresentedFrames = 0;
             }
-            if (monitor != null
-                    && monitor.resetPresentationAfterFrame(frameNumber)) {
+            if (monitor != null && monitor.resetPresentationAfterFrame(frameNumber)) {
                 windowUpdateMillis = 0;
                 windowRenderMillis = 0;
                 presentationDivisor = 1;
@@ -504,8 +448,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
         return 4;
     }
 
-    private int adaptPresentationDivisor(
-            int currentDivisor, long updateMillis, long renderMillis) {
+    private int adaptPresentationDivisor(int currentDivisor, long updateMillis, long renderMillis) {
         int candidate = choosePresentationDivisor(updateMillis, renderMillis);
         if (candidate >= currentDivisor) {
             return candidate;
@@ -574,13 +517,17 @@ final class W4Canvas extends GameCanvas implements Runnable {
         return menuState.isMenuOpen();
     }
 
-    private void showNotification(String message) {
+    private synchronized void showNotification(String message) {
         notification = message;
         notificationFrames = 90;
     }
 
-    private void reportSaveState(
-            String operation, String outcome, WasmModule module) {
+    private synchronized void clearNotification() {
+        notification = null;
+        notificationFrames = 0;
+    }
+
+    private void reportSaveState(String operation, String outcome, WasmModule module) {
         if (monitor != null) {
             monitor.onSaveState(operation, outcome, module);
         }
@@ -588,9 +535,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
 
     int audioVolumeCapability() {
         Session session = activeSession;
-        return session == null
-                ? w4me.runtime.audio.AudioControl.VOLUME_CONTINUOUS
-                : session.audio.volumeCapability();
+        return session == null ? w4me.runtime.audio.AudioControl.VOLUME_CONTINUOUS : session.audio.volumeCapability();
     }
 
     String activeAudioProfileName() {
@@ -604,11 +549,9 @@ final class W4Canvas extends GameCanvas implements Runnable {
     }
 
     /**
-     * MIDP never promises that a {@code keyPressed} is followed by a matching
-     * {@code keyReleased} when the canvas stops being shown, so a button held
-     * while the settings form or the library takes over would stay held forever.
-     * The MIDP reference implementation clears its own key masks on show for the
-     * same reason.
+     * MIDP never promises that a {@code keyPressed} is followed by a matching {@code keyReleased} when the canvas stops
+     * being shown, so a button held while the settings form or the library takes over would stay held forever. The MIDP
+     * reference implementation clears its own key masks on show for the same reason.
      */
     protected void hideNotify() {
         clearInput();
@@ -745,15 +688,12 @@ final class W4Canvas extends GameCanvas implements Runnable {
     }
 
     /**
-     * Samples every input source exactly once for the frame that is about to run.
-     * {@code getKeyStates()} clears its own latch when read, so it must be called
-     * here and nowhere else.
+     * Samples every input source exactly once for the frame that is about to run. {@code getKeyStates()} clears its own
+     * latch when read, so it must be called here and nowhere else.
      */
     private void sampleInput() {
         int keyState = getKeyStates();
-        boolean suppress =
-                menuState.suppressNextGameInput
-                        && menuState.consumeInputSuppression();
+        boolean suppress = menuState.suppressNextGameInput && menuState.consumeInputSuppression();
         if (suppress) {
             keyState = 0;
         }
@@ -784,12 +724,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 pointerButtons = 0;
                 pendingPointerButtons = 0;
             }
-            frameGamepad1 =
-                    keys
-                            | extraButtons
-                            | pendingExtraButtons
-                            | touchButtons
-                            | pendingTouchButtons;
+            frameGamepad1 = keys | extraButtons | pendingExtraButtons | touchButtons | pendingTouchButtons;
             frameGamepad2 = extraGamepad2 | pendingExtraGamepad2;
             framePointerButtons = pointerButtons | pendingPointerButtons;
             if (pendingPointerButtons != 0) {
@@ -860,8 +795,8 @@ final class W4Canvas extends GameCanvas implements Runnable {
     }
 
     /**
-     * MIDP 2.0 delivers a single pointer, so at most one on-screen cell can be
-     * held at a time. Hardware keys remain the multi-button path.
+     * MIDP 2.0 delivers a single pointer, so at most one on-screen cell can be held at a time. Hardware keys remain the
+     * multi-button path.
      */
     private int touchButtonAt(int x, int y) {
         int width = getWidth();
@@ -903,8 +838,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
         return height > 0 ? height : 1;
     }
 
-    private void renderFrame(
-            Wasm4Runtime runtime, WasmModule module, boolean pausedOverlay) {
+    private void renderFrame(Wasm4Runtime runtime, WasmModule module, boolean pausedOverlay) {
         int width = getWidth();
         int height = getHeight();
         int gameHeight = gameAreaHeight();
@@ -913,34 +847,21 @@ final class W4Canvas extends GameCanvas implements Runnable {
         int top = (gameHeight - side) / 2;
         if (side != renderSide) {
             if (monitor != null) {
-                int controlHeight =
-                        hasPointerEvents() ? touchControlHeight() : 0;
-                monitor.onLayout(
-                        width,
-                        height,
-                        left,
-                        top,
-                        side,
-                        height - controlHeight,
-                        controlHeight);
+                int controlHeight = hasPointerEvents() ? touchControlHeight() : 0;
+                monitor.onLayout(width, height, left, top, side, height - controlHeight, controlHeight);
             }
             renderSide = side;
             if (side == Wasm4Runtime.WIDTH) {
-                xMap = null;
-                yMap = null;
+                horizontalMap = null;
+                verticalMap = null;
             } else {
-                xMap = new int[side];
-                yMap = new int[side];
+                horizontalMap = new int[side];
+                verticalMap = new int[side];
                 int index;
                 for (index = 0; index < side; index++) {
-                    int source =
-                            index * Wasm4Runtime.WIDTH / side;
-                    xMap[index] =
-                            (source >> 2)
-                                    | ((source & 3) << 8);
-                    yMap[index] =
-                            source
-                                    * (Wasm4Runtime.WIDTH >> 2);
+                    int source = index * Wasm4Runtime.WIDTH / side;
+                    horizontalMap[index] = (source >> 2) | ((source & 3) << 8);
+                    verticalMap[index] = source * (Wasm4Runtime.WIDTH >> 2);
                 }
             }
             int fullPixels = side * side;
@@ -976,46 +897,15 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 rowCount = rowsPerBand;
             }
             if (side == Wasm4Runtime.WIDTH) {
-                runtime.copyNativeArgbBand(
-                        module,
-                        bandPixels,
-                        firstRow,
-                        rowCount);
+                runtime.copyNativeArgbBand(module, bandPixels, firstRow, rowCount);
             } else if (side == 240) {
-                runtime.copyArgb240Band(
-                        module,
-                        bandPixels,
-                        yMap,
-                        firstRow,
-                        rowCount);
+                runtime.copyArgb240Band(module, bandPixels, verticalMap, firstRow, rowCount);
             } else if (side > Wasm4Runtime.WIDTH) {
-                runtime.copyUpscaledArgbBand(
-                        module,
-                        bandPixels,
-                        side,
-                        xMap,
-                        yMap,
-                        firstRow,
-                        rowCount);
+                runtime.copyUpscaledArgbBand(module, bandPixels, side, horizontalMap, verticalMap, firstRow, rowCount);
             } else {
-                runtime.copyArgbBand(
-                        module,
-                        bandPixels,
-                        side,
-                        xMap,
-                        yMap,
-                        firstRow,
-                        rowCount);
+                runtime.copyArgbBand(module, bandPixels, side, horizontalMap, verticalMap, firstRow, rowCount);
             }
-            graphics.drawRGB(
-                    bandPixels,
-                    0,
-                    side,
-                    left,
-                    top + firstRow,
-                    side,
-                    rowCount,
-                    false);
+            graphics.drawRGB(bandPixels, 0, side, left, top + firstRow, side, rowCount, false);
         }
         drawTouchControls(graphics);
         if (pausedOverlay) {
@@ -1049,26 +939,26 @@ final class W4Canvas extends GameCanvas implements Runnable {
         graphics.setColor(0x86c06c);
         graphics.drawRect(panelLeft, panelTop, panelWidth - 1, panelHeight - 1);
         graphics.setColor(0xe0f8cf);
-        graphics.drawString(
-                "Paused",
-                panelLeft + panelWidth / 2,
-                panelTop + 6,
-                Graphics.HCENTER | Graphics.TOP);
+        graphics.drawString("Paused", panelLeft + panelWidth / 2, panelTop + 6, Graphics.HCENTER | Graphics.TOP);
     }
 
     private void drawNotification(Graphics graphics) {
-        if (notification == null || notificationFrames <= 0) {
-            return;
+        String message;
+        synchronized (this) {
+            if (notification == null || notificationFrames <= 0) {
+                return;
+            }
+            message = notification;
+            notificationFrames--;
+            if (notificationFrames == 0) {
+                notification = null;
+            }
         }
-        int labelWidth = graphics.getFont().stringWidth(notification);
+        int labelWidth = graphics.getFont().stringWidth(message);
         graphics.setColor(0x071821);
         graphics.fillRect(2, 2, labelWidth + 6, graphics.getFont().getHeight() + 4);
         graphics.setColor(0xe0f8cf);
-        graphics.drawString(notification, 5, 4, Graphics.LEFT | Graphics.TOP);
-        notificationFrames--;
-        if (notificationFrames == 0) {
-            notification = null;
-        }
+        graphics.drawString(message, 5, 4, Graphics.LEFT | Graphics.TOP);
     }
 
     private void drawTouchControls(Graphics graphics) {
@@ -1081,53 +971,23 @@ final class W4Canvas extends GameCanvas implements Runnable {
         int top = height - controlHeight;
         int leftHalf = width / 2;
         int third = leftHalf / 3;
-        int middleWidth = leftHalf - third * 2;
+        final int middleWidth = leftHalf - third * 2;
         int rightHalf = width - leftHalf;
-        int buttonWidth = rightHalf / 2;
-        int halfHeight = controlHeight / 2;
+        final int buttonWidth = rightHalf / 2;
+        final int halfHeight = controlHeight / 2;
 
         graphics.setColor(0x071821);
         graphics.fillRect(0, top, width, controlHeight);
+        drawTouchCell(graphics, 0, top, third, controlHeight, "<", BUTTON_LEFT);
+        drawTouchCell(graphics, third, top, middleWidth, halfHeight, "^", BUTTON_UP);
+        drawTouchCell(graphics, third, top + halfHeight, middleWidth, controlHeight - halfHeight, "v", BUTTON_DOWN);
+        drawTouchCell(graphics, third + middleWidth, top, third, controlHeight, ">", BUTTON_RIGHT);
+        drawTouchCell(graphics, leftHalf, top, buttonWidth, controlHeight, "B", BUTTON_2);
         drawTouchCell(
-                graphics, 0, top, third, controlHeight, "<", BUTTON_LEFT);
-        drawTouchCell(
-                graphics, third, top, middleWidth, halfHeight, "^", BUTTON_UP);
-        drawTouchCell(
-                graphics,
-                third,
-                top + halfHeight,
-                middleWidth,
-                controlHeight - halfHeight,
-                "v",
-                BUTTON_DOWN);
-        drawTouchCell(
-                graphics,
-                third + middleWidth,
-                top,
-                third,
-                controlHeight,
-                ">",
-                BUTTON_RIGHT);
-        drawTouchCell(
-                graphics, leftHalf, top, buttonWidth, controlHeight, "B", BUTTON_2);
-        drawTouchCell(
-                graphics,
-                leftHalf + buttonWidth,
-                top,
-                width - leftHalf - buttonWidth,
-                controlHeight,
-                "A",
-                BUTTON_1);
+                graphics, leftHalf + buttonWidth, top, width - leftHalf - buttonWidth, controlHeight, "A", BUTTON_1);
     }
 
-    private void drawTouchCell(
-            Graphics graphics,
-            int x,
-            int y,
-            int width,
-            int height,
-            String label,
-            int button) {
+    private void drawTouchCell(Graphics graphics, int x, int y, int width, int height, String label, int button) {
         if ((touchButtons & button) != 0) {
             graphics.setColor(0x306850);
             graphics.fillRect(x + 1, y + 1, width - 2, height - 2);
@@ -1192,5 +1052,4 @@ final class W4Canvas extends GameCanvas implements Runnable {
             module.close();
         }
     }
-
 }

@@ -1,7 +1,8 @@
 package w4me.midp;
 
-public final class GenericW4IrBaselineBenchmarkMidlet
-        extends DiagnosticW4MeMidlet {
+/** Provides the generic W4IR baseline benchmark midlet implementation. */
+public final class GenericW4IrBaselineBenchmarkMidlet extends DiagnosticW4MeMidlet {
+    /** Returns the app property. */
     public String getAppProperty(String name) {
         if ("W4ME-Cartridge-URL".equals(name)) {
             return "/cartridges/plasma-cube.wasm";

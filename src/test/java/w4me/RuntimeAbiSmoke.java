@@ -3,7 +3,6 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.SilentAudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
@@ -11,15 +10,16 @@ import w4me.runtime.storage.MemoryDiskBackend;
 import w4me.wasm.WasmModule;
 import w4me.wasm.WasmTrap;
 
+/** Provides the runtime abi smoke implementation. */
 public final class RuntimeAbiSmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin cartridge.wasm");
         }
         WasmModule module = WasmModule.read(readFile(arguments[1]));
         MemoryDiskBackend disk = new MemoryDiskBackend();
-        Wasm4Runtime runtime = new Wasm4Runtime(
-                readFile(arguments[0]), new Wasm4Apu(new SilentAudioBackend()), disk);
+        Wasm4Runtime runtime = new Wasm4Runtime(readFile(arguments[0]), new Wasm4Apu(new SilentAudioBackend()), disk);
         runtime.initialize(module);
         byte[] memory = module.memory();
         runtime.beginFrame(module, 0x41, 0x82, 123, 45, 1);
@@ -49,16 +49,12 @@ public final class RuntimeAbiSmoke {
         }
         assertEquals("replacement read", 17, invoke(runtime, module, "diskr", pointer, 1024));
         for (index = 0; index < 17; index++) {
-            assertEquals(
-                    "replacement byte " + index,
-                    (byte) (255 - index),
-                    memory[pointer + index]);
+            assertEquals("replacement byte " + index, (byte) (255 - index), memory[pointer + index]);
         }
         verifyTracef(runtime, module);
         verifyHostGeometryBudget(runtime, module);
         runtime.close();
-        System.out.println(
-                "PASS runtime gamepads=2 disk ABI cap=1024 replacement=17 tracef=exact host-budget=PASS");
+        System.out.println("PASS runtime gamepads=2 disk ABI cap=1024 replacement=17 tracef=exact host-budget=PASS");
     }
 
     private static void verifyHostGeometryBudget(Wasm4Runtime runtime, WasmModule module) {
@@ -74,28 +70,12 @@ public final class RuntimeAbiSmoke {
                 "oval",
                 new long[] {0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE},
                 "oval geometry exceeds runtime limit");
-        runtime.invoke(
-                "env",
-                "hline",
-                new long[] {Integer.MAX_VALUE, 80, Integer.MAX_VALUE},
-                0,
-                3,
-                module);
-        runtime.invoke(
-                "env",
-                "blit",
-                new long[] {30000, Integer.MIN_VALUE, 0, 1, 1, 0},
-                0,
-                6,
-                module);
+        runtime.invoke("env", "hline", new long[] {Integer.MAX_VALUE, 80, Integer.MAX_VALUE}, 0, 3, module);
+        runtime.invoke("env", "blit", new long[] {30000, Integer.MIN_VALUE, 0, 1, 1, 0}, 0, 6, module);
     }
 
     private static void expectTrap(
-            Wasm4Runtime runtime,
-            WasmModule module,
-            String name,
-            long[] arguments,
-            String message) {
+            Wasm4Runtime runtime, WasmModule module, String name, long[] arguments, String message) {
         try {
             runtime.invoke("env", name, arguments, 0, arguments.length, module);
             throw new AssertionError(name + " accepted unbounded geometry");
@@ -115,18 +95,12 @@ public final class RuntimeAbiSmoke {
         writeAscii(memory, stringPointer, "hello");
         writeI32(memory, argumentPointer, 'A');
         writeI32(memory, argumentPointer + 4, -42);
-        writeI64(
-                memory,
-                argumentPointer + 8,
-                Double.doubleToLongBits(1.5));
+        writeI64(memory, argumentPointer + 8, Double.doubleToLongBits(1.5));
         writeI32(memory, argumentPointer + 16, stringPointer);
         writeI32(memory, argumentPointer + 20, 0x89abcdef);
         long[] traceArguments = {formatPointer, argumentPointer};
         runtime.invoke("env", "tracef", traceArguments, 0, 2, module);
-        assertEquals(
-                "tracef output",
-                "char=A dec=-42 float=1.5 str=hello hex=89abcdef % %q",
-                runtime.lastTrace());
+        assertEquals("tracef output", "char=A dec=-42 float=1.5 str=hello hex=89abcdef % %q", runtime.lastTrace());
 
         memory[memory.length - 1] = '%';
         long[] invalidArguments = {memory.length - 1, argumentPointer};
@@ -140,8 +114,7 @@ public final class RuntimeAbiSmoke {
         }
     }
 
-    private static int invoke(
-            Wasm4Runtime runtime, WasmModule module, String name, int pointer, int size) {
+    private static int invoke(Wasm4Runtime runtime, WasmModule module, String name, int pointer, int size) {
         long[] values = {pointer, size};
         return (int) runtime.invoke("env", name, values, 0, 2, module);
     }

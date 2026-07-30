@@ -3,79 +3,36 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the runtime benchmark implementation. */
 public final class RuntimeBenchmark {
     private static final int WARMUP_FRAMES = 5;
     private static final int SAMPLE_FRAMES = 30;
     private static final int RENDER_SAMPLES = 200;
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 4) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin mandelbrot.wasm duck-maze.wasm plasma-cube.wasm");
+            throw new IllegalArgumentException("usage: font.bin mandelbrot.wasm duck-maze.wasm plasma-cube.wasm");
         }
         byte[] font = readFile(arguments[0]);
         byte[] mandelbrot = readFile(arguments[1]);
         benchmarkMandelbrotFirstUpdate(font, mandelbrot);
-        benchmark(
-                "mandelbrot-steady-state", font, mandelbrot,
-                true, true, true, true, true, false);
-        benchmark(
-                "duck-maze-gameplay", font, readFile(arguments[2]),
-                true, true, true, true, true, true);
+        benchmark("mandelbrot-steady-state", font, mandelbrot, true, true, true, true, true, false);
+        benchmark("duck-maze-gameplay", font, readFile(arguments[2]), true, true, true, true, true, true);
         byte[] plasma = readFile(arguments[3]);
         benchmark("plasma-cube", font, plasma, true, true, true, true, true, false);
-        benchmark(
-                "plasma-cube-generic", font, plasma,
-                false, true, true, true, true, false);
-        benchmark(
-                "plasma-cube-generic-direct-intrinsics-off",
-                font,
-                plasma,
-                false,
-                true,
-                true,
-                true,
-                false,
-                false);
-        benchmark(
-                "plasma-cube-generic-trace-off",
-                font,
-                plasma,
-                false,
-                true,
-                true,
-                false,
-                true,
-                false);
-        benchmark(
-                "plasma-cube-generic-fusion-only",
-                font,
-                plasma,
-                false,
-                true,
-                false,
-                true,
-                true,
-                false);
-        benchmark(
-                "plasma-cube-generic-baseline",
-                font,
-                plasma,
-                false,
-                false,
-                false,
-                true,
-                false,
-                false);
+        benchmark("plasma-cube-generic", font, plasma, false, true, true, true, true, false);
+        benchmark("plasma-cube-generic-direct-intrinsics-off", font, plasma, false, true, true, true, false, false);
+        benchmark("plasma-cube-generic-trace-off", font, plasma, false, true, true, false, true, false);
+        benchmark("plasma-cube-generic-fusion-only", font, plasma, false, true, false, true, true, false);
+        benchmark("plasma-cube-generic-baseline", font, plasma, false, false, false, true, false, false);
     }
 
-    private static void benchmarkMandelbrotFirstUpdate(
-            byte[] font, byte[] cartridge) throws Exception {
+    private static void benchmarkMandelbrotFirstUpdate(byte[] font, byte[] cartridge) throws Exception {
         long parseStarted = System.nanoTime();
         WasmModule module = WasmModule.read(cartridge);
         long parseNanos = System.nanoTime() - parseStarted;
@@ -88,28 +45,27 @@ public final class RuntimeBenchmark {
             long updateStarted = System.nanoTime();
             update(module, runtime, interpreter, 0);
             long updateNanos = System.nanoTime() - updateStarted;
-            System.out.println(
-                    "BENCH cart=mandelbrot-first-update"
-                            + " parse-us="
-                            + nanosToMicros(parseNanos)
-                            + " update-us="
-                            + nanosToMicros(updateNanos)
-                            + " instructions="
-                            + interpreter.instructionsExecuted()
-                            + " dispatches="
-                            + interpreter.dispatchesExecuted()
-                            + " fast-paths="
-                            + interpreter.fastPathCalls()
-                            + " compact-blocks="
-                            + interpreter.compactBlockCalls()
-                            + " compact-instructions="
-                            + interpreter.compactInstructionsExecuted()
-                            + " trace-loops="
-                            + interpreter.traceLoopCalls()
-                            + " trace-iterations="
-                            + interpreter.traceLoopIterations()
-                            + " framebuffer-fnv1a="
-                            + Integer.toHexString(FramebufferOracle.fnv1a(module)));
+            System.out.println("BENCH cart=mandelbrot-first-update"
+                    + " parse-us="
+                    + nanosToMicros(parseNanos)
+                    + " update-us="
+                    + nanosToMicros(updateNanos)
+                    + " instructions="
+                    + interpreter.instructionsExecuted()
+                    + " dispatches="
+                    + interpreter.dispatchesExecuted()
+                    + " fast-paths="
+                    + interpreter.fastPathCalls()
+                    + " compact-blocks="
+                    + interpreter.compactBlockCalls()
+                    + " compact-instructions="
+                    + interpreter.compactInstructionsExecuted()
+                    + " trace-loops="
+                    + interpreter.traceLoopCalls()
+                    + " trace-iterations="
+                    + interpreter.traceLoopIterations()
+                    + " framebuffer-fnv1a="
+                    + Integer.toHexString(FramebufferOracle.fnv1a(module)));
         } finally {
             runtime.close();
             module.close();
@@ -129,7 +85,7 @@ public final class RuntimeBenchmark {
             throws Exception {
         long parseStarted = System.nanoTime();
         WasmModule module = WasmModule.read(cartridge, null, extendedFusionsEnabled);
-        long parseNanos = System.nanoTime() - parseStarted;
+        final long parseNanos = System.nanoTime() - parseStarted;
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
         WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
@@ -197,35 +153,34 @@ public final class RuntimeBenchmark {
         interpreter.setProfilingEnabled(true);
         update(module, runtime, interpreter, gamepad);
 
-        System.out.println(
-                "BENCH cart="
-                        + name
-                        + " parse-us="
-                        + nanosToMicros(parseNanos)
-                        + " update-avg-us="
-                        + nanosToMicros(totalNanos / SAMPLE_FRAMES)
-                        + " update-min-us="
-                        + nanosToMicros(minimumNanos)
-                        + " update-max-us="
-                        + nanosToMicros(maximumNanos)
-                        + " instructions-avg="
-                        + instructions / SAMPLE_FRAMES
-                        + " dispatches-avg="
-                        + dispatches / SAMPLE_FRAMES
-                        + " fast-paths-avg="
-                        + fastPaths / SAMPLE_FRAMES
-                        + " compact-blocks-avg="
-                        + compactBlocks / SAMPLE_FRAMES
-                        + " compact-instructions-avg="
-                        + compactInstructions / SAMPLE_FRAMES
-                        + " trace-loops-avg="
-                        + traceLoops / SAMPLE_FRAMES
-                        + " trace-iterations-avg="
-                        + traceIterations / SAMPLE_FRAMES
-                        + " vm-mips="
-                        + mips(instructions, totalNanos)
-                        + " unpack-avg-us="
-                        + nanosToMicros(renderNanos / RENDER_SAMPLES));
+        System.out.println("BENCH cart="
+                + name
+                + " parse-us="
+                + nanosToMicros(parseNanos)
+                + " update-avg-us="
+                + nanosToMicros(totalNanos / SAMPLE_FRAMES)
+                + " update-min-us="
+                + nanosToMicros(minimumNanos)
+                + " update-max-us="
+                + nanosToMicros(maximumNanos)
+                + " instructions-avg="
+                + instructions / SAMPLE_FRAMES
+                + " dispatches-avg="
+                + dispatches / SAMPLE_FRAMES
+                + " fast-paths-avg="
+                + fastPaths / SAMPLE_FRAMES
+                + " compact-blocks-avg="
+                + compactBlocks / SAMPLE_FRAMES
+                + " compact-instructions-avg="
+                + compactInstructions / SAMPLE_FRAMES
+                + " trace-loops-avg="
+                + traceLoops / SAMPLE_FRAMES
+                + " trace-iterations-avg="
+                + traceIterations / SAMPLE_FRAMES
+                + " vm-mips="
+                + mips(instructions, totalNanos)
+                + " unpack-avg-us="
+                + nanosToMicros(renderNanos / RENDER_SAMPLES));
         printHotOpcodes(interpreter);
         printHotW4IrOpcodes(interpreter);
         printHotOpcodePairs(interpreter);
@@ -236,22 +191,16 @@ public final class RuntimeBenchmark {
     }
 
     private static void updates(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad,
-            int count) throws Exception {
+            WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad, int count)
+            throws Exception {
         int index;
         for (index = 0; index < count; index++) {
             update(module, runtime, interpreter, gamepad);
         }
     }
 
-    private static void update(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad) throws Exception {
+    private static void update(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad)
+            throws Exception {
         runtime.beginFrame(module, gamepad, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();
@@ -369,8 +318,7 @@ public final class RuntimeBenchmark {
                         continue;
                     }
                     long count = interpreter.w4irOpcodePairCount(first, second);
-                    if (count > bestCount
-                            && !containsPair(emittedFirst, emittedSecond, rank, first, second)) {
+                    if (count > bestCount && !containsPair(emittedFirst, emittedSecond, rank, first, second)) {
                         bestFirst = first;
                         bestSecond = second;
                         bestCount = count;
@@ -394,8 +342,7 @@ public final class RuntimeBenchmark {
         System.out.println(output.toString());
     }
 
-    private static boolean containsPair(
-            int[] firstValues, int[] secondValues, int count, int first, int second) {
+    private static boolean containsPair(int[] firstValues, int[] secondValues, int count, int first, int second) {
         int index;
         for (index = 0; index < count; index++) {
             if (firstValues[index] == first && secondValues[index] == second) {
@@ -434,8 +381,7 @@ public final class RuntimeBenchmark {
         System.out.println(output.toString());
     }
 
-    private static void printHotFunctionDispatches(
-            WasmModule module, WasmInterpreter interpreter) {
+    private static void printHotFunctionDispatches(WasmModule module, WasmInterpreter interpreter) {
         StringBuffer output = new StringBuffer("PROFILE function-dispatches=");
         int rank;
         boolean[] emitted = new boolean[module.functionCount()];

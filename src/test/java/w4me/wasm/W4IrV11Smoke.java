@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
+/** Provides the W4IR v 11 smoke implementation. */
 public final class W4IrV11Smoke {
     private static final int[] OPTIMIZED_OPCODES = {
         WasmModule.W4IR_LOCAL_TRIPLE_F32_STORE,
@@ -15,6 +16,7 @@ public final class W4IrV11Smoke {
         WasmModule.W4IR_COUNTED_F32_TRACE
     };
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 1) {
             throw new IllegalArgumentException("usage: plasma.wasm");
@@ -27,8 +29,7 @@ public final class W4IrV11Smoke {
             counts[index] = countOpcode(optimized, OPTIMIZED_OPCODES[index]);
             if (counts[index] == 0) {
                 throw new AssertionError(
-                        "missing W4IR optimized opcode 0x"
-                                + Integer.toHexString(OPTIMIZED_OPCODES[index]));
+                        "missing W4IR optimized opcode 0x" + Integer.toHexString(OPTIMIZED_OPCODES[index]));
             }
         }
 
@@ -36,26 +37,24 @@ public final class W4IrV11Smoke {
         for (index = 0; index < OPTIMIZED_OPCODES.length; index++) {
             if (countOpcode(baseline, OPTIMIZED_OPCODES[index]) != 0) {
                 throw new AssertionError(
-                        "baseline contains optimized opcode 0x"
-                                + Integer.toHexString(OPTIMIZED_OPCODES[index]));
+                        "baseline contains optimized opcode 0x" + Integer.toHexString(OPTIMIZED_OPCODES[index]));
             }
         }
-        System.out.println(
-                "PASS W4IR-v11 v9="
-                        + counts[0]
-                        + ","
-                        + counts[1]
-                        + ","
-                        + counts[2]
-                        + " v10="
-                        + counts[3]
-                        + ","
-                        + counts[4]
-                        + ","
-                        + counts[5]
-                        + " v11="
-                        + counts[6]
-                        + " baseline=clean");
+        System.out.println("PASS W4IR-v11 v9="
+                + counts[0]
+                + ","
+                + counts[1]
+                + ","
+                + counts[2]
+                + " v10="
+                + counts[3]
+                + ","
+                + counts[4]
+                + ","
+                + counts[5]
+                + " v11="
+                + counts[6]
+                + " baseline=clean");
     }
 
     private static int countOpcode(WasmModule module, int expectedOpcode) {
@@ -68,8 +67,7 @@ public final class W4IrV11Smoke {
             }
             int pc;
             for (pc = 0; pc < body.instructionCount(); pc++) {
-                int opcode = WasmModule.originalOpcode(
-                        body.code[pc * WasmModule.W4IR_STRIDE] & 0xffff);
+                int opcode = WasmModule.originalOpcode(body.code[pc * WasmModule.W4IR_STRIDE] & 0xffff);
                 if (opcode == expectedOpcode) {
                     count++;
                 }

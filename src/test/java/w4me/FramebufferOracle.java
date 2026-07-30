@@ -7,6 +7,7 @@ import w4me.wasm.WasmModule;
 public final class FramebufferOracle {
     private FramebufferOracle() {}
 
+    /** Performs the FNV 1a operation. */
     public static int fnv1a(WasmModule module) {
         byte[] memory = module.memory();
         int hash = 0x811c9dc5;

@@ -8,13 +8,14 @@ public final class Wasm4Pcm {
 
     private Wasm4Pcm() {}
 
+    /** Performs the synthesize operation. */
     public static byte[] synthesize(int frequency, int duration, int volume, int flags) {
         int sustain = duration & 0xff;
         int release = (duration >>> 8) & 0xff;
         int decay = (duration >>> 16) & 0xff;
         int attack = (duration >>> 24) & 0xff;
-        int totalFrames = attack + decay + sustain + release;
-        int sustainVolume = clamp(volume & 0xff, 0, 100);
+        final int totalFrames = attack + decay + sustain + release;
+        final int sustainVolume = clamp(volume & 0xff, 0, 100);
         int peakVolume = (volume >>> 8) & 0xff;
         if (peakVolume == 0) {
             peakVolume = 100;
@@ -30,7 +31,7 @@ public final class Wasm4Pcm {
         boolean peakAudible = peakVolume > 0 && (attack > 0 || decay > 0);
         boolean sustainAudible = sustainVolume > 0 && (sustain > 0 || release > 0);
         if (totalFrames == 0 || startFrequency <= 0 || (!peakAudible && !sustainAudible)) {
-            return null;
+            return null; // NOPMD -- Null is the established no-result sentinel and avoids a CLDC heap allocation.
         }
 
         int pan = (flags >>> 4) & 3;
@@ -52,20 +53,9 @@ public final class Wasm4Pcm {
         } else {
             duty = 0.75;
         }
-        if (endFrequency == startFrequency
-                && attack == 0
-                && decay == 0
-                && release == 0) {
+        if (endFrequency == startFrequency && attack == 0 && decay == 0 && release == 0) {
             synthesizeConstantTone(
-                    wav,
-                    sampleCount,
-                    channels,
-                    pan,
-                    channel,
-                    duty,
-                    startFrequency,
-                    sustainVolume,
-                    frequency);
+                    wav, sampleCount, channels, pan, channel, duty, startFrequency, sustainVolume, frequency);
             applyEdgeRamp(wav, sampleCount, channels, true);
             return wav;
         }
@@ -78,18 +68,11 @@ public final class Wasm4Pcm {
             int elapsedFrame = sample * 60 / SAMPLE_RATE;
             if (elapsedFrame != lastElapsedFrame) {
                 currentVolume =
-                        envelopeVolume(
-                                elapsedFrame,
-                                attack,
-                                decay,
-                                sustain,
-                                release,
-                                sustainVolume,
-                                peakVolume);
+                        envelopeVolume(elapsedFrame, attack, decay, sustain, release, sustainVolume, peakVolume);
                 lastElapsedFrame = elapsedFrame;
             }
-            int currentFrequency = startFrequency
-                    + (int) ((long) (endFrequency - startFrequency) * sample / sampleCount);
+            int currentFrequency =
+                    startFrequency + (int) ((long) (endFrequency - startFrequency) * sample / sampleCount);
             double wave;
             phase += (double) currentFrequency / SAMPLE_RATE;
             if (channel == 3) {
@@ -124,15 +107,13 @@ public final class Wasm4Pcm {
     }
 
     /**
-     * Removes the discontinuity between unsigned 8-bit silence and a finite
-     * MMAPI WAV without extending the WASM-4 tone.
+     * Removes the discontinuity between unsigned 8-bit silence and a finite MMAPI WAV without extending the WASM-4
+     * tone.
      *
-     * <p>The one-millisecond ramps live inside the requested duration. A real
-     * attack already starts at silence, while every finite WAV must return to
-     * silence before its Player reaches end-of-media.
+     * <p>The one-millisecond ramps live inside the requested duration. A real attack already starts at silence, while
+     * every finite WAV must return to silence before its Player reaches end-of-media.
      */
-    private static void applyEdgeRamp(
-            byte[] wav, int sampleCount, int channels, boolean rampStart) {
+    private static void applyEdgeRamp(byte[] wav, int sampleCount, int channels, boolean rampStart) {
         int rampSamples = DECLICK_SAMPLES;
         if (rampSamples * 2 > sampleCount) {
             rampSamples = sampleCount / 2;
@@ -141,8 +122,7 @@ public final class Wasm4Pcm {
             int channel;
             for (channel = 0; channel < channels; channel++) {
                 wav[WAV_HEADER_SIZE + channel] = (byte) 128;
-                wav[WAV_HEADER_SIZE + (sampleCount - 1) * channels + channel] =
-                        (byte) 128;
+                wav[WAV_HEADER_SIZE + (sampleCount - 1) * channels + channel] = (byte) 128;
             }
             return;
         }
@@ -155,21 +135,11 @@ public final class Wasm4Pcm {
                 if (rampStart) {
                     int startOffset = WAV_HEADER_SIZE + sample * channels + channel;
                     int startValue = wav[startOffset] & 0xff;
-                    wav[startOffset] =
-                            (byte)
-                                    (128
-                                            + ((startValue - 128)
-                                                            * sample
-                                                    >> 3));
+                    wav[startOffset] = (byte) (128 + (((startValue - 128) * sample) >> 3));
                 }
                 int endOffset = WAV_HEADER_SIZE + endSample * channels + channel;
                 int endValue = wav[endOffset] & 0xff;
-                wav[endOffset] =
-                        (byte)
-                                (128
-                                        + ((endValue - 128)
-                                                        * (rampSamples - 1 - sample)
-                                                >> 3));
+                wav[endOffset] = (byte) (128 + (((endValue - 128) * (rampSamples - 1 - sample)) >> 3));
             }
         }
     }
@@ -185,12 +155,7 @@ public final class Wasm4Pcm {
             int currentVolume,
             int encodedFrequency) {
         if (channels == 1 && channel != 2 && channel != 3) {
-            synthesizeConstantPulseMono(
-                    wav,
-                    sampleCount,
-                    duty,
-                    currentFrequency,
-                    currentVolume);
+            synthesizeConstantPulseMono(wav, sampleCount, duty, currentFrequency, currentVolume);
             return;
         }
         double phase = 0.0;
@@ -215,16 +180,7 @@ public final class Wasm4Pcm {
                     wave = phase < duty ? 1.0 : -1.0;
                 }
             }
-            int pcm =
-                    clamp(
-                            128
-                                    + (int)
-                                            (wave
-                                                    * currentVolume
-                                                    * 127.0
-                                                    / 100.0),
-                            0,
-                            255);
+            int pcm = clamp(128 + (int) (wave * currentVolume * 127.0 / 100.0), 0, 255);
             int offset = WAV_HEADER_SIZE + sample * channels;
             if (pan == 1) {
                 wav[offset] = (byte) pcm;
@@ -239,34 +195,21 @@ public final class Wasm4Pcm {
     }
 
     private static void synthesizeConstantPulseMono(
-            byte[] wav,
-            int sampleCount,
-            double duty,
-            int currentFrequency,
-            int currentVolume) {
+            byte[] wav, int sampleCount, double duty, int currentFrequency, int currentVolume) {
         double phase = 0.0;
         double phaseStep = (double) currentFrequency / SAMPLE_RATE;
-        int pcmHigh =
-                128 + (int) ((double) currentVolume * 127.0 / 100.0);
-        int pcmLow =
-                128 + (int) ((double) -currentVolume * 127.0 / 100.0);
+        int pcmHigh = 128 + (int) ((double) currentVolume * 127.0 / 100.0);
+        int pcmLow = 128 + (int) ((double) -currentVolume * 127.0 / 100.0);
         int sample;
         for (sample = 0; sample < sampleCount; sample++) {
             phase += phaseStep;
             phase -= (int) phase;
-            wav[WAV_HEADER_SIZE + sample] =
-                    (byte) (phase < duty ? pcmHigh : pcmLow);
+            wav[WAV_HEADER_SIZE + sample] = (byte) (phase < duty ? pcmHigh : pcmLow);
         }
     }
 
     private static int envelopeVolume(
-            int elapsed,
-            int attack,
-            int decay,
-            int sustain,
-            int release,
-            int sustainVolume,
-            int peakVolume) {
+            int elapsed, int attack, int decay, int sustain, int release, int sustainVolume, int peakVolume) {
         if (elapsed < attack) {
             return attack == 0 ? peakVolume : peakVolume * elapsed / attack;
         }
@@ -296,7 +239,7 @@ public final class Wasm4Pcm {
     }
 
     private static void writeWavHeader(byte[] wav, int dataLength, int channels) {
-        int bytesPerSecond = SAMPLE_RATE * channels;
+        final int bytesPerSecond = SAMPLE_RATE * channels;
         writeAscii(wav, 0, "RIFF");
         writeIntLe(wav, 4, 36 + dataLength);
         writeAscii(wav, 8, "WAVE");

@@ -3,7 +3,6 @@ package w4me.midp;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
@@ -12,6 +11,7 @@ import w4me.runtime.storage.DiskBackend;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the rubido corpus probe midlet implementation. */
 public final class RubidoCorpusProbeMidlet extends MIDlet {
     private static final int[] CHECKPOINT_FRAMES = {
         0, 1, 2, 3, 4, 5, 12, 13, 14, 20, 21, 22, 23, 24, 25,
@@ -25,12 +25,8 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
         0x807cc89f, 0x807cc89f, 0x807cc89f, 0x29f51a8f, 0x29f51a8f,
         0x2ded7883, 0x2ded7883, 0xbafb82af, 0xbafb82af, 0x47462cbf
     };
-    private static final int[] BLUE_PALETTE = {
-        0x00004385, 0x004485cf, 0x007dbbff, 0x00ffffff
-    };
-    private static final int[] AQUA_PALETTE = {
-        0x00002b59, 0x00005f8c, 0x0000b9be, 0x009ff4e5
-    };
+    private static final int[] BLUE_PALETTE = {0x00004385, 0x004485cf, 0x007dbbff, 0x00ffffff};
+    private static final int[] AQUA_PALETTE = {0x00002b59, 0x00005f8c, 0x0000b9be, 0x009ff4e5};
     private static final int[] TONE_FRAMES = {0, 4, 14, 22, 26, 37, 48, 58};
     private static final int[] TONE_FREQUENCIES = {0, 900, 900, 1000, 900, 900, 600, 600};
     private static final int[] TONE_DURATIONS = {0, 8, 8, 8, 8, 8, 8, 8};
@@ -39,6 +35,7 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
 
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -55,11 +52,7 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             RecordingBackend audio = new RecordingBackend();
             Wasm4Apu apu = new Wasm4Apu(audio);
             RecordingDisk disk = new RecordingDisk();
-            runtime =
-                    new Wasm4Runtime(
-                            ResourceLoader.read("/w4font.bin"),
-                            apu,
-                            disk);
+            runtime = new Wasm4Runtime(ResourceLoader.read("/w4font.bin"), apu, disk);
             runtime.initialize(module);
             WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
             interpreter.invokeCartridgeLifecycle();
@@ -69,35 +62,25 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             for (frame = 0; frame < 70; frame++) {
                 audio.frame = frame;
                 disk.frame = frame;
-                runtime.beginFrame(
-                        module,
-                        gamepad(frame),
-                        mouseX(frame),
-                        mouseY(frame),
-                        mouseButtons(frame));
+                runtime.beginFrame(module, gamepad(frame), mouseX(frame), mouseY(frame), mouseButtons(frame));
                 interpreter.invoke("update");
                 runtime.endFrame();
-                if (checkpoint < CHECKPOINT_FRAMES.length
-                        && CHECKPOINT_FRAMES[checkpoint] == frame) {
+                if (checkpoint < CHECKPOINT_FRAMES.length && CHECKPOINT_FRAMES[checkpoint] == frame) {
                     int actual = FramebufferOracle.fnv1a(module);
-                    requireEquals(
-                            "framebuffer at frame " + frame,
-                            CHECKPOINT_FNV1A[checkpoint],
-                            actual);
+                    requireEquals("framebuffer at frame " + frame, CHECKPOINT_FNV1A[checkpoint], actual);
                     checkPalette(module.memory(), frame);
-                    System.out.println(
-                            "W4ME_RUBIDO_FRAME frame="
-                                    + frame
-                                    + " gamepad="
-                                    + gamepad(frame)
-                                    + " mouse="
-                                    + mouseX(frame)
-                                    + ","
-                                    + mouseY(frame)
-                                    + ","
-                                    + mouseButtons(frame)
-                                    + " framebuffer-fnv1a="
-                                    + hex8(actual));
+                    System.out.println("W4ME_RUBIDO_FRAME frame="
+                            + frame
+                            + " gamepad="
+                            + gamepad(frame)
+                            + " mouse="
+                            + mouseX(frame)
+                            + ","
+                            + mouseY(frame)
+                            + ","
+                            + mouseButtons(frame)
+                            + " framebuffer-fnv1a="
+                            + hex8(actual));
                     checkpoint++;
                 }
             }
@@ -106,12 +89,11 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             requireEquals("APU tone count", TONE_FRAMES.length, apu.toneEventCount());
             audio.check();
             disk.check();
-            System.out.println(
-                    "W4ME_RUBIDO_PROBE frames=70 checkpoints=30 tones=8"
-                            + " disk-read=20/0 disk-write=20/20"
-                            + " palette=blue-to-aqua framebuffer-fnv1a=47462cbf");
+            System.out.println("W4ME_RUBIDO_PROBE frames=70 checkpoints=30 tones=8"
+                    + " disk-read=20/0 disk-write=20/20"
+                    + " palette=blue-to-aqua framebuffer-fnv1a=47462cbf");
             result.append("PASS\n70 frames\n30 exact checkpoints\nmouse + palette + disk");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_RUBIDO_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -125,9 +107,15 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private static int gamepad(int frame) {
         if (frame == 13) {
@@ -198,8 +186,7 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
 
     private static void requireEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new IllegalStateException(
-                    label + ": expected " + hex8(expected) + ", got " + hex8(actual));
+            throw new IllegalStateException(label + ": expected " + hex8(expected) + ", got " + hex8(actual));
         }
     }
 
@@ -235,9 +222,13 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             calls++;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";
@@ -248,14 +239,8 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             int index;
             for (index = 0; index < calls; index++) {
                 requireEquals("tone frame " + index, TONE_FRAMES[index], frames[index]);
-                requireEquals(
-                        "tone frequency " + index,
-                        TONE_FREQUENCIES[index],
-                        frequencies[index]);
-                requireEquals(
-                        "tone duration " + index,
-                        TONE_DURATIONS[index],
-                        durations[index]);
+                requireEquals("tone frequency " + index, TONE_FREQUENCIES[index], frequencies[index]);
+                requireEquals("tone duration " + index, TONE_DURATIONS[index], durations[index]);
                 requireEquals("tone volume " + index, TONE_VOLUMES[index], volumes[index]);
                 requireEquals("tone flags " + index, TONE_FLAGS[index], flags[index]);
             }
@@ -300,7 +285,9 @@ public final class RubidoCorpusProbeMidlet extends MIDlet {
             return count;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

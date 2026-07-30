@@ -5,14 +5,15 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
-
 import w4me.runtime.storage.DiskBackend;
 import w4me.runtime.storage.DiskBackends;
 import w4me.runtime.storage.RmsDiskBackend;
 
+/** Provides the RMS disk probe midlet implementation. */
 public final class RmsDiskProbeMidlet extends MIDlet {
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -29,7 +30,7 @@ public final class RmsDiskProbeMidlet extends MIDlet {
             }
             DiskBackend writer = DiskBackends.create(cartridge);
             String writeGrade = writer.grade();
-            int written = writer.write(expected, 0, expected.length);
+            final int written = writer.write(expected, 0, expected.length);
             writer.close();
 
             byte[] actual = new byte[1024];
@@ -38,12 +39,10 @@ public final class RmsDiskProbeMidlet extends MIDlet {
             int read = reader.read(actual, 0, actual.length);
             reader.close();
             if (!"RMS".equals(writeGrade) || !"RMS".equals(readGrade)) {
-                throw new IllegalStateException(
-                        "RMS unavailable: write=" + writeGrade + " read=" + readGrade);
+                throw new IllegalStateException("RMS unavailable: write=" + writeGrade + " read=" + readGrade);
             }
             if (written != expected.length || read != expected.length) {
-                throw new IllegalStateException(
-                        "RMS length mismatch: wrote=" + written + " read=" + read);
+                throw new IllegalStateException("RMS length mismatch: wrote=" + written + " read=" + read);
             }
             for (index = 0; index < expected.length; index++) {
                 if (expected[index] != actual[index]) {
@@ -53,27 +52,32 @@ public final class RmsDiskProbeMidlet extends MIDlet {
             testRecovery(expected);
             testLegacyMigration(expected);
             System.out.println(
-                    "W4ME_RMS_PROBE grade=RMS bytes=1024 reopen=PASS"
-                            + " recovery=PASS legacy=PASS records=2");
+                    "W4ME_RMS_PROBE grade=RMS bytes=1024 reopen=PASS" + " recovery=PASS legacy=PASS records=2");
             result.append("PASS\n1024 bytes\nA/B recovery\nlegacy migration");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_RMS_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private void testRecovery(byte[] seed) throws Exception {
         String name = "w4dprobe1";
         deleteStore(name);
         byte[] first = transformed(seed, 0x11);
         byte[] second = transformed(seed, 0x22);
-        byte[] third = transformed(seed, 0x33);
-        byte[] fourth = transformed(seed, 0x44);
+        final byte[] third = transformed(seed, 0x33);
+        final byte[] fourth = transformed(seed, 0x44);
 
         RmsDiskBackend backend = new RmsDiskBackend();
         backend.open(name);
@@ -112,7 +116,7 @@ public final class RmsDiskProbeMidlet extends MIDlet {
         String name = "w4dprobe2";
         deleteStore(name);
         byte[] legacy = transformed(seed, 0x55);
-        byte[] migrated = transformed(seed, 0x66);
+        final byte[] migrated = transformed(seed, 0x66);
         RecordStore store = RecordStore.openRecordStore(name, true);
         store.addRecord(legacy, 0, legacy.length);
         store.closeRecordStore();
@@ -189,7 +193,7 @@ public final class RmsDiskProbeMidlet extends MIDlet {
     private void deleteStore(String name) {
         try {
             RecordStore.deleteRecordStore(name);
-        } catch (Throwable ignored) {
+        } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
             // The test store may not exist on a fresh KEmulator profile.
         }
     }

@@ -7,6 +7,7 @@ public final class UntangleBenchmarkRoute {
 
     private UntangleBenchmarkRoute() {}
 
+    /** Performs the mouse x operation. */
     public static int mouseX(int frame) {
         if (frame == 0) {
             return 32767;
@@ -32,6 +33,7 @@ public final class UntangleBenchmarkRoute {
         return 40;
     }
 
+    /** Performs the mouse y operation. */
     public static int mouseY(int frame) {
         if (frame == 0) {
             return 32767;
@@ -66,6 +68,7 @@ public final class UntangleBenchmarkRoute {
         return 50;
     }
 
+    /** Performs the mouse buttons operation. */
     public static int mouseButtons(int frame) {
         if (frame == 1 || frame == 4) {
             return 1;
@@ -80,6 +83,7 @@ public final class UntangleBenchmarkRoute {
         return 0;
     }
 
+    /** Performs the phase operation. */
     public static int phase(int frame) {
         if (frame <= 5) {
             return 0;
@@ -99,6 +103,7 @@ public final class UntangleBenchmarkRoute {
         return 5;
     }
 
+    /** Performs the phase name operation. */
     public static String phaseName(int phase) {
         switch (phase) {
             case 0:

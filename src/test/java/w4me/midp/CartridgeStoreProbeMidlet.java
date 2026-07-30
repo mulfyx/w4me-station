@@ -3,21 +3,21 @@ package w4me.midp;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.rms.RecordStore;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the cartridge store probe midlet implementation. */
 public final class CartridgeStoreProbeMidlet extends MIDlet {
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -31,7 +31,7 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
             byte[] cartridge = ResourceLoader.read("/cartridges/sound-demo.wasm");
             WasmModule.read(cartridge);
 
-            int recordsBeforeRecovery = injectInterruptedDownload();
+            final int recordsBeforeRecovery = injectInterruptedDownload();
             store = CartridgeStore.open();
             store.close();
             store = null;
@@ -40,12 +40,9 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
             }
 
             store = CartridgeStore.open();
-            int before = store.list().length;
+            final int before = store.list().length;
             int stagedId =
-                    store.stageStream(
-                            "Installed Sound Demo",
-                            new ByteArrayInputStream(cartridge),
-                            cartridge.length);
+                    store.stageStream("Installed Sound Demo", new ByteArrayInputStream(cartridge), cartridge.length);
             requireEqual(cartridge, store.readStaged(stagedId));
             store.close();
             store = null;
@@ -54,7 +51,7 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
             if (store.list().length != before) {
                 throw new IllegalStateException("staging record leaked into library");
             }
-            CartridgeStore.CartridgeInfo committed = store.commitStaged(stagedId);
+            final CartridgeStore.CartridgeInfo committed = store.commitStaged(stagedId);
             store.close();
             store = null;
 
@@ -65,17 +62,14 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
             byte[] reopened = store.read(committed.recordId);
             requireEqual(cartridge, reopened);
             int countBeforeDedupe = store.list().length;
-            CartridgeStore.CartridgeInfo duplicate =
-                    store.installValidated("Duplicate", cartridge);
-            if (store.list().length != countBeforeDedupe
-                    || duplicate.length != cartridge.length) {
+            CartridgeStore.CartridgeInfo duplicate = store.installValidated("Duplicate", cartridge);
+            if (store.list().length != countBeforeDedupe || duplicate.length != cartridge.length) {
                 throw new IllegalStateException("duplicate install created another cart");
             }
             int legacyStaged = store.stageValidated("Legacy record", cartridge);
             requireEqual(cartridge, store.readStaged(legacyStaged));
             CartridgeStore.CartridgeInfo legacyDuplicate = store.commitStaged(legacyStaged);
-            if (legacyDuplicate.recordId != committed.recordId
-                    || store.list().length != countBeforeDedupe) {
+            if (legacyDuplicate.recordId != committed.recordId || store.list().length != countBeforeDedupe) {
                 throw new IllegalStateException("legacy record compatibility failed");
             }
             store.close();
@@ -102,16 +96,15 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
                 throw new IllegalStateException("installed cartridge did not execute its tone");
             }
 
-            System.out.println(
-                    "W4ME_LIBRARY_PROBE recovery=PASS stream=PASS hidden=PASS committed=PASS"
-                            + " reopen=PASS dedupe=PASS legacy=PASS chunks="
-                            + committed.chunks
-                            + " bytes="
-                            + installed.length
-                            + " tones="
-                            + backend.events);
+            System.out.println("W4ME_LIBRARY_PROBE recovery=PASS stream=PASS hidden=PASS committed=PASS"
+                    + " reopen=PASS dedupe=PASS legacy=PASS chunks="
+                    + committed.chunks
+                    + " bytes="
+                    + installed.length
+                    + " tones="
+                    + backend.events);
             result.append("PASS\nstreamed RMS chunks\nclose/reopen\n1518 bytes\ntone executed");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_LIBRARY_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -125,15 +118,18 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
-    private void frame(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad) throws Exception {
+    private void frame(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad)
+            throws Exception {
         runtime.beginFrame(module, gamepad, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();
@@ -153,7 +149,7 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
 
     private int injectInterruptedDownload() throws Exception {
         RecordStore store = RecordStore.openRecordStore("w4lib1", true);
-        int before = store.getNumRecords();
+        final int before = store.getNumRecords();
         ByteArrayOutputStream manifestBytes = new ByteArrayOutputStream();
         DataOutputStream manifest = new DataOutputStream(manifestBytes);
         manifest.writeInt(0x57344331);
@@ -201,9 +197,13 @@ public final class CartridgeStoreProbeMidlet extends MIDlet {
             events++;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "probe";

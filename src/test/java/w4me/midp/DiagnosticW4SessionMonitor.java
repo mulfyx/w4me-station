@@ -8,7 +8,6 @@ import w4me.wasm.WasmModule;
 /** Frame oracles, replay input, and benchmark receipts for diagnostic JARs. */
 final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
     private static final int BUTTON_1 = 1;
-    private static final int BUTTON_LEFT = 16;
     private static final int BUTTON_RIGHT = 32;
     private static final int BUTTON_UP = 64;
     private static final int BUTTON_DOWN = 128;
@@ -29,11 +28,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
     private long benchmarkStartedAt;
     private int closedSessions;
 
-    DiagnosticW4SessionMonitor(
-            String title,
-            boolean replay,
-            boolean frameDiagnostics,
-            int benchmarkWarmupFrames) {
+    DiagnosticW4SessionMonitor(String title, boolean replay, boolean frameDiagnostics, int benchmarkWarmupFrames) {
         this.title = title;
         this.replay = replay;
         this.frameDiagnostics = frameDiagnostics;
@@ -49,8 +44,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
     }
 
     public boolean resetPresentationAfterFrame(int frame) {
-        return benchmarkWarmupFrames > 0
-                && frame + 1 == benchmarkWarmupFrames;
+        return benchmarkWarmupFrames > 0 && frame + 1 == benchmarkWarmupFrames;
     }
 
     public int gamepad(int frame, int current) {
@@ -61,8 +55,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
         return replay ? 0 : current;
     }
 
-    public void onInstallState(
-            String state, int recordId, int bytes, int chunks, int hash) {
+    public void onInstallState(String state, int recordId, int bytes, int chunks, int hash) {
         StringBuffer receipt = new StringBuffer("W4ME_INSTALL state=");
         receipt.append(state);
         if ("RECEIVED".equals(state)) {
@@ -93,56 +86,46 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
         if (!frameDiagnostics) {
             return;
         }
-        System.out.println(
-                "W4ME_LOAD cart="
-                        + title
-                        + " bytes="
-                        + cartridgeBytes
-                        + " source="
-                        + source
-                        + " w4ir="
-                        + module.w4irStatus()
-                        + " fast-paths="
-                        + enabled(fastPathsEnabled)
-                        + " extended-fusions="
-                        + enabled(extendedFusionsEnabled)
-                        + " compact-executor="
-                        + enabled(compactExecutorEnabled)
-                        + " trace-executor="
-                        + enabled(traceExecutorEnabled)
-                        + " direct-numeric-intrinsics="
-                        + enabled(directNumericIntrinsicsEnabled));
+        System.out.println("W4ME_LOAD cart="
+                + title
+                + " bytes="
+                + cartridgeBytes
+                + " source="
+                + source
+                + " w4ir="
+                + module.w4irStatus()
+                + " fast-paths="
+                + enabled(fastPathsEnabled)
+                + " extended-fusions="
+                + enabled(extendedFusionsEnabled)
+                + " compact-executor="
+                + enabled(compactExecutorEnabled)
+                + " trace-executor="
+                + enabled(traceExecutorEnabled)
+                + " direct-numeric-intrinsics="
+                + enabled(directNumericIntrinsicsEnabled));
     }
 
-    public void onInput(
-            int frame,
-            int gamepad,
-            int gamepad2,
-            int touch,
-            int mouseButtons,
-            int pointerX,
-            int pointerY) {
-        if (!frameDiagnostics
-                || (gamepad == previousGamepad && gamepad2 == previousGamepad2)) {
+    public void onInput(int frame, int gamepad, int gamepad2, int touch, int mouseButtons, int pointerX, int pointerY) {
+        if (!frameDiagnostics || (gamepad == previousGamepad && gamepad2 == previousGamepad2)) {
             return;
         }
-        System.out.println(
-                "W4ME_INPUT cart="
-                        + title
-                        + " frame="
-                        + frame
-                        + " gamepad="
-                        + gamepad
-                        + " touch="
-                        + touch
-                        + " mouse="
-                        + mouseButtons
-                        + " pointer="
-                        + pointerX
-                        + ","
-                        + pointerY
-                        + " gamepad2="
-                        + gamepad2);
+        System.out.println("W4ME_INPUT cart="
+                + title
+                + " frame="
+                + frame
+                + " gamepad="
+                + gamepad
+                + " touch="
+                + touch
+                + " mouse="
+                + mouseButtons
+                + " pointer="
+                + pointerX
+                + ","
+                + pointerY
+                + " gamepad2="
+                + gamepad2);
         previousGamepad = gamepad;
         previousGamepad2 = gamepad2;
     }
@@ -159,36 +142,34 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
             int presentationDivisor,
             boolean bandRenderer) {
         if (frameDiagnostics && (frame < 60 || frame % 60 == 0)) {
-            System.out.println(
-                    "W4ME_FRAME cart="
-                            + title
-                            + " frame="
-                            + frame
-                            + " instructions="
-                            + interpreter.instructionsExecuted()
-                            + " dispatches="
-                            + interpreter.dispatchesExecuted()
-                            + " fast-paths="
-                            + interpreter.fastPathCalls()
-                            + " compact-blocks="
-                            + interpreter.compactBlockCalls()
-                            + " compact-instructions="
-                            + interpreter.compactInstructionsExecuted()
-                            + " framebuffer-fnv1a="
-                            + hex8(FramebufferOracle.fnv1a(module))
-                            + " elapsed-ms="
-                            + elapsedMillis
-                            + " free-heap="
-                            + Runtime.getRuntime().freeMemory());
+            System.out.println("W4ME_FRAME cart="
+                    + title
+                    + " frame="
+                    + frame
+                    + " instructions="
+                    + interpreter.instructionsExecuted()
+                    + " dispatches="
+                    + interpreter.dispatchesExecuted()
+                    + " fast-paths="
+                    + interpreter.fastPathCalls()
+                    + " compact-blocks="
+                    + interpreter.compactBlockCalls()
+                    + " compact-instructions="
+                    + interpreter.compactInstructionsExecuted()
+                    + " framebuffer-fnv1a="
+                    + hex8(FramebufferOracle.fnv1a(module))
+                    + " elapsed-ms="
+                    + elapsedMillis
+                    + " free-heap="
+                    + Runtime.getRuntime().freeMemory());
         }
         if (frameDiagnostics && replay && frame == 154) {
-            System.out.println(
-                    "W4ME_REPLAY_COMPLETE cart="
-                            + title
-                            + " frame="
-                            + frame
-                            + " framebuffer-fnv1a="
-                            + hex8(FramebufferOracle.fnv1a(module)));
+            System.out.println("W4ME_REPLAY_COMPLETE cart="
+                    + title
+                    + " frame="
+                    + frame
+                    + " framebuffer-fnv1a="
+                    + hex8(FramebufferOracle.fnv1a(module)));
         }
         recordBenchmark(
                 frame,
@@ -214,46 +195,37 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
         if (!frameDiagnostics) {
             return;
         }
-        System.out.println(
-                "W4ME_LAYOUT screen="
-                        + screenWidth
-                        + "x"
-                        + screenHeight
-                        + " framebuffer="
-                        + framebufferLeft
-                        + ","
-                        + framebufferTop
-                        + ","
-                        + framebufferSide
-                        + " controls="
-                        + controlsTop
-                        + ","
-                        + controlsHeight
-                        + " overlap=0");
+        System.out.println("W4ME_LAYOUT screen="
+                + screenWidth
+                + "x"
+                + screenHeight
+                + " framebuffer="
+                + framebufferLeft
+                + ","
+                + framebufferTop
+                + ","
+                + framebufferSide
+                + " controls="
+                + controlsTop
+                + ","
+                + controlsHeight
+                + " overlap=0");
     }
 
     public void onSessionClosed(String reason) {
         closedSessions++;
-        System.out.println(
-                "W4ME_SESSION_CLOSED cart="
-                        + title
-                        + " reason="
-                        + reason
-                        + " count="
-                        + closedSessions);
+        System.out.println("W4ME_SESSION_CLOSED cart=" + title + " reason=" + reason + " count=" + closedSessions);
     }
 
-    public void onSaveState(
-            String operation, String outcome, WasmModule module) {
-        System.out.println(
-                "W4ME_SAVE_STATE cart="
-                        + title
-                        + " operation="
-                        + operation
-                        + " outcome="
-                        + outcome
-                        + " framebuffer-fnv1a="
-                        + hex8(FramebufferOracle.fnv1a(module)));
+    public void onSaveState(String operation, String outcome, WasmModule module) {
+        System.out.println("W4ME_SAVE_STATE cart="
+                + title
+                + " operation="
+                + operation
+                + " outcome="
+                + outcome
+                + " framebuffer-fnv1a="
+                + hex8(FramebufferOracle.fnv1a(module)));
     }
 
     private void recordBenchmark(
@@ -271,8 +243,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
             return;
         }
         if (benchmarkStartedAt == 0) {
-            benchmarkStartedAt =
-                    System.currentTimeMillis() - elapsedMillis;
+            benchmarkStartedAt = System.currentTimeMillis() - elapsedMillis;
         }
         totalUpdateMillis += updateMillis;
         totalRenderMillis += renderMillis;
@@ -282,8 +253,7 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
         if (presented) {
             presentedFrames++;
         }
-        if (benchmarkWarmupFrames > 0
-                && frame + 1 == benchmarkWarmupFrames) {
+        if (benchmarkWarmupFrames > 0 && frame + 1 == benchmarkWarmupFrames) {
             totalUpdateMillis = 0;
             totalRenderMillis = 0;
             maximumFrameMillis = 0;
@@ -294,67 +264,65 @@ final class DiagnosticW4SessionMonitor implements W4SessionMonitor {
         if (frame != benchmarkWarmupFrames + 119) {
             return;
         }
-        long benchmarkElapsed =
-                System.currentTimeMillis() - benchmarkStartedAt;
+        long benchmarkElapsed = System.currentTimeMillis() - benchmarkStartedAt;
         if (benchmarkElapsed < 1) {
             benchmarkElapsed = 1;
         }
         int rendered = presentedFrames == 0 ? 1 : presentedFrames;
-        System.out.println(
-                "W4ME_BENCH cart="
-                        + title
-                        + " frames=120 warmup-frames="
-                        + benchmarkWarmupFrames
-                        + " update-average-ms="
-                        + totalUpdateMillis / 120
-                        + " render-average-ms="
-                        + totalRenderMillis / rendered
-                        + " renderer="
-                        + (bandRenderer ? "band" : "full")
-                        + " logic-fps="
-                        + 120000L / benchmarkElapsed
-                        + " presentation-fps="
-                        + presentedFrames * 1000L / benchmarkElapsed
-                        + " presentation-divisor="
-                        + presentationDivisor
-                        + " presented="
-                        + presentedFrames
-                        + " frame-maximum-ms="
-                        + maximumFrameMillis
-                        + " instructions="
-                        + interpreter.instructionsExecuted()
-                        + " dispatches="
-                        + interpreter.dispatchesExecuted()
-                        + " fast-paths="
-                        + interpreter.fastPathCalls()
-                        + " compact-blocks="
-                        + interpreter.compactBlockCalls()
-                        + " compact-instructions="
-                        + interpreter.compactInstructionsExecuted()
-                        + " trace-loops="
-                        + interpreter.traceLoopCalls()
-                        + " trace-iterations="
-                        + interpreter.traceLoopIterations()
-                        + " extended-fusions="
-                        + enabled(extendedFusionsEnabled)
-                        + " trace-executor="
-                        + enabled(traceExecutorEnabled)
-                        + " direct-numeric-intrinsics="
-                        + enabled(directNumericIntrinsicsEnabled)
-                        + " audio="
-                        + runtime.apu().grade()
-                        + " disk="
-                        + runtime.disk().grade()
-                        + " w4ir="
-                        + module.w4irStatus()
-                        + " code-faults="
-                        + module.w4irPageFaults()
-                        + " code-hits="
-                        + module.w4irPageHits()
-                        + " code-promoted="
-                        + module.w4irPromotedFunctions()
-                        + " free-heap="
-                        + Runtime.getRuntime().freeMemory());
+        System.out.println("W4ME_BENCH cart="
+                + title
+                + " frames=120 warmup-frames="
+                + benchmarkWarmupFrames
+                + " update-average-ms="
+                + totalUpdateMillis / 120
+                + " render-average-ms="
+                + totalRenderMillis / rendered
+                + " renderer="
+                + (bandRenderer ? "band" : "full")
+                + " logic-fps="
+                + 120000L / benchmarkElapsed
+                + " presentation-fps="
+                + presentedFrames * 1000L / benchmarkElapsed
+                + " presentation-divisor="
+                + presentationDivisor
+                + " presented="
+                + presentedFrames
+                + " frame-maximum-ms="
+                + maximumFrameMillis
+                + " instructions="
+                + interpreter.instructionsExecuted()
+                + " dispatches="
+                + interpreter.dispatchesExecuted()
+                + " fast-paths="
+                + interpreter.fastPathCalls()
+                + " compact-blocks="
+                + interpreter.compactBlockCalls()
+                + " compact-instructions="
+                + interpreter.compactInstructionsExecuted()
+                + " trace-loops="
+                + interpreter.traceLoopCalls()
+                + " trace-iterations="
+                + interpreter.traceLoopIterations()
+                + " extended-fusions="
+                + enabled(extendedFusionsEnabled)
+                + " trace-executor="
+                + enabled(traceExecutorEnabled)
+                + " direct-numeric-intrinsics="
+                + enabled(directNumericIntrinsicsEnabled)
+                + " audio="
+                + runtime.apu().grade()
+                + " disk="
+                + runtime.disk().grade()
+                + " w4ir="
+                + module.w4irStatus()
+                + " code-faults="
+                + module.w4irPageFaults()
+                + " code-hits="
+                + module.w4irPageHits()
+                + " code-promoted="
+                + module.w4irPromotedFunctions()
+                + " free-heap="
+                + Runtime.getRuntime().freeMemory());
     }
 
     private int replayGamepad(int frame) {

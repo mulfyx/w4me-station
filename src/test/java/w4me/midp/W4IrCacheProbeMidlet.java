@@ -5,7 +5,6 @@ import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.storage.W4IrStores;
@@ -14,12 +13,14 @@ import w4me.wasm.W4IrStore;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the W4IR cache probe midlet implementation. */
 public final class W4IrCacheProbeMidlet extends MIDlet {
     private static final int MANIFEST_MAGIC = 0x57344952;
     private static final int EXPECTED_FRAME_FNV = 0x2e572184;
     private static final int EXPECTED_FRAME_10_FNV = 0xf90becd4;
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -59,7 +60,7 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
             if (!"RMS-build".equals(first.w4irStatus())) {
                 throw new IllegalStateException("old W4IR format was not rebuilt");
             }
-            int descriptorHash = descriptorHash(migratedStore, 10);
+            final int descriptorHash = descriptorHash(migratedStore, 10);
             first.close();
             first = null;
 
@@ -73,8 +74,7 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
             }
             int reopenedDescriptorHash = descriptorHash(secondStore, 10);
             if (reopenedDescriptorHash != descriptorHash) {
-                throw new IllegalStateException(
-                        "reopened W4IR branch descriptors changed");
+                throw new IllegalStateException("reopened W4IR branch descriptors changed");
             }
 
             runtime = new Wasm4Runtime(ResourceLoader.read("/w4font.bin"));
@@ -82,11 +82,11 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
             WasmInterpreter interpreter = new WasmInterpreter(second, runtime);
             interpreter.setFastPathsEnabled(false);
             interpreter.invokeCartridgeLifecycle();
-            long firstStarted = System.currentTimeMillis();
+            final long firstStarted = System.currentTimeMillis();
             runtime.beginFrame(second, 0, 0, 0, 0);
             interpreter.invoke("update");
             runtime.endFrame();
-            long firstMillis = System.currentTimeMillis() - firstStarted;
+            final long firstMillis = System.currentTimeMillis() - firstStarted;
             long compactBlocks = interpreter.compactBlockCalls();
             long compactInstructions = interpreter.compactInstructionsExecuted();
             long traceLoops = interpreter.traceLoopCalls();
@@ -94,13 +94,12 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
             int fastPaths = interpreter.fastPathCalls();
             int frameHash = FramebufferOracle.fnv1a(second);
             if (frameHash != EXPECTED_FRAME_FNV) {
-                throw new IllegalStateException(
-                        "cached W4IR framebuffer mismatch: " + hex8(frameHash));
+                throw new IllegalStateException("cached W4IR framebuffer mismatch: " + hex8(frameHash));
             }
             if (second.w4irPageFaults() <= 0) {
                 throw new IllegalStateException("cached W4IR executed without a code page fault");
             }
-            int faultsAfterFirst = second.w4irPageFaults();
+            final int faultsAfterFirst = second.w4irPageFaults();
             long warmedStarted = System.currentTimeMillis();
             int frame;
             for (frame = 1; frame <= 10; frame++) {
@@ -113,76 +112,69 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
                 traceIterations += interpreter.traceLoopIterations();
                 fastPaths += interpreter.fastPathCalls();
             }
-            long warmedAverage = (System.currentTimeMillis() - warmedStarted) / 10;
+            final long warmedAverage = (System.currentTimeMillis() - warmedStarted) / 10;
             int frame10Hash = FramebufferOracle.fnv1a(second);
             if (frame10Hash != EXPECTED_FRAME_10_FNV) {
-                throw new IllegalStateException(
-                        "cached W4IR frame 10 mismatch: " + hex8(frame10Hash));
+                throw new IllegalStateException("cached W4IR frame 10 mismatch: " + hex8(frame10Hash));
             }
             if (second.w4irPromotedFunctions() <= 0) {
                 throw new IllegalStateException("hot W4IR function was not promoted");
             }
-            boolean compactCounters =
-                    compactBlocks != 0 || compactInstructions != 0;
-            if (compactCounters
-                    && (compactBlocks <= 0 || compactInstructions <= 0)) {
-                throw new IllegalStateException(
-                        "diagnostic compact counters are incomplete");
+            boolean compactCounters = compactBlocks != 0 || compactInstructions != 0;
+            if (compactCounters && (compactBlocks <= 0 || compactInstructions <= 0)) {
+                throw new IllegalStateException("diagnostic compact counters are incomplete");
             }
             if (traceLoops <= 0 || traceIterations <= 0) {
-                throw new IllegalStateException(
-                        "cached W4IR did not execute through counted traces");
+                throw new IllegalStateException("cached W4IR did not execute through counted traces");
             }
             if (fastPaths != 0) {
                 throw new IllegalStateException("cartridge fast path was executed");
             }
 
-            System.out.println(
-                    "W4ME_W4IR_PROBE recovery=PASS old-format=PASS build=PASS hit=PASS"
-                            + " descriptors=PASS descriptor-hash="
-                            + hex8(descriptorHash)
-                            + " slots=12 faults="
-                            + second.w4irPageFaults()
-                            + " warm-faults="
-                            + (second.w4irPageFaults() - faultsAfterFirst)
-                            + " hits="
-                            + second.w4irPageHits()
-                            + " promoted="
-                            + second.w4irPromotedFunctions()
-                            + " compact-counters="
-                            + (compactCounters ? "on" : "off")
-                            + " compact-blocks="
-                            + compactBlocks
-                            + " compact-instructions="
-                            + compactInstructions
-                            + " trace-loops="
-                            + traceLoops
-                            + " trace-iterations="
-                            + traceIterations
-                            + " fast-paths="
-                            + fastPaths
-                            + " first-ms="
-                            + firstMillis
-                            + " warm-average-ms="
-                            + warmedAverage
-                            + " frame0-fnv1a="
-                            + hex8(frameHash)
-                            + " frame10-fnv1a="
-                            + hex8(frame10Hash));
-            result.append(
-                    "PASS\nbuild -> RMS\nreopen -> cache hit\n12 page slots\nfaults: "
-                            + second.w4irPageFaults()
-                            + "\nwarm avg: "
-                            + warmedAverage
-                            + " ms\npromoted: "
-                            + second.w4irPromotedFunctions()
-                            + "\ncompact blocks: "
-                            + compactBlocks
-                            + "\ntrace loops: "
-                            + traceLoops
-                            + "\nframe 10: "
-                            + hex8(frame10Hash));
-        } catch (Throwable failure) {
+            System.out.println("W4ME_W4IR_PROBE recovery=PASS old-format=PASS build=PASS hit=PASS"
+                    + " descriptors=PASS descriptor-hash="
+                    + hex8(descriptorHash)
+                    + " slots=12 faults="
+                    + second.w4irPageFaults()
+                    + " warm-faults="
+                    + (second.w4irPageFaults() - faultsAfterFirst)
+                    + " hits="
+                    + second.w4irPageHits()
+                    + " promoted="
+                    + second.w4irPromotedFunctions()
+                    + " compact-counters="
+                    + (compactCounters ? "on" : "off")
+                    + " compact-blocks="
+                    + compactBlocks
+                    + " compact-instructions="
+                    + compactInstructions
+                    + " trace-loops="
+                    + traceLoops
+                    + " trace-iterations="
+                    + traceIterations
+                    + " fast-paths="
+                    + fastPaths
+                    + " first-ms="
+                    + firstMillis
+                    + " warm-average-ms="
+                    + warmedAverage
+                    + " frame0-fnv1a="
+                    + hex8(frameHash)
+                    + " frame10-fnv1a="
+                    + hex8(frame10Hash));
+            result.append("PASS\nbuild -> RMS\nreopen -> cache hit\n12 page slots\nfaults: "
+                    + second.w4irPageFaults()
+                    + "\nwarm avg: "
+                    + warmedAverage
+                    + " ms\npromoted: "
+                    + second.w4irPromotedFunctions()
+                    + "\ncompact blocks: "
+                    + compactBlocks
+                    + "\ntrace loops: "
+                    + traceLoops
+                    + "\nframe 10: "
+                    + hex8(frame10Hash));
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_W4IR_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -199,15 +191,19 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
-    private int descriptorHash(W4IrStore store, int functionCount)
-            throws Exception {
+    private int descriptorHash(W4IrStore store, int functionCount) throws Exception {
         if (!store.isComplete(functionCount)) {
-            throw new IllegalStateException(
-                    "W4IR descriptor cache function count mismatch");
+            throw new IllegalStateException("W4IR descriptor cache function count mismatch");
         }
         int hash = 0x811c9dc5;
         int descriptorInts = 0;
@@ -226,8 +222,7 @@ public final class W4IrCacheProbeMidlet extends MIDlet {
             }
         }
         if (descriptorInts == 0) {
-            throw new IllegalStateException(
-                    "W4IR cache contains no branch descriptors");
+            throw new IllegalStateException("W4IR cache contains no branch descriptors");
         }
         return hash;
     }

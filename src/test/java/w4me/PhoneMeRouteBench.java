@@ -2,63 +2,54 @@ package w4me;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
 /**
- * Reference-VM route benchmark. Times a recorded browser-oracle route, then
- * replays it separately to verify every oracle checkpoint (framebuffer FNV-1a,
- * palette, input state) without charging validation to the timed interval.
- * CLDC 1.1 clean by construction: it runs unchanged on the local phoneME
- * `cldc_vm_r` (the reference measurement, see docs/performance.md) and on any
- * J2SE VM for cross-checks.
+ * Reference-VM route benchmark. Times a recorded browser-oracle route, then replays it separately to verify every
+ * oracle checkpoint (framebuffer FNV-1a, palette, input state) without charging validation to the timed interval. CLDC
+ * 1.1 clean by construction: it runs unchanged on the local phoneME `cldc_vm_r` (the reference measurement, see
+ * docs/performance.md) and on any J2SE VM for cross-checks.
  *
- * Arguments: cartridge mode extra-frames repetitions candidate sample-start
- * verification.
- * Modes mirror the KEmulator Untangle benchmark family:
- * optimized | trace-off | fusion-only | baseline.
- * Resources looked up on the classpath: /<cart>.wasm, /<cart>-input.csv,
- * /<cart>-oracle.csv, /w4font.bin.
+ * <p>Arguments: cartridge mode extra-frames repetitions candidate sample-start verification. Modes mirror the KEmulator
+ * Untangle benchmark family: optimized | trace-off | fusion-only | baseline. Resources looked up on the classpath:
+ * /<cart>.wasm, /<cart>-input.csv, /<cart>-oracle.csv, /w4font.bin.
  */
 public final class PhoneMeRouteBench {
+    /** Runs this verification entry point. */
     public static void main(String[] args) throws Exception {
         if (args.length != 7) {
-            throw new IllegalArgumentException(
-                    "usage: cart optimized|trace-off|fusion-only|baseline"
-                            + " extraFrames reps"
-                            + " current|seven-opcode|host-import-id|counterless"
-                            + "|resident-baseline|dense-baseline"
-                            + "|load-tee-baseline|load-tee"
-                            + "|branch-legacy|branch-inline|branch-direct"
-                            + " sampleStart verified|unverified-idle");
+            throw new IllegalArgumentException("usage: cart optimized|trace-off|fusion-only|baseline"
+                    + " extraFrames reps"
+                    + " current|seven-opcode|host-import-id|counterless"
+                    + "|resident-baseline|dense-baseline"
+                    + "|load-tee-baseline|load-tee"
+                    + "|branch-legacy|branch-inline|branch-direct"
+                    + " sampleStart verified|unverified-idle");
         }
-        String cart = args[0];
+        final String cart = args[0];
         String mode = args[1];
-        int extraFrames = Integer.parseInt(args[2]);
-        int repetitions = Integer.parseInt(args[3]);
+        final int extraFrames = Integer.parseInt(args[2]);
+        final int repetitions = Integer.parseInt(args[3]);
         String candidate = args[4];
-        int sampleStart = Integer.parseInt(args[5]);
+        final int sampleStart = Integer.parseInt(args[5]);
         String verification = args[6];
         boolean verifiedRoute = "verified".equals(verification);
         if (!verifiedRoute && !"unverified-idle".equals(verification)) {
-            throw new IllegalArgumentException(
-                    "verification must be verified or unverified-idle");
+            throw new IllegalArgumentException("verification must be verified or unverified-idle");
         }
-        boolean numericHostImportDispatch =
-                "host-import-id".equals(candidate)
-                        || "counterless".equals(candidate)
-                        || "resident-baseline".equals(candidate)
-                        || "dense-baseline".equals(candidate)
-                        || "load-tee-baseline".equals(candidate)
-                        || "load-tee".equals(candidate)
-                        || "branch-legacy".equals(candidate)
-                        || "branch-inline".equals(candidate)
-                        || "branch-direct".equals(candidate);
-        boolean integerCompactOpcodes =
-                "seven-opcode".equals(candidate) || numericHostImportDispatch;
-        boolean loadTeeFusions = !"load-tee-baseline".equals(candidate);
+        boolean numericHostImportDispatch = "host-import-id".equals(candidate)
+                || "counterless".equals(candidate)
+                || "resident-baseline".equals(candidate)
+                || "dense-baseline".equals(candidate)
+                || "load-tee-baseline".equals(candidate)
+                || "load-tee".equals(candidate)
+                || "branch-legacy".equals(candidate)
+                || "branch-inline".equals(candidate)
+                || "branch-direct".equals(candidate);
+        boolean integerCompactOpcodes = "seven-opcode".equals(candidate) || numericHostImportDispatch;
+        final boolean loadTeeFusions = !"load-tee-baseline".equals(candidate);
         if (!"current".equals(candidate) && !integerCompactOpcodes) {
             throw new IllegalArgumentException("unknown candidate: " + candidate);
         }
@@ -77,22 +68,14 @@ public final class PhoneMeRouteBench {
         int[][] inputTrace = readCsv("/" + cart + "-input.csv", 5);
         int[][] oracle = readOracle("/" + cart + "-oracle.csv");
         if (verifiedRoute && (inputTrace.length == 0 || oracle.length == 0)) {
-            throw new IllegalArgumentException(
-                    "verified route requires non-empty input and oracle: " + cart);
+            throw new IllegalArgumentException("verified route requires non-empty input and oracle: " + cart);
         }
-        int frames =
-                (inputTrace.length == 0 ? 0 : inputTrace[inputTrace.length - 1][0])
-                        + extraFrames;
+        int frames = (inputTrace.length == 0 ? 0 : inputTrace[inputTrace.length - 1][0]) + extraFrames;
 
         int repetition;
         for (repetition = 0; repetition < repetitions; repetition++) {
-            long initStart = System.currentTimeMillis();
-            WasmModule module =
-                    WasmModule.read(
-                            cartridge,
-                            null,
-                            extended,
-                            loadTeeFusions);
+            final long initStart = System.currentTimeMillis();
+            WasmModule module = WasmModule.read(cartridge, null, extended, loadTeeFusions);
             Wasm4Runtime runtime = new Wasm4Runtime(font);
             runtime.initialize(module);
             WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
@@ -112,8 +95,7 @@ public final class PhoneMeRouteBench {
             long start = System.currentTimeMillis();
             int frame;
             for (frame = 0; frame < frames; frame++) {
-                while (inputIndex < inputTrace.length
-                        && inputTrace[inputIndex][0] == frame) {
+                while (inputIndex < inputTrace.length && inputTrace[inputIndex][0] == frame) {
                     gamepad = inputTrace[inputIndex][1];
                     mouseX = inputTrace[inputIndex][2];
                     mouseY = inputTrace[inputIndex][3];
@@ -126,26 +108,20 @@ public final class PhoneMeRouteBench {
             }
             long elapsed = System.currentTimeMillis() - start;
             int finalFramebuffer = FramebufferOracle.fnv1a(module);
-            ValidationResult validation =
-                    validateRoute(
-                            cart,
-                            font,
-                            cartridge,
-                            inputTrace,
-                            oracle,
-                            frames,
-                            extended,
-                            loadTeeFusions,
-                            compact,
-                            trace,
-                            integerCompactOpcodes,
-                            numericHostImportDispatch);
-            requireEquals(
+            ValidationResult validation = validateRoute(
                     cart,
+                    font,
+                    cartridge,
+                    inputTrace,
+                    oracle,
                     frames,
-                    "validation-final-framebuffer",
-                    finalFramebuffer,
-                    validation.finalFramebuffer);
+                    extended,
+                    loadTeeFusions,
+                    compact,
+                    trace,
+                    integerCompactOpcodes,
+                    numericHostImportDispatch);
+            requireEquals(cart, frames, "validation-final-framebuffer", finalFramebuffer, validation.finalFramebuffer);
             System.out.println("phoneme-bench:pass cart=" + cart
                     + " mode=" + mode
                     + " candidate=" + candidate
@@ -192,12 +168,7 @@ public final class PhoneMeRouteBench {
             boolean integerCompactOpcodes,
             boolean numericHostImportDispatch)
             throws Exception {
-        WasmModule module =
-                WasmModule.read(
-                        cartridge,
-                        null,
-                        extended,
-                        loadTeeFusions);
+        WasmModule module = WasmModule.read(cartridge, null, extended, loadTeeFusions);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
         WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
@@ -223,8 +194,7 @@ public final class PhoneMeRouteBench {
         long instructions = 0;
         int frame;
         for (frame = 0; frame < frames; frame++) {
-            while (inputIndex < inputTrace.length
-                    && inputTrace[inputIndex][0] == frame) {
+            while (inputIndex < inputTrace.length && inputTrace[inputIndex][0] == frame) {
                 gamepad = inputTrace[inputIndex][1];
                 mouseX = inputTrace[inputIndex][2];
                 mouseY = inputTrace[inputIndex][3];
@@ -242,23 +212,14 @@ public final class PhoneMeRouteBench {
             traceIterations += interpreter.traceLoopIterations();
             instructions += interpreter.instructionsExecuted();
             if (oracleIndex < oracle.length && oracle[oracleIndex][0] == frame) {
-                checkCheckpoint(
-                        cart,
-                        module,
-                        runtime,
-                        oracle[oracleIndex],
-                        gamepad,
-                        mouseX,
-                        mouseY,
-                        mouseButtons);
+                checkCheckpoint(cart, module, oracle[oracleIndex], gamepad, mouseX, mouseY, mouseButtons);
                 oracleIndex++;
             }
         }
         if (oracleIndex != oracle.length) {
-            throw new RuntimeException(
-                    "phoneme-bench:fail cart=" + cart
-                            + " unconsumed oracle checkpoints: "
-                            + (oracle.length - oracleIndex));
+            throw new RuntimeException("phoneme-bench:fail cart=" + cart
+                    + " unconsumed oracle checkpoints: "
+                    + (oracle.length - oracleIndex));
         }
         return new ValidationResult(
                 oracleIndex,
@@ -275,22 +236,13 @@ public final class PhoneMeRouteBench {
     }
 
     private static void checkCheckpoint(
-            String cart,
-            WasmModule module,
-            Wasm4Runtime runtime,
-            int[] receipt,
-            int gamepad,
-            int mouseX,
-            int mouseY,
-            int mouseButtons) {
+            String cart, WasmModule module, int[] receipt, int gamepad, int mouseX, int mouseY, int mouseButtons) {
         int frame = receipt[0];
         requireEquals(cart, frame, "gamepad", receipt[1], gamepad);
         requireEquals(cart, frame, "mouse-x", receipt[2], mouseX);
         requireEquals(cart, frame, "mouse-y", receipt[3], mouseY);
         requireEquals(cart, frame, "mouse-buttons", receipt[4], mouseButtons);
-        requireEquals(
-                cart, frame, "framebuffer-fnv1a",
-                receipt[5], FramebufferOracle.fnv1a(module));
+        requireEquals(cart, frame, "framebuffer-fnv1a", receipt[5], FramebufferOracle.fnv1a(module));
         byte[] memory = module.memory();
         int index;
         for (index = 0; index < 4; index++) {
@@ -303,8 +255,7 @@ public final class PhoneMeRouteBench {
         }
     }
 
-    private static void requireEquals(
-            String cart, int frame, String what, int expected, int actual) {
+    private static void requireEquals(String cart, int frame, String what, int expected, int actual) {
         if (expected != actual) {
             throw new RuntimeException("phoneme-bench:fail cart=" + cart
                     + " frame=" + frame
@@ -377,7 +328,7 @@ public final class PhoneMeRouteBench {
                 header = false;
                 continue;
             }
-            rows[count++] = parseFields(line, fieldCount);
+            rows[count++] = parseFields(line, fieldCount); // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
         int[][] result = new int[count][];
         System.arraycopy(rows, 0, result, 0, count);
@@ -385,10 +336,8 @@ public final class PhoneMeRouteBench {
     }
 
     /**
-     * Oracle rows become
-     * {frame, gamepad, mouseX, mouseY, mouseButtons, fnv1a, palette0..3}.
-     * The SHA-256 column is skipped: CLDC has no digest API and the FNV-1a
-     * plus palette comparison is already an exact framebuffer check.
+     * Oracle rows become {frame, gamepad, mouseX, mouseY, mouseButtons, fnv1a, palette0..3}. The SHA-256 column is
+     * skipped: CLDC has no digest API and the FNV-1a plus palette comparison is already an exact framebuffer check.
      */
     private static int[][] readOracle(String path) throws Exception {
         String text = readText(path);
@@ -423,7 +372,7 @@ public final class PhoneMeRouteBench {
             for (index = 0; index < 4; index++) {
                 receipt[6 + index] = (int) Long.parseLong(fields[7 + index], 16);
             }
-            rows[count++] = receipt;
+            rows[count++] = receipt; // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
         int[][] result = new int[count][];
         System.arraycopy(rows, 0, result, 0, count);
@@ -447,10 +396,10 @@ public final class PhoneMeRouteBench {
         while (count < fields.length) {
             int comma = line.indexOf(',', start);
             if (comma < 0) {
-                fields[count++] = line.substring(start);
+                fields[count++] = line.substring(start); // NOPMD -- Compact Java 1.3 cursor bytecode.
                 break;
             }
-            fields[count++] = line.substring(start, comma);
+            fields[count++] = line.substring(start, comma); // NOPMD -- Compact Java 1.3 cursor bytecode.
             start = comma + 1;
         }
         if (count < minimumFields) {

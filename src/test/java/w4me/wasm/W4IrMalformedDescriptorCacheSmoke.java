@@ -9,11 +9,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Properties;
-
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
-
 import w4me.runtime.storage.RmsW4IrStore;
 
 /** Rejects malformed persisted branch-descriptor metadata at the RMS boundary. */
@@ -27,12 +25,12 @@ public final class W4IrMalformedDescriptorCacheSmoke {
 
     private W4IrMalformedDescriptorCacheSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
-            throw new IllegalArgumentException(
-                    "usage: w4ir-cache-metadata-recovery.wasm");
+            throw new IllegalArgumentException("usage: w4ir-cache-metadata-recovery.wasm");
         }
-        installHeadlessKEmulatorFrontend();
+        installHeadlessKemulatorFrontend();
         byte[] cartridge = {
             (byte) 0x57, (byte) 0x34, (byte) 0x49, (byte) 0x52,
             (byte) 0x2d, (byte) 0x6d, (byte) 0x61, (byte) 0x6c,
@@ -119,40 +117,30 @@ public final class W4IrMalformedDescriptorCacheSmoke {
             corruptFunctionChecksum(storeName);
             expectReadRejected(store);
             restoreFunctionRecord(storeName, validFunctionRecord);
-            mutateFunctionInt(
-                    storeName,
-                    FUNCTION_LOCAL_COUNT_OFFSET,
-                    W4IrFunction.MAX_DECLARED_LOCALS + 1);
+            mutateFunctionInt(storeName, FUNCTION_LOCAL_COUNT_OFFSET, W4IrFunction.MAX_DECLARED_LOCALS + 1);
             expectReadRejected(store);
             restoreFunctionRecord(storeName, validFunctionRecord);
-            mutateFunctionInt(
-                    storeName,
-                    FUNCTION_INSTRUCTION_COUNT_OFFSET,
-                    1431655766);
+            mutateFunctionInt(storeName, FUNCTION_INSTRUCTION_COUNT_OFFSET, 1431655766);
             expectReadRejected(store);
             restoreFunctionRecord(storeName, validFunctionRecord);
-            mutateFunctionInt(
-                    storeName,
-                    FUNCTION_INTRINSIC_OFFSET,
-                    W4IrFunction.MAX_INTRINSIC + 1);
+            mutateFunctionInt(storeName, FUNCTION_INTRINSIC_OFFSET, W4IrFunction.MAX_INTRINSIC + 1);
             expectReadRejected(store);
             restoreFunctionRecord(storeName, validFunctionRecord);
             truncateDescriptorRecord(storeName);
             expectReadRejected(store);
 
-            System.out.println(
-                    "PASS w4ir-malformed-descriptor-cache"
-                            + " truncated=PASS"
-                            + " direct-index=PASS"
-                            + " table-index=PASS"
-                            + " target-pc=PASS"
-                            + " height=PASS"
-                            + " arity=PASS"
-                            + " control-depth=PASS"
-                            + " checksum=PASS"
-                            + " locals=PASS"
-                            + " instructions=PASS"
-                            + " intrinsic=PASS");
+            System.out.println("PASS w4ir-malformed-descriptor-cache"
+                    + " truncated=PASS"
+                    + " direct-index=PASS"
+                    + " table-index=PASS"
+                    + " target-pc=PASS"
+                    + " height=PASS"
+                    + " arity=PASS"
+                    + " control-depth=PASS"
+                    + " checksum=PASS"
+                    + " locals=PASS"
+                    + " instructions=PASS"
+                    + " intrinsic=PASS");
         } finally {
             if (store != null) {
                 store.discard();
@@ -174,10 +162,7 @@ public final class W4IrMalformedDescriptorCacheSmoke {
             module.close();
             module = null;
 
-            mutateFunctionInt(
-                    storeName,
-                    FUNCTION_INTRINSIC_OFFSET,
-                    WasmModule.INTRINSIC_F32_FLOOR);
+            mutateFunctionInt(storeName, FUNCTION_INTRINSIC_OFFSET, WasmModule.INTRINSIC_F32_FLOOR);
 
             RmsW4IrStore damaged = RmsW4IrStore.open(cartridge, 1);
             module = WasmModule.read(cartridge, damaged, true);
@@ -197,10 +182,9 @@ public final class W4IrMalformedDescriptorCacheSmoke {
             module.close();
             module = null;
 
-            System.out.println(
-                    "PASS w4ir-metadata-cache-recovery"
-                            + " invalid-intrinsic-signature=PASS"
-                            + " discard=PASS rebuild=PASS hit=PASS");
+            System.out.println("PASS w4ir-metadata-cache-recovery"
+                    + " invalid-intrinsic-signature=PASS"
+                    + " discard=PASS rebuild=PASS hit=PASS");
         } finally {
             if (module != null) {
                 module.close();
@@ -209,11 +193,9 @@ public final class W4IrMalformedDescriptorCacheSmoke {
         }
     }
 
-    private static void requireStatus(
-            String label, String expected, String actual) {
+    private static void requireStatus(String label, String expected, String actual) {
         if (!expected.equals(actual)) {
-            throw new AssertionError(
-                    label + " expected=" + expected + " actual=" + actual);
+            throw new AssertionError(label + " expected=" + expected + " actual=" + actual);
         }
     }
 
@@ -243,11 +225,8 @@ public final class W4IrMalformedDescriptorCacheSmoke {
             if (expectedMessage.equals(expected.getMessage())) {
                 return;
             }
-            throw new AssertionError(
-                    "malformed "
-                            + label
-                            + " reached the wrong rejection path: "
-                            + expected.getMessage());
+            throw new AssertionError( // NOPMD -- CLDC 1.1 does not provide portable exception-cause chaining.
+                    "malformed " + label + " reached the wrong rejection path: " + expected.getMessage());
         }
         throw new AssertionError("malformed " + label + " was accepted for writing");
     }
@@ -259,9 +238,8 @@ public final class W4IrMalformedDescriptorCacheSmoke {
             if (expected.getMessage().indexOf("cannot load W4IR function 0") >= 0) {
                 return;
             }
-            throw new AssertionError(
-                    "truncated record reached the wrong rejection path: "
-                            + expected.getMessage());
+            throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
+                    "truncated record reached the wrong rejection path: " + expected.getMessage());
         }
         throw new AssertionError("truncated branch descriptor record was accepted");
     }
@@ -271,17 +249,14 @@ public final class W4IrMalformedDescriptorCacheSmoke {
     }
 
     private static void corruptFunctionChecksum(String storeName) throws Exception {
-        mutateFunctionRecord(
-                storeName, FUNCTION_LOCAL_COUNT_OFFSET, 1, false);
+        mutateFunctionRecord(storeName, FUNCTION_LOCAL_COUNT_OFFSET, 1, false);
     }
 
-    private static void mutateFunctionInt(String storeName, int offset, int value)
-            throws Exception {
+    private static void mutateFunctionInt(String storeName, int offset, int value) throws Exception {
         mutateFunctionRecord(storeName, offset, value, true);
     }
 
-    private static void mutateFunctionRecord(
-            String storeName, int offset, int value, boolean refreshChecksum)
+    private static void mutateFunctionRecord(String storeName, int offset, int value, boolean refreshChecksum)
             throws Exception {
         RecordStore rawStore = RecordStore.openRecordStore(storeName, false);
         RecordEnumeration records = rawStore.enumerateRecords(null, null, false);
@@ -296,24 +271,16 @@ public final class W4IrMalformedDescriptorCacheSmoke {
                         && readInt(record, 4) == 0) {
                     if (offset < 0) {
                         int payloadLength =
-                                FUNCTION_DESCRIPTOR_OFFSET
-                                        + (W4IrFunction.BRANCH_DESCRIPTOR_STRIDE - 1) * 4;
+                                FUNCTION_DESCRIPTOR_OFFSET + (W4IrFunction.BRANCH_DESCRIPTOR_STRIDE - 1) * 4;
                         byte[] truncated = new byte[payloadLength + 4];
                         System.arraycopy(record, 0, truncated, 0, payloadLength);
-                        writeInt(
-                                truncated,
-                                payloadLength,
-                                checksum(truncated, 0, payloadLength));
-                        rawStore.setRecord(
-                                recordId, truncated, 0, truncated.length);
+                        writeInt(truncated, payloadLength, checksum(truncated, 0, payloadLength));
+                        rawStore.setRecord(recordId, truncated, 0, truncated.length);
                     } else {
                         writeInt(record, offset, value);
                         if (refreshChecksum) {
                             int checksumOffset = record.length - 4;
-                            writeInt(
-                                    record,
-                                    checksumOffset,
-                                    checksum(record, 0, checksumOffset));
+                            writeInt(record, checksumOffset, checksum(record, 0, checksumOffset));
                         }
                         rawStore.setRecord(recordId, record, 0, record.length);
                     }
@@ -350,8 +317,7 @@ public final class W4IrMalformedDescriptorCacheSmoke {
         throw new AssertionError("persisted W4IR function record was not found");
     }
 
-    private static void restoreFunctionRecord(String storeName, byte[] validRecord)
-            throws Exception {
+    private static void restoreFunctionRecord(String storeName, byte[] validRecord) throws Exception {
         RecordStore rawStore = RecordStore.openRecordStore(storeName, false);
         RecordEnumeration records = rawStore.enumerateRecords(null, null, false);
         boolean restored = false;
@@ -363,8 +329,7 @@ public final class W4IrMalformedDescriptorCacheSmoke {
                         && record.length >= FUNCTION_DESCRIPTOR_OFFSET + 4
                         && readInt(record, 0) == FUNCTION_MAGIC
                         && readInt(record, 4) == 0) {
-                    rawStore.setRecord(
-                            recordId, validRecord, 0, validRecord.length);
+                    rawStore.setRecord(recordId, validRecord, 0, validRecord.length);
                     restored = true;
                     break;
                 }
@@ -392,25 +357,21 @@ public final class W4IrMalformedDescriptorCacheSmoke {
         return new int[] {0x0b, 0, 0};
     }
 
-    private static int[] descriptor(
-            int targetPc, int valueHeight, int arity, int controlDepth) {
+    private static int[] descriptor(int targetPc, int valueHeight, int arity, int controlDepth) {
         return new int[] {targetPc, valueHeight, arity, controlDepth, 0};
     }
 
-    static void installHeadlessKEmulatorFrontend() throws Exception {
+    static void installHeadlessKemulatorFrontend() throws Exception {
         File root = new File(RMS_ROOT);
         if (!root.exists() && !root.mkdirs()) {
             throw new AssertionError("cannot create focused RMS root");
         }
         Class emulatorClass = Class.forName("emulator.Emulator");
         Class frontendType = Class.forName("emulator.ui.IEmulatorFrontend");
-        Object frontend =
-                Proxy.newProxyInstance(
-                        frontendType.getClassLoader(),
-                        new Class[] {frontendType},
-                        new HeadlessFrontend());
+        Object frontend = Proxy.newProxyInstance(
+                frontendType.getClassLoader(), new Class[] {frontendType}, new HeadlessFrontend());
         Field frontendField = emulatorClass.getDeclaredField("emulatorimpl");
-        frontendField.setAccessible(true);
+        frontendField.setAccessible(true); // NOPMD -- Differential test inspects private state.
         frontendField.set(null, frontend);
     }
 
@@ -504,8 +465,7 @@ public final class W4IrMalformedDescriptorCacheSmoke {
     }
 
     private static Object interfaceProxy(Class type, InvocationHandler handler) {
-        return Proxy.newProxyInstance(
-                type.getClassLoader(), new Class[] {type}, handler);
+        return Proxy.newProxyInstance(type.getClassLoader(), new Class[] {type}, handler);
     }
 
     private static final class HeadlessFrontend implements InvocationHandler {
@@ -518,7 +478,7 @@ public final class W4IrMalformedDescriptorCacheSmoke {
 
         public Object invoke(Object proxy, Method method, Object[] arguments) {
             String name = method.getName();
-            Class returnType = method.getReturnType();
+            final Class returnType = method.getReturnType();
             if ("getRmsFolderPath".equals(name) || "getOldRmsPath".equals(name)) {
                 return RMS_ROOT;
             }

@@ -3,20 +3,19 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the untangle runtime benchmark implementation. */
 public final class UntangleRuntimeBenchmark {
-    private static final String[] MODES = {
-        "optimized", "trace-off", "fusion-only", "baseline"
-    };
+    private static final String[] MODES = {"optimized", "trace-off", "fusion-only", "baseline"};
     private static final int PHASES = 6;
     private static final int[] PROFILE_FRAMES = {70, 153, 168, 386};
 
     private UntangleRuntimeBenchmark() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin untangle.wasm");
@@ -36,7 +35,7 @@ public final class UntangleRuntimeBenchmark {
     private static void warmUp(String mode, byte[] font, byte[] cartridge) throws Exception {
         boolean extended = !"baseline".equals(mode);
         boolean compact = "optimized".equals(mode) || "trace-off".equals(mode);
-        boolean trace = "optimized".equals(mode) || "fusion-only".equals(mode);
+        final boolean trace = "optimized".equals(mode) || "fusion-only".equals(mode);
         WasmModule module = WasmModule.read(cartridge, null, extended);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
@@ -52,20 +51,19 @@ public final class UntangleRuntimeBenchmark {
             update(module, runtime, interpreter, frame);
             fastPaths += interpreter.fastPathCalls();
         }
-        requireExactResult(runtime, module, fastPaths);
+        requireExactResult(module, fastPaths);
         runtime.close();
         module.close();
     }
 
-    private static void benchmark(String mode, byte[] font, byte[] cartridge)
-            throws Exception {
+    private static void benchmark(String mode, byte[] font, byte[] cartridge) throws Exception {
         boolean extended = !"baseline".equals(mode);
         boolean compact = "optimized".equals(mode) || "trace-off".equals(mode);
-        boolean trace = "optimized".equals(mode) || "fusion-only".equals(mode);
+        final boolean trace = "optimized".equals(mode) || "fusion-only".equals(mode);
 
         long parseStarted = System.nanoTime();
         WasmModule module = WasmModule.read(cartridge, null, extended);
-        long parseNanos = System.nanoTime() - parseStarted;
+        final long parseNanos = System.nanoTime() - parseStarted;
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
         WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
@@ -75,7 +73,7 @@ public final class UntangleRuntimeBenchmark {
         interpreter.setInstructionLimit(200000000L);
         long lifecycleStarted = System.nanoTime();
         interpreter.invokeCartridgeLifecycle();
-        long lifecycleNanos = System.nanoTime() - lifecycleStarted;
+        final long lifecycleNanos = System.nanoTime() - lifecycleStarted;
 
         long[] phaseNanos = new long[PHASES];
         long[] phaseInstructions = new long[PHASES];
@@ -104,7 +102,7 @@ public final class UntangleRuntimeBenchmark {
             phaseNanos[phase] += elapsed;
             phaseFrames[phase]++;
             long frameInstructions = interpreter.instructionsExecuted();
-            int frameCompactBlocks = interpreter.compactBlockCalls();
+            final int frameCompactBlocks = interpreter.compactBlockCalls();
             instructions += frameInstructions;
             dispatches += interpreter.dispatchesExecuted();
             phaseInstructions[phase] += frameInstructions;
@@ -126,72 +124,66 @@ public final class UntangleRuntimeBenchmark {
                 maximumInstructionsFrame = frame;
             }
         }
-        requireExactResult(runtime, module, fastPaths);
+        requireExactResult(module, fastPaths);
         if (compact && compactFrames != 0) {
-            throw new AssertionError(
-                    "short Untangle route entered compact tier on "
-                            + compactFrames
-                            + " frame(s)");
+            throw new AssertionError("short Untangle route entered compact tier on " + compactFrames + " frame(s)");
         }
 
-        System.out.println(
-                "UNTANGLE_BENCH mode="
-                        + mode
-                        + " frames="
-                        + UntangleBenchmarkRoute.FRAMES
-                        + " parse-us="
-                        + micros(parseNanos)
-                        + " lifecycle-us="
-                        + micros(lifecycleNanos)
-                        + " update-average-us="
-                        + micros(totalNanos / UntangleBenchmarkRoute.FRAMES)
-                        + " update-maximum-us="
-                        + micros(maximumNanos)
-                        + " maximum-frame="
-                        + maximumFrame
-                        + " instructions-average="
-                        + instructions / UntangleBenchmarkRoute.FRAMES
-                        + " dispatches-average="
-                        + dispatches / UntangleBenchmarkRoute.FRAMES
-                        + " compact-blocks-average="
-                        + compactBlocks / UntangleBenchmarkRoute.FRAMES
-                        + " compact-instructions-average="
-                        + compactInstructions / UntangleBenchmarkRoute.FRAMES
-                        + " compact-frames="
-                        + compactFrames
-                        + " maximum-instructions="
-                        + maximumInstructions
-                        + " maximum-instructions-frame="
-                        + maximumInstructionsFrame
-                        + " trace-loops-average="
-                        + traceLoops / UntangleBenchmarkRoute.FRAMES
-                        + " trace-iterations-average="
-                        + traceIterations / UntangleBenchmarkRoute.FRAMES
-                        + " fast-paths="
-                        + fastPaths
-                        + " framebuffer-fnv1a=bc0231d9");
+        System.out.println("UNTANGLE_BENCH mode="
+                + mode
+                + " frames="
+                + UntangleBenchmarkRoute.FRAMES
+                + " parse-us="
+                + micros(parseNanos)
+                + " lifecycle-us="
+                + micros(lifecycleNanos)
+                + " update-average-us="
+                + micros(totalNanos / UntangleBenchmarkRoute.FRAMES)
+                + " update-maximum-us="
+                + micros(maximumNanos)
+                + " maximum-frame="
+                + maximumFrame
+                + " instructions-average="
+                + instructions / UntangleBenchmarkRoute.FRAMES
+                + " dispatches-average="
+                + dispatches / UntangleBenchmarkRoute.FRAMES
+                + " compact-blocks-average="
+                + compactBlocks / UntangleBenchmarkRoute.FRAMES
+                + " compact-instructions-average="
+                + compactInstructions / UntangleBenchmarkRoute.FRAMES
+                + " compact-frames="
+                + compactFrames
+                + " maximum-instructions="
+                + maximumInstructions
+                + " maximum-instructions-frame="
+                + maximumInstructionsFrame
+                + " trace-loops-average="
+                + traceLoops / UntangleBenchmarkRoute.FRAMES
+                + " trace-iterations-average="
+                + traceIterations / UntangleBenchmarkRoute.FRAMES
+                + " fast-paths="
+                + fastPaths
+                + " framebuffer-fnv1a=bc0231d9");
         int phase;
         for (phase = 0; phase < PHASES; phase++) {
-            System.out.println(
-                    "UNTANGLE_PHASE mode="
-                            + mode
-                            + " phase="
-                            + UntangleBenchmarkRoute.phaseName(phase)
-                            + " frames="
-                            + phaseFrames[phase]
-                            + " update-average-us="
-                            + micros(phaseNanos[phase] / phaseFrames[phase])
-                            + " instructions-average="
-                            + phaseInstructions[phase] / phaseFrames[phase]
-                            + " dispatches-average="
-                            + phaseDispatches[phase] / phaseFrames[phase]);
+            System.out.println("UNTANGLE_PHASE mode="
+                    + mode
+                    + " phase="
+                    + UntangleBenchmarkRoute.phaseName(phase)
+                    + " frames="
+                    + phaseFrames[phase]
+                    + " update-average-us="
+                    + micros(phaseNanos[phase] / phaseFrames[phase])
+                    + " instructions-average="
+                    + phaseInstructions[phase] / phaseFrames[phase]
+                    + " dispatches-average="
+                    + phaseDispatches[phase] / phaseFrames[phase]);
         }
         runtime.close();
         module.close();
     }
 
-    private static void profileRepresentativeFrames(byte[] font, byte[] cartridge)
-            throws Exception {
+    private static void profileRepresentativeFrames(byte[] font, byte[] cartridge) throws Exception {
         WasmModule module = WasmModule.read(cartridge, null, true);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
         runtime.initialize(module);
@@ -211,7 +203,7 @@ public final class UntangleRuntimeBenchmark {
                 target++;
             }
         }
-        requireExactResult(runtime, module, 0);
+        requireExactResult(module, 0);
         runtime.close();
         module.close();
     }
@@ -247,8 +239,7 @@ public final class UntangleRuntimeBenchmark {
         System.out.println(output.toString());
     }
 
-    private static void printHotFunctions(
-            int frame, WasmModule module, WasmInterpreter interpreter) {
+    private static void printHotFunctions(int frame, WasmModule module, WasmInterpreter interpreter) {
         StringBuffer output = new StringBuffer("UNTANGLE_PROFILE frame=");
         output.append(frame);
         output.append(" functions=");
@@ -279,11 +270,7 @@ public final class UntangleRuntimeBenchmark {
         System.out.println(output.toString());
     }
 
-    private static void update(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int frame)
+    private static void update(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int frame)
             throws Exception {
         runtime.beginFrame(
                 module,
@@ -295,12 +282,10 @@ public final class UntangleRuntimeBenchmark {
         runtime.endFrame();
     }
 
-    private static void requireExactResult(
-            Wasm4Runtime runtime, WasmModule module, int fastPaths) {
+    private static void requireExactResult(WasmModule module, int fastPaths) {
         int actual = FramebufferOracle.fnv1a(module);
         if (actual != UntangleBenchmarkRoute.FINAL_FRAMEBUFFER_FNV1A) {
-            throw new AssertionError(
-                    "Untangle final framebuffer mismatch: " + Integer.toHexString(actual));
+            throw new AssertionError("Untangle final framebuffer mismatch: " + Integer.toHexString(actual));
         }
         if (fastPaths != 0) {
             throw new AssertionError("Untangle used cartridge-specific fast paths");

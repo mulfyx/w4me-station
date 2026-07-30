@@ -3,14 +3,15 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the sound demo smoke implementation. */
 public final class SoundDemoSmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin sound-demo.wasm");
@@ -39,8 +40,7 @@ public final class SoundDemoSmoke {
         assertEquals("backend volume", 25700, backend.volume);
         assertEquals("backend flags", 0, backend.flags);
         testEnvelopeAndSlide();
-        System.out.println(
-                "PASS sound-demo tone=440,60,25700,0 channels=4 envelope=ADSR slide=440-880");
+        System.out.println("PASS sound-demo tone=440,60,25700,0 channels=4 envelope=ADSR slide=440-880");
     }
 
     private static void testEnvelopeAndSlide() {
@@ -87,17 +87,13 @@ public final class SoundDemoSmoke {
         apu.close();
     }
 
-    private static void assertChannel(
-            Wasm4Apu apu, int channel, int expectedFrequency, int expectedVolume) {
+    private static void assertChannel(Wasm4Apu apu, int channel, int expectedFrequency, int expectedVolume) {
         assertEquals("channel frequency", expectedFrequency, apu.channelFrequency(channel));
         assertEquals("channel volume", expectedVolume, apu.channelVolume(channel));
     }
 
-    private static void frame(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int gamepad) throws Exception {
+    private static void frame(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int gamepad)
+            throws Exception {
         runtime.beginFrame(module, gamepad, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();
@@ -139,9 +135,13 @@ public final class SoundDemoSmoke {
             this.flags = flags;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

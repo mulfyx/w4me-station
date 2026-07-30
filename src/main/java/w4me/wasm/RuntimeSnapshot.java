@@ -1,16 +1,14 @@
 package w4me.wasm;
 
 import w4me.runtime.Wasm4Runtime;
-import w4me.runtime.audio.Wasm4Apu;
 import w4me.runtime.storage.DiskBackend;
 import w4me.runtime.storage.SnapshotDiskBackend;
 
 /**
  * One in-memory snapshot of the mutable state for an active cartridge session.
  *
- * <p>The snapshot intentionally excludes the interpreter call stack and
- * derived W4IR caches. Capture and restore are valid only between exported
- * cartridge lifecycle calls.
+ * <p>The snapshot intentionally excludes the interpreter call stack and derived W4IR caches. Capture and restore are
+ * valid only between exported cartridge lifecycle calls.
  */
 public final class RuntimeSnapshot {
     private static final int FORMAT_VERSION = 1;
@@ -49,11 +47,9 @@ public final class RuntimeSnapshot {
         this.apu = apu;
     }
 
+    /** Performs the capture operation. */
     public static RuntimeSnapshot capture(
-            int cartridgeIdentity,
-            int cartridgeLength,
-            WasmModule module,
-            Wasm4Runtime runtime) {
+            int cartridgeIdentity, int cartridgeLength, WasmModule module, Wasm4Runtime runtime) {
         if (module == null || runtime == null || cartridgeLength < 0) {
             throw new IllegalArgumentException("invalid snapshot source");
         }
@@ -63,8 +59,7 @@ public final class RuntimeSnapshot {
         long[] globals = new long[module.snapshotGlobalCount()];
         int tableLength = module.snapshotTableLength();
         int[] table = tableLength < 0 ? null : new int[tableLength];
-        byte[][] dataSegments =
-                new byte[module.snapshotDataSegmentCount()][];
+        byte[][] dataSegments = new byte[module.snapshotDataSegmentCount()][];
         byte[] disk = new byte[DISK_CAPACITY];
         int[] apu = runtime.apu().snapshotState();
 
@@ -74,27 +69,13 @@ public final class RuntimeSnapshot {
             throw new IllegalStateException("logical disk snapshot failed");
         }
         return new RuntimeSnapshot(
-                cartridgeIdentity,
-                cartridgeLength,
-                memory,
-                globals,
-                table,
-                dataSegments,
-                disk,
-                diskLength,
-                apu);
+                cartridgeIdentity, cartridgeLength, memory, globals, table, dataSegments, disk, diskLength, apu);
     }
 
+    /** Performs the restore operation. */
     public boolean restore(
-            int expectedCartridgeIdentity,
-            int expectedCartridgeLength,
-            WasmModule module,
-            Wasm4Runtime runtime) {
-        if (!matches(
-                        expectedCartridgeIdentity,
-                        expectedCartridgeLength,
-                        module,
-                        runtime)
+            int expectedCartridgeIdentity, int expectedCartridgeLength, WasmModule module, Wasm4Runtime runtime) {
+        if (!matches(expectedCartridgeIdentity, expectedCartridgeLength, module, runtime)
                 || !snapshotDisk(runtime.disk()).replace(disk, diskLength)) {
             return false;
         }
@@ -104,11 +85,9 @@ public final class RuntimeSnapshot {
         return true;
     }
 
+    /** Performs the matches operation. */
     public boolean matches(
-            int expectedCartridgeIdentity,
-            int expectedCartridgeLength,
-            WasmModule module,
-            Wasm4Runtime runtime) {
+            int expectedCartridgeIdentity, int expectedCartridgeLength, WasmModule module, Wasm4Runtime runtime) {
         return version == FORMAT_VERSION
                 && expectedCartridgeIdentity == cartridgeIdentity
                 && expectedCartridgeLength == cartridgeLength
@@ -116,16 +95,14 @@ public final class RuntimeSnapshot {
                 && runtime != null
                 && diskLength >= 0
                 && diskLength <= disk.length
-                && module.canRestoreMutableState(
-                        memory, globals, table, dataSegments)
+                && module.canRestoreMutableState(memory, globals, table, dataSegments)
                 && runtime.apu().canRestoreState(apu)
                 && runtime.disk() instanceof SnapshotDiskBackend;
     }
 
     private static SnapshotDiskBackend snapshotDisk(DiskBackend disk) {
         if (!(disk instanceof SnapshotDiskBackend)) {
-            throw new IllegalStateException(
-                    "logical disk does not support save states");
+            throw new IllegalStateException("logical disk does not support save states");
         }
         return (SnapshotDiskBackend) disk;
     }

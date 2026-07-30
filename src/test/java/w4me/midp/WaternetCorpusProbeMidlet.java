@@ -3,7 +3,6 @@ package w4me.midp;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
@@ -12,10 +11,9 @@ import w4me.runtime.storage.DiskBackend;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the waternet corpus probe midlet implementation. */
 public final class WaternetCorpusProbeMidlet extends MIDlet {
-    private static final int[] CHECKPOINT_FRAMES = {
-        0, 1, 11, 12, 23, 24, 35, 36, 41, 42, 47, 48, 59, 60, 81, 82, 93
-    };
+    private static final int[] CHECKPOINT_FRAMES = {0, 1, 11, 12, 23, 24, 35, 36, 41, 42, 47, 48, 59, 60, 81, 82, 93};
     private static final int[] CHECKPOINT_FNV1A = {
         0x188fd725, 0x188fd725, 0x6cb32fd6, 0x6cb32fd6,
         0x90fe245f, 0x90fe245f, 0xf5a48f21, 0xf5a48f21,
@@ -42,24 +40,15 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
         0x00004385, 0x007dbbff, 0x004485cf, 0x00ffffff,
         0x00004385, 0x007dbbff, 0x004485cf, 0x00ffffff
     };
-    private static final int[] TONE_FRAMES = {
-        3, 3, 13, 19, 25, 37, 43, 49, 50, 61, 63, 78, 83, 93
-    };
-    private static final int[] TONE_FREQUENCIES = {
-        262, 0, 900, 262, 900, 1250, 1250, 900, 294, 900, 0, 262, 600, 277
-    };
-    private static final int[] TONE_DURATIONS = {
-        50, 0, 8, 50, 8, 8, 8, 8, 50, 8, 50, 50, 8, 50
-    };
-    private static final int[] TONE_VOLUMES = {
-        75, 100, 100, 75, 100, 100, 100, 100, 75, 100, 75, 75, 100, 75
-    };
-    private static final int[] TONE_FLAGS = {
-        1, 65, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1
-    };
+    private static final int[] TONE_FRAMES = {3, 3, 13, 19, 25, 37, 43, 49, 50, 61, 63, 78, 83, 93};
+    private static final int[] TONE_FREQUENCIES = {262, 0, 900, 262, 900, 1250, 1250, 900, 294, 900, 0, 262, 600, 277};
+    private static final int[] TONE_DURATIONS = {50, 0, 8, 50, 8, 8, 8, 8, 50, 8, 50, 50, 8, 50};
+    private static final int[] TONE_VOLUMES = {75, 100, 100, 75, 100, 100, 100, 100, 75, 100, 75, 75, 100, 75};
+    private static final int[] TONE_FLAGS = {1, 65, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1};
 
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -78,11 +67,7 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
             RecordingBackend audio = new RecordingBackend();
             Wasm4Apu apu = new Wasm4Apu(audio);
             RecordingDisk disk = new RecordingDisk();
-            runtime =
-                    new Wasm4Runtime(
-                            ResourceLoader.read("/w4font.bin"),
-                            apu,
-                            disk);
+            runtime = new Wasm4Runtime(ResourceLoader.read("/w4font.bin"), apu, disk);
             runtime.initialize(module);
             WasmInterpreter interpreter = new WasmInterpreter(module, runtime);
             interpreter.invokeCartridgeLifecycle();
@@ -94,21 +79,16 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
                 runtime.beginFrame(module, gamepad(frame), 0x7fff, 0x7fff, 0);
                 interpreter.invoke("update");
                 runtime.endFrame();
-                if (checkpoint < CHECKPOINT_FRAMES.length
-                        && CHECKPOINT_FRAMES[checkpoint] == frame) {
+                if (checkpoint < CHECKPOINT_FRAMES.length && CHECKPOINT_FRAMES[checkpoint] == frame) {
                     int actual = FramebufferOracle.fnv1a(module);
-                    requireEquals(
-                            "framebuffer at frame " + frame,
-                            CHECKPOINT_FNV1A[checkpoint],
-                            actual);
+                    requireEquals("framebuffer at frame " + frame, CHECKPOINT_FNV1A[checkpoint], actual);
                     checkPalette(module.memory(), checkpoint, frame);
-                    System.out.println(
-                            "W4ME_WATERNET_FRAME frame="
-                                    + frame
-                                    + " gamepad="
-                                    + gamepad(frame)
-                                    + " framebuffer-fnv1a="
-                                    + hex8(actual));
+                    System.out.println("W4ME_WATERNET_FRAME frame="
+                            + frame
+                            + " gamepad="
+                            + gamepad(frame)
+                            + " framebuffer-fnv1a="
+                            + hex8(actual));
                     checkpoint++;
                 }
             }
@@ -123,12 +103,11 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
             requireEquals("disk writes", 0, disk.writeCalls);
             requireEquals("disk bytes", 0, disk.length);
 
-            System.out.println(
-                    "W4ME_WATERNET_PROBE frames=94 checkpoints=17 tones=14"
-                            + " disk-read=16/0 disk-bytes=0"
-                            + " framebuffer-fnv1a=14e0f616");
+            System.out.println("W4ME_WATERNET_PROBE frames=94 checkpoints=17 tones=14"
+                    + " disk-read=16/0 disk-bytes=0"
+                    + " framebuffer-fnv1a=14e0f616");
             result.append("PASS\n94 frames\n17 exact checkpoints\n14 tone events");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_WATERNET_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -142,17 +121,18 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private int gamepad(int frame) {
-        if (frame == 0
-                || frame == 12
-                || frame == 24
-                || frame == 48
-                || frame == 60
-                || frame == 82) {
+        if (frame == 0 || frame == 12 || frame == 24 || frame == 48 || frame == 60 || frame == 82) {
             return 1;
         }
         if (frame == 36 || frame == 42) {
@@ -180,8 +160,7 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
 
     private static void requireEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new IllegalStateException(
-                    label + ": expected " + hex8(expected) + ", got " + hex8(actual));
+            throw new IllegalStateException(label + ": expected " + hex8(expected) + ", got " + hex8(actual));
         }
     }
 
@@ -217,9 +196,13 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
             calls++;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";
@@ -230,14 +213,8 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
             int index;
             for (index = 0; index < calls; index++) {
                 requireEquals("tone frame " + index, TONE_FRAMES[index], frames[index]);
-                requireEquals(
-                        "tone frequency " + index,
-                        TONE_FREQUENCIES[index],
-                        frequencies[index]);
-                requireEquals(
-                        "tone duration " + index,
-                        TONE_DURATIONS[index],
-                        durations[index]);
+                requireEquals("tone frequency " + index, TONE_FREQUENCIES[index], frequencies[index]);
+                requireEquals("tone duration " + index, TONE_DURATIONS[index], durations[index]);
                 requireEquals("tone volume " + index, TONE_VOLUMES[index], volumes[index]);
                 requireEquals("tone flags " + index, TONE_FLAGS[index], flags[index]);
             }
@@ -271,7 +248,9 @@ public final class WaternetCorpusProbeMidlet extends MIDlet {
             return count;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

@@ -1,7 +1,6 @@
 package w4me.wasm;
 
 import java.security.MessageDigest;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
@@ -15,13 +14,13 @@ public final class FullStateDifferential {
 
     private FullStateDifferential() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 11 && arguments.length != 12) {
-            throw new IllegalArgumentException(
-                    "usage: build-id font plasma duck waternet waternet-input"
-                            + " rubido rubido-input untangle untangle-input game-of-life"
-                            + " [reference-current|current-seven|seven-host-import-id"
-                            + "|reference-host-import-id|host-import-id-load-tee]");
+            throw new IllegalArgumentException("usage: build-id font plasma duck waternet waternet-input"
+                    + " rubido rubido-input untangle untangle-input game-of-life"
+                    + " [reference-current|current-seven|seven-host-import-id"
+                    + "|reference-host-import-id|host-import-id-load-tee]");
         }
         String buildIdentity = arguments[0];
         String comparison = arguments.length == 12 ? arguments[11] : "reference-current";
@@ -54,24 +53,17 @@ public final class FullStateDifferential {
         CorpusWorkload[] workloads = CorpusWorkload.readAll(workloadArguments, 1);
         int index;
         for (index = 0; index < workloads.length; index++) {
-            run(
-                    buildIdentity,
-                    comparison,
-                    referenceVariant,
-                    candidateVariant,
-                    font,
-                    workloads[index]);
+            run(buildIdentity, comparison, referenceVariant, candidateVariant, font, workloads[index]);
         }
-        System.out.println(
-                "FULL_STATE_DIFFERENTIAL_COMPLETE build="
-                        + buildIdentity
-                        + " w4ir-format="
-                        + WasmModule.W4IR_FORMAT_VERSION
-                        + " comparison="
-                        + comparison
-                        + " workloads="
-                        + workloads.length
-                        + " status=PASS");
+        System.out.println("FULL_STATE_DIFFERENTIAL_COMPLETE build="
+                + buildIdentity
+                + " w4ir-format="
+                + WasmModule.W4IR_FORMAT_VERSION
+                + " comparison="
+                + comparison
+                + " workloads="
+                + workloads.length
+                + " status=PASS");
     }
 
     private static void run(
@@ -80,7 +72,8 @@ public final class FullStateDifferential {
             InterpreterVariant referenceVariant,
             InterpreterVariant candidateVariant,
             byte[] font,
-            CorpusWorkload workload) throws Exception {
+            CorpusWorkload workload)
+            throws Exception {
         Side reference = new Side(referenceVariant, font, workload.cartridge);
         Side candidate = new Side(candidateVariant, font, workload.cartridge);
         try {
@@ -107,40 +100,38 @@ public final class FullStateDifferential {
                         Long.toString(referenceInstructions),
                         Long.toString(candidateInstructions));
             }
-            System.out.println(
-                    "FULL_STATE_DIFFERENTIAL build="
-                            + buildIdentity
-                            + " w4ir-format="
-                            + WasmModule.W4IR_FORMAT_VERSION
-                            + " comparison="
-                            + comparison
-                            + " workload="
-                            + workload.name
-                            + " route="
-                            + workload.route
-                            + " cartridge-sha256="
-                            + workload.cartridgeSha256
-                            + " frames="
-                            + workload.inputs.length
-                            + " reference={"
-                            + referenceVariant.configuration()
-                            + "} candidate={"
-                            + candidateVariant.configuration()
-                            + "} logical="
-                            + candidateInstructions
-                            + " memory-sha256="
-                            + sha256(candidate.module.memory)
-                            + " framebuffer-fnv1a="
-                            + hex32(FramebufferOracle.fnv1a(candidate.module))
-                            + " state=exact");
+            System.out.println("FULL_STATE_DIFFERENTIAL build="
+                    + buildIdentity
+                    + " w4ir-format="
+                    + WasmModule.W4IR_FORMAT_VERSION
+                    + " comparison="
+                    + comparison
+                    + " workload="
+                    + workload.name
+                    + " route="
+                    + workload.route
+                    + " cartridge-sha256="
+                    + workload.cartridgeSha256
+                    + " frames="
+                    + workload.inputs.length
+                    + " reference={"
+                    + referenceVariant.configuration()
+                    + "} candidate={"
+                    + candidateVariant.configuration()
+                    + "} logical="
+                    + candidateInstructions
+                    + " memory-sha256="
+                    + sha256(candidate.module.memory)
+                    + " framebuffer-fnv1a="
+                    + hex32(FramebufferOracle.fnv1a(candidate.module))
+                    + " state=exact");
         } finally {
             reference.close();
             candidate.close();
         }
     }
 
-    private static void assertState(
-            String workload, int frame, Side reference, Side candidate) {
+    private static void assertState(String workload, int frame, Side reference, Side candidate) {
         compareBytes(
                 workload,
                 frame,
@@ -169,24 +160,11 @@ public final class FullStateDifferential {
         compareInts(workload, frame, "table", reference.module.table, candidate.module.table);
         reference.audio.assertEquals(workload, frame, candidate.audio);
         reference.disk.assertEquals(workload, frame, candidate.disk);
-        compareBytes(
-                workload,
-                frame,
-                "linear-memory",
-                reference.module.memory,
-                candidate.module.memory,
-                0,
-                65536);
+        compareBytes(workload, frame, "linear-memory", reference.module.memory, candidate.module.memory, 0, 65536);
     }
 
     private static void compareBytes(
-            String workload,
-            int frame,
-            String category,
-            byte[] expected,
-            byte[] actual,
-            int offset,
-            int length) {
+            String workload, int frame, String category, byte[] expected, byte[] actual, int offset, int length) {
         int index;
         for (index = 0; index < length; index++) {
             int left = expected[offset + index] & 0xff;
@@ -202,8 +180,7 @@ public final class FullStateDifferential {
         }
     }
 
-    private static void compareLongs(
-            String workload, int frame, String category, long[] expected, long[] actual) {
+    private static void compareLongs(String workload, int frame, String category, long[] expected, long[] actual) {
         if (expected.length != actual.length) {
             fail(
                     workload,
@@ -225,8 +202,7 @@ public final class FullStateDifferential {
         }
     }
 
-    private static void compareInts(
-            String workload, int frame, String category, int[] expected, int[] actual) {
+    private static void compareInts(String workload, int frame, String category, int[] expected, int[] actual) {
         if (expected.length != actual.length) {
             fail(
                     workload,
@@ -248,22 +224,16 @@ public final class FullStateDifferential {
         }
     }
 
-    private static void fail(
-            String workload,
-            int frame,
-            String category,
-            String expected,
-            String actual) {
-        throw new AssertionError(
-                workload
-                        + " first divergence frame="
-                        + frame
-                        + " category="
-                        + category
-                        + " reference="
-                        + expected
-                        + " candidate="
-                        + actual);
+    private static void fail(String workload, int frame, String category, String expected, String actual) {
+        throw new AssertionError(workload
+                + " first divergence frame="
+                + frame
+                + " category="
+                + category
+                + " reference="
+                + expected
+                + " candidate="
+                + actual);
     }
 
     private static String sha256(byte[] bytes) throws Exception {
@@ -299,8 +269,7 @@ public final class FullStateDifferential {
         private final Wasm4Runtime runtime;
         private final WasmInterpreter interpreter;
 
-        private Side(InterpreterVariant variant, byte[] font, byte[] cartridge)
-                throws Exception {
+        private Side(InterpreterVariant variant, byte[] font, byte[] cartridge) throws Exception {
             module = variant.read(cartridge);
             audio = new RecordingAudio();
             disk = new RecordingDisk();
@@ -312,13 +281,7 @@ public final class FullStateDifferential {
         private void frame(int frame, CorpusWorkload.InputState input) throws Exception {
             audio.frame = frame;
             disk.frame = frame;
-            runtime.beginFrame(
-                    module,
-                    input.gamepad1,
-                    input.gamepad2,
-                    input.mouseX,
-                    input.mouseY,
-                    input.mouseButtons);
+            runtime.beginFrame(module, input.gamepad1, input.gamepad2, input.mouseX, input.mouseY, input.mouseButtons);
             interpreter.invoke("update");
             runtime.endFrame();
         }
@@ -345,9 +308,13 @@ public final class FullStateDifferential {
             eventCount++;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "differential";
@@ -408,19 +375,15 @@ public final class FullStateDifferential {
             return count;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "differential";
         }
 
-        private void record(
-                int operation,
-                int address,
-                int size,
-                int result,
-                byte[] bytes,
-                int bytesOffset) {
+        private void record(int operation, int address, int size, int result, byte[] bytes, int bytesOffset) {
             ensure(eventCount + 1);
             int offset = eventCount * 5;
             events[offset] = frame;
@@ -447,12 +410,7 @@ public final class FullStateDifferential {
 
         private void assertEquals(String workload, int frame, RecordingDisk other) {
             if (length != other.length) {
-                fail(
-                        workload,
-                        frame,
-                        "disk-length",
-                        Integer.toString(length),
-                        Integer.toString(other.length));
+                fail(workload, frame, "disk-length", Integer.toString(length), Integer.toString(other.length));
             }
             compareBytes(workload, frame, "disk", data, other.data, 0, data.length);
             if (eventCount != other.eventCount) {

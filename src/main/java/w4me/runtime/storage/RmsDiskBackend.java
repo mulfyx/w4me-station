@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
 import javax.microedition.rms.RecordEnumeration;
 import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
@@ -20,10 +19,12 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
     private RecordStore store;
     private boolean available = true;
 
+    /** Performs the open operation. */
     public void open(String name) throws RecordStoreException {
         store = RecordStore.openRecordStore(name, true);
     }
 
+    /** Performs the read operation. */
     public int read(byte[] target, int offset, int size) {
         if (!available || store == null || size == 0) {
             return 0;
@@ -36,12 +37,13 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
             int count = minimum(size, latest.data.length);
             System.arraycopy(latest.data, 0, target, offset, count);
             return count;
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             available = false;
             return 0;
         }
     }
 
+    /** Performs the write operation. */
     public int write(byte[] source, int offset, int size) {
         if (!available || store == null) {
             return 0;
@@ -50,6 +52,7 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
         return replaceRange(source, offset, count) ? count : 0;
     }
 
+    /** Performs the snapshot operation. */
     public int snapshot(byte[] target) {
         if (!available || store == null || target == null || target.length < MAX_BYTES) {
             return -1;
@@ -63,12 +66,13 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
             return latest.data.length;
         } catch (OutOfMemoryError unavailable) {
             return -1;
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             available = false;
             return -1;
         }
     }
 
+    /** Performs the replace operation. */
     public boolean replace(byte[] source, int length) {
         if (source == null
                 || length < 0
@@ -97,12 +101,13 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
             }
             cleanup(recordId, previous == null ? 0 : previous.recordId);
             return true;
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             available = false;
             return false;
         }
     }
 
+    /** Performs the close operation. */
     public void close() {
         if (store != null) {
             try {
@@ -114,6 +119,7 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
         }
     }
 
+    /** Performs the grade operation. */
     public String grade() {
         return available && store != null ? "RMS" : "memory-unavailable";
     }
@@ -134,10 +140,7 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
                         latest = candidate;
                     }
                 } catch (IOException damaged) {
-                    if (recordCount == 1
-                            && recordId == 1
-                            && record.length <= MAX_BYTES
-                            && !looksStructured(record)) {
+                    if (recordCount == 1 && recordId == 1 && record.length <= MAX_BYTES && !looksStructured(record)) {
                         legacy = record;
                         legacyRecordId = recordId;
                     }
@@ -157,8 +160,7 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
         return null;
     }
 
-    private byte[] encode(long generation, byte[] source, int offset, int length)
-            throws IOException {
+    private byte[] encode(long generation, byte[] source, int offset, int length) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(HEADER_BYTES + length);
         DataOutputStream output = new DataOutputStream(bytes);
         output.writeInt(MAGIC);
@@ -182,10 +184,7 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
         long generation = input.readLong();
         int length = input.readInt();
         int crc = input.readInt();
-        if (generation <= 0
-                || length < 0
-                || length > MAX_BYTES
-                || input.available() != length) {
+        if (generation <= 0 || length < 0 || length > MAX_BYTES || input.available() != length) {
             throw new IOException("RMS save metadata is invalid");
         }
         byte[] data = new byte[length];
@@ -213,7 +212,8 @@ public final class RmsDiskBackend implements SnapshotDiskBackend {
             RecordEnumeration records = store.enumerateRecords(null, null, false);
             try {
                 while (records.hasNextElement() && count < recordIds.length) {
-                    recordIds[count++] = records.nextRecordId();
+                    recordIds[count] = records.nextRecordId();
+                    count++;
                 }
             } finally {
                 records.destroy();

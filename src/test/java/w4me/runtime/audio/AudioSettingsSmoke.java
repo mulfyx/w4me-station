@@ -2,7 +2,9 @@ package w4me.runtime.audio;
 
 import w4me.runtime.Wasm4Runtime;
 
+/** Provides the audio settings smoke implementation. */
 public final class AudioSettingsSmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) {
         RecordingBackend backend = new RecordingBackend();
         Wasm4Apu apu = new Wasm4Apu(backend);
@@ -23,7 +25,7 @@ public final class AudioSettingsSmoke {
         assertEquals("gain uses deterministic half-up rounding", 0x00000101, backend.lastVolume);
 
         int submittedBeforeMute = backend.submitCount;
-        int logicalBeforeMute = apu.toneEventCount();
+        final int logicalBeforeMute = apu.toneEventCount();
         apu.setMuted(true);
         apu.tone(262, 10, 100, 0);
         assertEquals("mute suppresses backend submission", submittedBeforeMute, backend.submitCount);
@@ -42,28 +44,19 @@ public final class AudioSettingsSmoke {
         apu.suspendOutput();
         int submittedBeforeSuspend = backend.submitCount;
         apu.tone(294, 10, 100, 0);
-        assertEquals(
-                "temporary suspension suppresses output",
-                submittedBeforeSuspend,
-                backend.submitCount);
+        assertEquals("temporary suspension suppresses output", submittedBeforeSuspend, backend.submitCount);
         apu.resumeOutput();
         if (apu.muted()) {
             throw new AssertionError("temporary suspension changed persistent mute");
         }
         apu.tone(294, 10, 100, 0);
-        assertEquals(
-                "resume restores persistent gain",
-                submittedBeforeSuspend + 1,
-                backend.submitCount);
+        assertEquals("resume restores persistent gain", submittedBeforeSuspend + 1, backend.submitCount);
 
         apu.setMasterGain(0);
         int submittedBeforeZero = backend.submitCount;
         apu.tone(330, 10, 100, 0);
         assertEquals("zero gain suppresses output", submittedBeforeZero, backend.submitCount);
-        assertEquals(
-                "backend capability forwarded",
-                AudioControl.VOLUME_CONTINUOUS,
-                apu.volumeCapability());
+        assertEquals("backend capability forwarded", AudioControl.VOLUME_CONTINUOUS, apu.volumeCapability());
 
         RecordingBackend runtimeBackend = new RecordingBackend();
         Wasm4Apu runtimeApu = new Wasm4Apu(runtimeBackend);
@@ -84,8 +77,7 @@ public final class AudioSettingsSmoke {
 
         requireInvalidGain(apu, -1);
         requireInvalidGain(apu, 101);
-        System.out.println(
-                "PASS audio-settings gain-boundaries rounding hard-mute resume unchanged-fields");
+        System.out.println("PASS audio-settings gain-boundaries rounding hard-mute resume unchanged-fields");
     }
 
     private static void requireInvalidGain(Wasm4Apu apu, int gain) {
@@ -99,8 +91,7 @@ public final class AudioSettingsSmoke {
 
     private static void assertEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 
@@ -125,7 +116,9 @@ public final class AudioSettingsSmoke {
             tickCount++;
         }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "test";

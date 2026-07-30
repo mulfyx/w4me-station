@@ -25,6 +25,7 @@ public final class W4IrFunction {
     private final int intrinsic;
     private final int[] pageRecordIds;
 
+    /** Creates a new W4IR function. */
     public W4IrFunction(
             int functionIndex,
             int declaredLocalCount,
@@ -50,50 +51,62 @@ public final class W4IrFunction {
         this.pageRecordIds = pageRecordIds;
     }
 
+    /** Performs the function index operation. */
     public int functionIndex() {
         return functionIndex;
     }
 
+    /** Performs the declared local count operation. */
     public int declaredLocalCount() {
         return declaredLocalCount;
     }
 
+    /** Performs the instruction count operation. */
     public int instructionCount() {
         return instructionCount;
     }
 
+    /** Performs the branch tables operation. */
     public int[][] branchTables() {
         return branchTables;
     }
 
+    /** Performs the branch descriptors operation. */
     public int[] branchDescriptors() {
         return branchDescriptors;
     }
 
+    /** Performs the branch descriptor pcs operation. */
     public int[] branchDescriptorPcs() {
         return branchDescriptorPcs;
     }
 
+    /** Performs the branch descriptor indices operation. */
     public int[] branchDescriptorIndices() {
         return branchDescriptorIndices;
     }
 
+    /** Performs the branch descriptor tables operation. */
     public int[][] branchDescriptorTables() {
         return branchDescriptorTables;
     }
 
+    /** Performs the fingerprint operation. */
     public long fingerprint() {
         return fingerprint;
     }
 
+    /** Performs the intrinsic operation. */
     public int intrinsic() {
         return intrinsic;
     }
 
+    /** Performs the page count operation. */
     public int pageCount() {
         return pageRecordIds.length;
     }
 
+    /** Performs the page record id operation. */
     public int pageRecordId(int pageIndex) {
         return pageRecordIds[pageIndex];
     }

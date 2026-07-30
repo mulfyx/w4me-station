@@ -1,11 +1,11 @@
 package w4me.runtime.audio;
 
+/** Provides the WASM 4 apu implementation. */
 public final class Wasm4Apu {
     private static final int CHANNEL_COUNT = 4;
     private static final int CHANNEL_STATE_FIELDS = 11;
     private static final int SCALAR_STATE_FIELDS = 5;
-    private static final int SNAPSHOT_LENGTH =
-            CHANNEL_COUNT * CHANNEL_STATE_FIELDS + SCALAR_STATE_FIELDS;
+    private static final int SNAPSHOT_LENGTH = CHANNEL_COUNT * CHANNEL_STATE_FIELDS + SCALAR_STATE_FIELDS;
     private final AudioBackend backend;
     private final AudioControl control;
     private final int[] frequencyStart = new int[4];
@@ -29,6 +29,7 @@ public final class Wasm4Apu {
     private boolean muted;
     private boolean suspended;
 
+    /** Creates a new WASM 4 apu. */
     public Wasm4Apu(AudioBackend backend) {
         if (backend == null) {
             throw new IllegalArgumentException("audio backend is required");
@@ -37,6 +38,7 @@ public final class Wasm4Apu {
         control = backend instanceof AudioControl ? (AudioControl) backend : null;
     }
 
+    /** Updates the diagnostic. */
     public void setDiagnostic(boolean diagnostic) {
         this.diagnostic = diagnostic;
         if (backend instanceof AudioDiagnostics) {
@@ -44,19 +46,20 @@ public final class Wasm4Apu {
         }
     }
 
+    /** Performs the tone operation. */
     public synchronized void tone(int frequency, int duration, int volume, int flags) {
         if (muted) {
             return;
         }
         int channel = flags & 3;
         int start = decodeFrequency(frequency & 0xffff, (flags & 0x40) != 0);
-        int end = decodeFrequency((frequency >>> 16) & 0xffff, (flags & 0x40) != 0);
+        final int end = decodeFrequency((frequency >>> 16) & 0xffff, (flags & 0x40) != 0);
         int sustain = duration & 0xff;
         int release = (duration >>> 8) & 0xff;
         int decay = (duration >>> 16) & 0xff;
         int attack = (duration >>> 24) & 0xff;
-        int frames = sustain + release + decay + attack;
-        int sustainLevel = clamp(volume & 0xff, 0, 100);
+        final int frames = sustain + release + decay + attack;
+        final int sustainLevel = clamp(volume & 0xff, 0, 100);
         int peakLevel = (volume >>> 8) & 0xff;
         if (peakLevel == 0) {
             peakLevel = 100;
@@ -85,20 +88,20 @@ public final class Wasm4Apu {
             backend.submitTone(frequency, duration, scalePackedVolume(volume, gain), flags);
         }
         if (diagnostic) {
-            System.out.println(
-                    "W4ME_TONE frequency="
-                            + unsignedString(frequency)
-                            + " duration="
-                            + unsignedString(duration)
-                            + " volume="
-                            + unsignedString(volume)
-                            + " flags="
-                            + unsignedString(flags)
-                            + " backend="
-                            + backend.grade());
+            System.out.println("W4ME_TONE frequency="
+                    + unsignedString(frequency)
+                    + " duration="
+                    + unsignedString(duration)
+                    + " volume="
+                    + unsignedString(volume)
+                    + " flags="
+                    + unsignedString(flags)
+                    + " backend="
+                    + backend.grade());
         }
     }
 
+    /** Performs the tick operation. */
     public void tick() {
         if (muted) {
             return;
@@ -112,10 +115,12 @@ public final class Wasm4Apu {
         backend.tick();
     }
 
+    /** Performs the close operation. */
     public void close() {
         backend.close();
     }
 
+    /** Updates the master gain. */
     public synchronized void setMasterGain(int gain) {
         if (gain < 0 || gain > 100) {
             throw new IllegalArgumentException("master gain is out of range");
@@ -127,10 +132,12 @@ public final class Wasm4Apu {
         silence();
     }
 
+    /** Performs the master gain operation. */
     public synchronized int masterGain() {
         return masterGain;
     }
 
+    /** Updates the muted. */
     public synchronized void setMuted(boolean value) {
         if (muted == value) {
             return;
@@ -142,10 +149,12 @@ public final class Wasm4Apu {
         }
     }
 
+    /** Performs the muted operation. */
     public synchronized boolean muted() {
         return muted;
     }
 
+    /** Updates the suspended. */
     public synchronized void setSuspended(boolean value) {
         suspended = value;
         if (value) {
@@ -153,51 +162,63 @@ public final class Wasm4Apu {
         }
     }
 
+    /** Performs the suspend output operation. */
     public synchronized void suspendOutput() {
         suspended = true;
         silence();
     }
 
+    /** Performs the resume output operation. */
     public synchronized void resumeOutput() {
         suspended = false;
     }
 
+    /** Performs the suspended operation. */
     public synchronized boolean suspended() {
         return suspended;
     }
 
+    /** Performs the volume capability operation. */
     public int volumeCapability() {
         return control == null ? AudioControl.VOLUME_CONTINUOUS : control.volumeCapability();
     }
 
+    /** Performs the grade operation. */
     public String grade() {
         return backend.grade();
     }
 
+    /** Performs the active profile name operation. */
     public String activeProfileName() {
         return AudioBackends.activeProfileName(backend);
     }
 
+    /** Performs the audio fallback reason operation. */
     public String audioFallbackReason() {
         return AudioBackends.fallbackReason(backend);
     }
 
+    /** Performs the tone event count operation. */
     public int toneEventCount() {
         return toneEventCount;
     }
 
+    /** Performs the last frequency operation. */
     public int lastFrequency() {
         return lastFrequency;
     }
 
+    /** Performs the last duration operation. */
     public int lastDuration() {
         return lastDuration;
     }
 
+    /** Performs the last volume operation. */
     public int lastVolume() {
         return lastVolume;
     }
 
+    /** Performs the last flags operation. */
     public int lastFlags() {
         return lastFlags;
     }
@@ -217,22 +238,22 @@ public final class Wasm4Apu {
         offset = copyToState(sustainVolume, state, offset);
         offset = copyToState(peakVolume, state, offset);
         offset = copyToState(channelFlags, state, offset);
-        state[offset++] = toneEventCount;
-        state[offset++] = lastFrequency;
-        state[offset++] = lastDuration;
-        state[offset++] = lastVolume;
+        state[offset++] = toneEventCount; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        state[offset++] = lastFrequency; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        state[offset++] = lastDuration; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        state[offset++] = lastVolume; // NOPMD -- Compact Java 1.3 cursor bytecode.
         state[offset] = lastFlags;
         return state;
     }
 
+    /** Reports whether restore state. */
     public synchronized boolean canRestoreState(int[] state) {
         return state != null && state.length == SNAPSHOT_LENGTH;
     }
 
     /**
-     * Restores cartridge-owned APU state without changing user mute, gain, or
-     * menu suspension. An already playing backend tone stays silent until the
-     * cartridge submits its next tone.
+     * Restores cartridge-owned APU state without changing user mute, gain, or menu suspension. An already playing
+     * backend tone stays silent until the cartridge submits its next tone.
      */
     public synchronized void restoreState(int[] state) {
         if (!canRestoreState(state)) {
@@ -251,13 +272,14 @@ public final class Wasm4Apu {
         offset = copyFromState(state, offset, sustainVolume);
         offset = copyFromState(state, offset, peakVolume);
         offset = copyFromState(state, offset, channelFlags);
-        toneEventCount = state[offset++];
-        lastFrequency = state[offset++];
-        lastDuration = state[offset++];
-        lastVolume = state[offset++];
+        toneEventCount = state[offset++]; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        lastFrequency = state[offset++]; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        lastDuration = state[offset++]; // NOPMD -- Compact Java 1.3 cursor bytecode.
+        lastVolume = state[offset++]; // NOPMD -- Compact Java 1.3 cursor bytecode.
         lastFlags = state[offset];
     }
 
+    /** Performs the channel frequency operation. */
     public int channelFrequency(int channel) {
         requireChannel(channel);
         int end = frequencyEnd[channel];
@@ -266,10 +288,10 @@ public final class Wasm4Apu {
             return frequencyStart[channel];
         }
         int elapsed = elapsedFrames[channel];
-        return frequencyStart[channel]
-                + (int) ((long) (end - frequencyStart[channel]) * elapsed / total);
+        return frequencyStart[channel] + (int) ((long) (end - frequencyStart[channel]) * elapsed / total);
     }
 
+    /** Performs the channel volume operation. */
     public int channelVolume(int channel) {
         requireChannel(channel);
         int elapsed = elapsedFrames[channel];
@@ -290,9 +312,7 @@ public final class Wasm4Apu {
         elapsed -= sustainFrames[channel];
         int release = releaseFrames[channel];
         if (elapsed < release) {
-            return release == 0
-                    ? 0
-                    : sustainVolume[channel] * (release - elapsed) / release;
+            return release == 0 ? 0 : sustainVolume[channel] * (release - elapsed) / release;
         }
         return 0;
     }

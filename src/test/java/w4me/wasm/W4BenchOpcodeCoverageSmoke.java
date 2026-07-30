@@ -3,15 +3,13 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 
 /**
  * Executes every source opcode exercised by the W4Bench cartridge.
  *
- * <p>The cartridge exports small deterministic groups instead of running the
- * whole instruction set through one large function. Profiling is reset at
- * every invocation, so this smoke accumulates a bitmap after each group.
+ * <p>The cartridge exports small deterministic groups instead of running the whole instruction set through one large
+ * function. Profiling is reset at every invocation, so this smoke accumulates a bitmap after each group.
  */
 public final class W4BenchOpcodeCoverageSmoke {
     private static final int PROFILE_LIMIT = 0x10000;
@@ -31,6 +29,7 @@ public final class W4BenchOpcodeCoverageSmoke {
 
     private W4BenchOpcodeCoverageSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin w4bench.wasm");
@@ -63,7 +62,8 @@ public final class W4BenchOpcodeCoverageSmoke {
                 interpreter.invoke("trap_unreachable");
             } catch (WasmTrap expected) {
                 if (!"unreachable instruction executed".equals(expected.getMessage())) {
-                    throw new AssertionError("unexpected trap: " + expected.getMessage());
+                    throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
+                            "unexpected trap: " + expected.getMessage());
                 }
                 trapped = true;
             }
@@ -74,8 +74,7 @@ public final class W4BenchOpcodeCoverageSmoke {
 
             int covered = requireExactCoverage(observed);
             assertNoInternalW4irOpcodes(observed);
-            System.out.println(
-                    "PASS opcodes=" + covered + " trap=exact fusion=none");
+            System.out.println("PASS opcodes=" + covered + " trap=exact fusion=none");
         } finally {
             runtime.close();
             module.close();
@@ -92,8 +91,7 @@ public final class W4BenchOpcodeCoverageSmoke {
         collectRange(interpreter, observed, W4IR_FIRST, W4IR_LAST);
     }
 
-    private static void collectRange(
-            WasmInterpreter interpreter, boolean[] observed, int first, int last) {
+    private static void collectRange(WasmInterpreter interpreter, boolean[] observed, int first, int last) {
         int opcode;
         for (opcode = first; opcode <= last; opcode++) {
             if (wasExecuted(interpreter, opcode)) {
@@ -108,8 +106,7 @@ public final class W4BenchOpcodeCoverageSmoke {
         }
         try {
             int executionOpcode = WasmModule.executionOpcode(originalOpcode);
-            return executionOpcode != originalOpcode
-                    && interpreter.opcodeCount(executionOpcode) != 0;
+            return executionOpcode != originalOpcode && interpreter.opcodeCount(executionOpcode) != 0;
         } catch (IllegalArgumentException ignored) {
             return false;
         }
@@ -125,10 +122,7 @@ public final class W4BenchOpcodeCoverageSmoke {
         covered += requireRange(observed, 0xfc00, 0xfc0b);
         if (covered != REQUIRED_OPCODE_COUNT) {
             throw new AssertionError(
-                    "required opcode set changed: expected "
-                            + REQUIRED_OPCODE_COUNT
-                            + ", got "
-                            + covered);
+                    "required opcode set changed: expected " + REQUIRED_OPCODE_COUNT + ", got " + covered);
         }
         return covered;
     }
@@ -137,9 +131,7 @@ public final class W4BenchOpcodeCoverageSmoke {
         int opcode;
         for (opcode = first; opcode <= last; opcode++) {
             if (!observed[opcode]) {
-                throw new AssertionError(
-                        "W4Bench did not execute source opcode 0x"
-                                + Integer.toHexString(opcode));
+                throw new AssertionError("W4Bench did not execute source opcode 0x" + Integer.toHexString(opcode));
             }
         }
         return last - first + 1;
@@ -149,9 +141,7 @@ public final class W4BenchOpcodeCoverageSmoke {
         int opcode;
         for (opcode = W4IR_FIRST; opcode <= W4IR_LAST; opcode++) {
             if (observed[opcode]) {
-                throw new AssertionError(
-                        "fusion leaked internal W4IR opcode 0x"
-                                + Integer.toHexString(opcode));
+                throw new AssertionError("fusion leaked internal W4IR opcode 0x" + Integer.toHexString(opcode));
             }
         }
     }

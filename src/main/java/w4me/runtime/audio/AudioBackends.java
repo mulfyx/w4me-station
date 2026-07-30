@@ -1,5 +1,6 @@
 package w4me.runtime.audio;
 
+/** Provides the audio backends implementation. */
 public final class AudioBackends {
     public static final String PREFERENCE_WAV = "wav";
     public static final String PREFERENCE_MIDI = "midi";
@@ -12,10 +13,12 @@ public final class AudioBackends {
 
     private AudioBackends() {}
 
+    /** Performs the create operation. */
     public static AudioBackend create() {
         return create(null);
     }
 
+    /** Performs the create operation. */
     public static AudioBackend create(String preference) {
         if (PREFERENCE_TONE.equals(preference)) {
             return createTone();
@@ -26,7 +29,7 @@ public final class AudioBackends {
         try {
             Object backend = Class.forName("w4me.runtime.audio.MmapiPcmBackend").newInstance();
             return (AudioBackend) backend;
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return createMidiFallback();
         }
     }
@@ -36,7 +39,7 @@ public final class AudioBackends {
             Object backend =
                     Class.forName("w4me.runtime.audio.MmapiMidiBackend").newInstance();
             return (AudioBackend) backend;
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return createTone();
         }
     }
@@ -46,11 +49,12 @@ public final class AudioBackends {
             Object backend =
                     Class.forName("w4me.runtime.audio.MmapiToneBackend").newInstance();
             return (AudioBackend) backend;
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return new SilentAudioBackend();
         }
     }
 
+    /** Performs the active profile name operation. */
     public static String activeProfileName(AudioBackend backend) {
         if (backend instanceof AudioBackendStatus) {
             return ((AudioBackendStatus) backend).activeProfileName();
@@ -58,6 +62,7 @@ public final class AudioBackends {
         return backend == null ? PROFILE_SILENT : backend.grade();
     }
 
+    /** Performs the fallback reason operation. */
     public static String fallbackReason(AudioBackend backend) {
         if (backend instanceof AudioBackendStatus) {
             return ((AudioBackendStatus) backend).fallbackReason();

@@ -3,7 +3,6 @@ package w4me.midp;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
-
 import w4me.FramebufferOracle;
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
@@ -19,8 +18,10 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
 
     private boolean started;
 
+    /** Performs the workload operation. */
     protected abstract int workload();
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -36,62 +37,66 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
             int sample;
             for (sample = 0; sample < samples.length; sample++) {
                 samples[sample] = runRoute(font, cartridge);
-                System.out.println(
-                        "W4ME_CORPUS_BENCH_SAMPLE workload="
-                                + workloadName()
-                                + " route="
-                                + routeName()
-                                + " sample="
-                                + (sample + 1)
-                                + " elapsed-ms="
-                                + samples[sample].elapsedMillis
-                                + " logical="
-                                + samples[sample].instructions
-                                + " outer-dispatches="
-                                + samples[sample].dispatches
-                                + " compact-calls="
-                                + samples[sample].compactCalls
-                                + " compact-instructions="
-                                + samples[sample].compactInstructions
-                                + " framebuffer-fnv1a="
-                                + hex8(samples[sample].framebuffer));
+                System.out.println("W4ME_CORPUS_BENCH_SAMPLE workload="
+                        + workloadName()
+                        + " route="
+                        + routeName()
+                        + " sample="
+                        + (sample + 1)
+                        + " elapsed-ms="
+                        + samples[sample].elapsedMillis
+                        + " logical="
+                        + samples[sample].instructions
+                        + " outer-dispatches="
+                        + samples[sample].dispatches
+                        + " compact-calls="
+                        + samples[sample].compactCalls
+                        + " compact-instructions="
+                        + samples[sample].compactInstructions
+                        + " framebuffer-fnv1a="
+                        + hex8(samples[sample].framebuffer));
             }
             requireEquivalent(samples);
             long median = medianElapsed(samples);
-            System.out.println(
-                    "W4ME_CORPUS_BENCH workload="
-                            + workloadName()
-                            + " route="
-                            + routeName()
-                            + " frames="
-                            + frameCount()
-                            + " samples="
-                            + SAMPLES
-                            + " median-elapsed-ms="
-                            + median
-                            + " logical="
-                            + samples[0].instructions
-                            + " outer-dispatches="
-                            + samples[0].dispatches
-                            + " compact-calls="
-                            + samples[0].compactCalls
-                            + " compact-instructions="
-                            + samples[0].compactInstructions
-                            + " fast-paths=0 extended-fusions=enabled"
-                            + " compact=enabled trace=enabled direct-intrinsics=enabled"
-                            + " w4ir=RAM framebuffer-fnv1a="
-                            + hex8(samples[0].framebuffer));
+            System.out.println("W4ME_CORPUS_BENCH workload="
+                    + workloadName()
+                    + " route="
+                    + routeName()
+                    + " frames="
+                    + frameCount()
+                    + " samples="
+                    + SAMPLES
+                    + " median-elapsed-ms="
+                    + median
+                    + " logical="
+                    + samples[0].instructions
+                    + " outer-dispatches="
+                    + samples[0].dispatches
+                    + " compact-calls="
+                    + samples[0].compactCalls
+                    + " compact-instructions="
+                    + samples[0].compactInstructions
+                    + " fast-paths=0 extended-fusions=enabled"
+                    + " compact=enabled trace=enabled direct-intrinsics=enabled"
+                    + " w4ir=RAM framebuffer-fnv1a="
+                    + hex8(samples[0].framebuffer));
             form.append("PASS\n" + workloadName() + "\nmedian " + median + " ms");
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_CORPUS_BENCH_ERROR " + failure.toString());
             failure.printStackTrace();
             form.append("FAIL\n" + failure.toString());
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private Result runRoute(byte[] font, byte[] cartridge) throws Exception {
         WasmModule module = WasmModule.read(cartridge);
@@ -109,12 +114,7 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
             long startedAt = System.currentTimeMillis();
             int frame;
             for (frame = 0; frame < frameCount(); frame++) {
-                runtime.beginFrame(
-                        module,
-                        gamepad(frame),
-                        mouseX(frame),
-                        mouseY(frame),
-                        mouseButtons(frame));
+                runtime.beginFrame(module, gamepad(frame), mouseX(frame), mouseY(frame), mouseButtons(frame));
                 interpreter.invoke("update");
                 runtime.endFrame();
                 instructions += interpreter.instructionsExecuted();
@@ -128,13 +128,7 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
             long elapsed = System.currentTimeMillis() - startedAt;
             int framebuffer = FramebufferOracle.fnv1a(module);
             requireEquals("final framebuffer", expectedFramebuffer(), framebuffer);
-            return new Result(
-                    elapsed,
-                    instructions,
-                    dispatches,
-                    compactCalls,
-                    compactInstructions,
-                    framebuffer);
+            return new Result(elapsed, instructions, dispatches, compactCalls, compactInstructions, framebuffer);
         } finally {
             runtime.close();
             module.close();
@@ -203,12 +197,7 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
 
     private int gamepad(int frame) {
         if (workload() == WATERNET) {
-            if (frame == 0
-                    || frame == 12
-                    || frame == 24
-                    || frame == 48
-                    || frame == 60
-                    || frame == 82) {
+            if (frame == 0 || frame == 12 || frame == 24 || frame == 48 || frame == 60 || frame == 82) {
                 return 1;
             }
             if (frame == 36 || frame == 42) {
@@ -284,9 +273,7 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
         if (workload() != RUBIDO) {
             return 0;
         }
-        return frame == 3 || frame == 25 || frame == 36 || frame == 47 || frame == 57
-                ? 1
-                : 0;
+        return frame == 3 || frame == 25 || frame == 36 || frame == 47 || frame == 57 ? 1 : 0;
     }
 
     private static void requireEquivalent(Result[] samples) {
@@ -295,10 +282,7 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
             requireEquals("logical instructions", samples[0].instructions, samples[sample].instructions);
             requireEquals("outer dispatches", samples[0].dispatches, samples[sample].dispatches);
             requireEquals("compact calls", samples[0].compactCalls, samples[sample].compactCalls);
-            requireEquals(
-                    "compact instructions",
-                    samples[0].compactInstructions,
-                    samples[sample].compactInstructions);
+            requireEquals("compact instructions", samples[0].compactInstructions, samples[sample].compactInstructions);
             requireEquals("framebuffer", samples[0].framebuffer, samples[sample].framebuffer);
         }
     }
@@ -325,15 +309,13 @@ public abstract class GenericCorpusBenchmarkMidlet extends MIDlet {
 
     private static void requireEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new IllegalStateException(
-                    label + ": expected " + hex8(expected) + ", got " + hex8(actual));
+            throw new IllegalStateException(label + ": expected " + hex8(expected) + ", got " + hex8(actual));
         }
     }
 
     private static void requireEquals(String label, long expected, long actual) {
         if (expected != actual) {
-            throw new IllegalStateException(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new IllegalStateException(label + ": expected " + expected + ", got " + actual);
         }
     }
 

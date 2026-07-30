@@ -3,19 +3,19 @@ package w4me;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 import w4me.wasm.WasmTrap;
 
+/** Provides the WASM w 4 extensions smoke implementation. */
 public final class WasmW4ExtensionsSmoke {
     private WasmW4ExtensionsSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 3) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin extensions.wasm indirect-equivalent-types.wasm");
+            throw new IllegalArgumentException("usage: font.bin extensions.wasm indirect-equivalent-types.wasm");
         }
         WasmModule module = WasmModule.read(readFile(arguments[1]));
         Wasm4Runtime runtime = new Wasm4Runtime(readFile(arguments[0]));
@@ -50,13 +50,9 @@ public final class WasmW4ExtensionsSmoke {
         WasmModule indirectModule = WasmModule.read(readFile(arguments[2]));
         Wasm4Runtime indirectRuntime = new Wasm4Runtime(readFile(arguments[0]));
         indirectRuntime.initialize(indirectModule);
-        WasmInterpreter indirectInterpreter =
-                new WasmInterpreter(indirectModule, indirectRuntime);
+        WasmInterpreter indirectInterpreter = new WasmInterpreter(indirectModule, indirectRuntime);
         indirectInterpreter.invoke("update");
-        assertEquals(
-                "structurally equivalent call_indirect type",
-                123456789,
-                readI32(indirectModule.memory(), 20040));
+        assertEquals("structurally equivalent call_indirect type", 123456789, readI32(indirectModule.memory(), 20040));
         try {
             indirectInterpreter.invoke("mismatch");
             throw new AssertionError("call_indirect accepted a near-miss result type");
@@ -67,9 +63,8 @@ public final class WasmW4ExtensionsSmoke {
         }
         indirectModule.close();
         indirectRuntime.close();
-        System.out.println(
-                "PASS WASM-W4 trunc_sat=8 passive-data=memory.init/data.drop"
-                        + " indirect-types=structural memory.grow(0)=1");
+        System.out.println("PASS WASM-W4 trunc_sat=8 passive-data=memory.init/data.drop"
+                + " indirect-types=structural memory.grow(0)=1");
     }
 
     private static int readI32(byte[] memory, int address) {

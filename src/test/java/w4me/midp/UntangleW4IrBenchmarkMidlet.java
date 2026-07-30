@@ -3,21 +3,20 @@ package w4me.midp;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
-
 import w4me.FramebufferOracle;
 import w4me.UntangleBenchmarkRoute;
 import w4me.runtime.Wasm4Runtime;
 import w4me.wasm.WasmInterpreter;
 import w4me.wasm.WasmModule;
 
+/** Provides the untangle W4IR benchmark midlet implementation. */
 public class UntangleW4IrBenchmarkMidlet extends MIDlet {
-    private static final String[] COMPARISON_MODES = {
-        "optimized", "trace-off", "fusion-only", "baseline"
-    };
+    private static final String[] COMPARISON_MODES = {"optimized", "trace-off", "fusion-only", "baseline"};
     private static final int PHASES = 6;
     private static final int MEASURED_ROUTES = 8;
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -37,23 +36,29 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
                 runSingleMode(mode, cartridge, font);
                 result.append("PASS\n" + mode + "\n8 x 401 exact frames");
             }
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_UNTANGLE_BENCH_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
+    /** Performs the benchmark mode operation. */
     protected String benchmarkMode() {
         return "optimized";
     }
 
-    private static void runSingleMode(String mode, byte[] cartridge, byte[] font)
-            throws Exception {
+    private static void runSingleMode(String mode, byte[] cartridge, byte[] font) throws Exception {
         warmUpMode(mode, cartridge, font);
         Measurement total = new Measurement();
         int route;
@@ -88,8 +93,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
         }
     }
 
-    private static void warmUpMode(String mode, byte[] cartridge, byte[] font)
-            throws Exception {
+    private static void warmUpMode(String mode, byte[] cartridge, byte[] font) throws Exception {
         warmUp(
                 cartridge,
                 font,
@@ -98,8 +102,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
                 "optimized".equals(mode) || "fusion-only".equals(mode));
     }
 
-    private static Measurement measureMode(String mode, byte[] cartridge, byte[] font)
-            throws Exception {
+    private static Measurement measureMode(String mode, byte[] cartridge, byte[] font) throws Exception {
         return measureRoute(
                 cartridge,
                 font,
@@ -109,101 +112,93 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
     }
 
     private static void printSample(String mode, int route, Measurement sample) {
-        System.out.println(
-                "W4ME_UNTANGLE_SAMPLE mode="
-                        + mode
-                        + " route="
-                        + route
-                        + " frames="
-                        + UntangleBenchmarkRoute.FRAMES
-                        + " update-total-ms="
-                        + sample.updateMillis
-                        + " update-maximum-ms="
-                        + sample.maximumMillis
-                        + " maximum-frame="
-                        + sample.maximumFrame
-                        + " fast-paths="
-                        + sample.fastPaths
-                        + " framebuffer-fnv1a=bc0231d9");
+        System.out.println("W4ME_UNTANGLE_SAMPLE mode="
+                + mode
+                + " route="
+                + route
+                + " frames="
+                + UntangleBenchmarkRoute.FRAMES
+                + " update-total-ms="
+                + sample.updateMillis
+                + " update-maximum-ms="
+                + sample.maximumMillis
+                + " maximum-frame="
+                + sample.maximumFrame
+                + " fast-paths="
+                + sample.fastPaths
+                + " framebuffer-fnv1a=bc0231d9");
     }
 
     private static void printTotal(String mode, Measurement total) {
         int measuredFrames = UntangleBenchmarkRoute.FRAMES * MEASURED_ROUTES;
         int phase;
         for (phase = 0; phase < PHASES; phase++) {
-            System.out.println(
-                    "W4ME_UNTANGLE_PHASE mode="
-                            + mode
-                            + " phase="
-                            + UntangleBenchmarkRoute.phaseName(phase)
-                            + " frames="
-                            + total.phaseFrames[phase]
-                            + " update-total-ms="
-                            + total.phaseMillis[phase]
-                            + " update-average-us-estimate="
-                            + total.phaseMillis[phase] * 1000L / total.phaseFrames[phase]
-                            + " instructions-average="
-                            + total.phaseInstructions[phase] / total.phaseFrames[phase]
-                            + " dispatches-average="
-                            + total.phaseDispatches[phase] / total.phaseFrames[phase]);
+            System.out.println("W4ME_UNTANGLE_PHASE mode="
+                    + mode
+                    + " phase="
+                    + UntangleBenchmarkRoute.phaseName(phase)
+                    + " frames="
+                    + total.phaseFrames[phase]
+                    + " update-total-ms="
+                    + total.phaseMillis[phase]
+                    + " update-average-us-estimate="
+                    + total.phaseMillis[phase] * 1000L / total.phaseFrames[phase]
+                    + " instructions-average="
+                    + total.phaseInstructions[phase] / total.phaseFrames[phase]
+                    + " dispatches-average="
+                    + total.phaseDispatches[phase] / total.phaseFrames[phase]);
         }
-        System.out.println(
-                "W4ME_UNTANGLE_BENCH mode="
-                        + mode
-                        + " frames="
-                        + measuredFrames
-                        + " routes="
-                        + MEASURED_ROUTES
-                        + " parse-total-ms="
-                        + total.parseMillis
-                        + " lifecycle-total-ms="
-                        + total.lifecycleMillis
-                        + " update-total-ms="
-                        + total.updateMillis
-                        + " update-average-us-estimate="
-                        + total.updateMillis * 1000L / measuredFrames
-                        + " update-route-median-ms="
-                        + total.routeMedianMillis()
-                        + " update-maximum-ms="
-                        + total.maximumMillis
-                        + " maximum-route="
-                        + total.maximumRoute
-                        + " maximum-frame="
-                        + total.maximumFrame
-                        + " instructions-average="
-                        + total.instructions / measuredFrames
-                        + " dispatches-average="
-                        + total.dispatches / measuredFrames
-                        + " compact-blocks-average="
-                        + total.compactBlocks / measuredFrames
-                        + " compact-instructions-average="
-                        + total.compactInstructions / measuredFrames
-                        + " compact-frames="
-                        + total.compactFrames
-                        + " maximum-instructions="
-                        + total.maximumInstructions
-                        + " maximum-instructions-route="
-                        + total.maximumInstructionsRoute
-                        + " maximum-instructions-frame="
-                        + total.maximumInstructionsFrame
-                        + " trace-loops-average="
-                        + total.traceLoops / measuredFrames
-                        + " trace-iterations-average="
-                        + total.traceIterations / measuredFrames
-                        + " fast-paths="
-                        + total.fastPaths
-                        + " framebuffer-fnv1a=bc0231d9"
-                        + " free-heap="
-                        + Runtime.getRuntime().freeMemory());
+        System.out.println("W4ME_UNTANGLE_BENCH mode="
+                + mode
+                + " frames="
+                + measuredFrames
+                + " routes="
+                + MEASURED_ROUTES
+                + " parse-total-ms="
+                + total.parseMillis
+                + " lifecycle-total-ms="
+                + total.lifecycleMillis
+                + " update-total-ms="
+                + total.updateMillis
+                + " update-average-us-estimate="
+                + total.updateMillis * 1000L / measuredFrames
+                + " update-route-median-ms="
+                + total.routeMedianMillis()
+                + " update-maximum-ms="
+                + total.maximumMillis
+                + " maximum-route="
+                + total.maximumRoute
+                + " maximum-frame="
+                + total.maximumFrame
+                + " instructions-average="
+                + total.instructions / measuredFrames
+                + " dispatches-average="
+                + total.dispatches / measuredFrames
+                + " compact-blocks-average="
+                + total.compactBlocks / measuredFrames
+                + " compact-instructions-average="
+                + total.compactInstructions / measuredFrames
+                + " compact-frames="
+                + total.compactFrames
+                + " maximum-instructions="
+                + total.maximumInstructions
+                + " maximum-instructions-route="
+                + total.maximumInstructionsRoute
+                + " maximum-instructions-frame="
+                + total.maximumInstructionsFrame
+                + " trace-loops-average="
+                + total.traceLoops / measuredFrames
+                + " trace-iterations-average="
+                + total.traceIterations / measuredFrames
+                + " fast-paths="
+                + total.fastPaths
+                + " framebuffer-fnv1a=bc0231d9"
+                + " free-heap="
+                + Runtime.getRuntime().freeMemory());
     }
 
     private static Measurement measureRoute(
-            byte[] cartridge,
-            byte[] font,
-            boolean extended,
-            boolean compact,
-            boolean trace)
-            throws Exception {
+            byte[] cartridge, byte[] font, boolean extended, boolean compact, boolean trace) throws Exception {
         Measurement result = new Measurement();
         long parseStarted = System.currentTimeMillis();
         WasmModule module = WasmModule.read(cartridge, null, extended);
@@ -230,7 +225,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
                 result.phaseMillis[phase] += elapsed;
                 result.phaseFrames[phase]++;
                 long frameInstructions = interpreter.instructionsExecuted();
-                int frameCompactBlocks = interpreter.compactBlockCalls();
+                final int frameCompactBlocks = interpreter.compactBlockCalls();
                 result.instructions += frameInstructions;
                 result.dispatches += interpreter.dispatchesExecuted();
                 result.phaseInstructions[phase] += frameInstructions;
@@ -252,7 +247,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
                     result.maximumInstructionsFrame = frame;
                 }
             }
-            requireExactResult(runtime, module, result.fastPaths);
+            requireExactResult(module, result.fastPaths);
             return result;
         } finally {
             runtime.close();
@@ -260,12 +255,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
         }
     }
 
-    private static void warmUp(
-            byte[] cartridge,
-            byte[] font,
-            boolean extended,
-            boolean compact,
-            boolean trace)
+    private static void warmUp(byte[] cartridge, byte[] font, boolean extended, boolean compact, boolean trace)
             throws Exception {
         WasmModule module = WasmModule.read(cartridge, null, extended);
         Wasm4Runtime runtime = new Wasm4Runtime(font);
@@ -283,18 +273,14 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
                 update(module, runtime, interpreter, frame);
                 fastPaths += interpreter.fastPathCalls();
             }
-            requireExactResult(runtime, module, fastPaths);
+            requireExactResult(module, fastPaths);
         } finally {
             runtime.close();
             module.close();
         }
     }
 
-    private static void update(
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter,
-            int frame)
+    private static void update(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter, int frame)
             throws Exception {
         runtime.beginFrame(
                 module,
@@ -306,11 +292,9 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
         runtime.endFrame();
     }
 
-    private static void requireExactResult(
-            Wasm4Runtime runtime, WasmModule module, int fastPaths) {
+    private static void requireExactResult(WasmModule module, int fastPaths) {
         int framebuffer = FramebufferOracle.fnv1a(module);
-        if (framebuffer != UntangleBenchmarkRoute.FINAL_FRAMEBUFFER_FNV1A
-                || fastPaths != 0) {
+        if (framebuffer != UntangleBenchmarkRoute.FINAL_FRAMEBUFFER_FNV1A || fastPaths != 0) {
             throw new IllegalStateException("Untangle route was not exact generic execution");
         }
     }
@@ -383,8 +367,7 @@ public class UntangleW4IrBenchmarkMidlet extends MIDlet {
 
         long routeMedianMillis() {
             long[] sorted = new long[routeUpdateMillis.length];
-            System.arraycopy(
-                    routeUpdateMillis, 0, sorted, 0, routeUpdateMillis.length);
+            System.arraycopy(routeUpdateMillis, 0, sorted, 0, routeUpdateMillis.length);
             int first;
             for (first = 0; first < sorted.length - 1; first++) {
                 int minimum = first;

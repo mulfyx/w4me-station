@@ -1,20 +1,18 @@
 package w4me.runtime.audio;
 
 import java.io.ByteArrayInputStream;
-
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Sequence;
 
+/** Provides the MMAPI midi backend smoke implementation. */
 public final class MmapiMidiBackendSmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) {
         FakeMidiPlayerFactory factory = new FakeMidiPlayerFactory();
         MmapiMidiBackend backend = new MmapiMidiBackend(factory);
 
         assertEquals("ready grade", "C-smf4-ready", backend.grade());
-        assertEquals(
-                "active technology",
-                AudioBackends.PROFILE_MIDI,
-                backend.activeProfileName());
+        assertEquals("active technology", AudioBackends.PROFILE_MIDI, backend.activeProfileName());
         if (backend.fallbackReason() != null) {
             throw new AssertionError("available MIDI reported a fallback");
         }
@@ -33,7 +31,7 @@ public final class MmapiMidiBackendSmoke {
         requireEvent(factory.lastMidi, 0x90, 69, 0);
         requireEvent(factory.lastMidi, 0x91, 60, 0);
 
-        FakeMidiPlayback first = factory.lastPlayback;
+        final FakeMidiPlayback first = factory.lastPlayback;
         backend.submitTone(900, 8, 100, 3);
         backend.tick();
         assertEquals("replacement Player count", 2, factory.openCount);
@@ -45,7 +43,7 @@ public final class MmapiMidiBackendSmoke {
         requireEvent(factory.lastMidi, 0x91, 60, 95);
         requireEvent(factory.lastMidi, 0x99, 42, 127);
 
-        FakeMidiPlayback second = factory.lastPlayback;
+        final FakeMidiPlayback second = factory.lastPlayback;
         backend.submitTone(0, 0, 0, 0);
         backend.submitTone(0, 0, 0, 1);
         backend.submitTone(0, 0, 0, 3);
@@ -59,16 +57,10 @@ public final class MmapiMidiBackendSmoke {
         backend.close();
         MmapiMidiBackend unavailable = new MmapiMidiBackend(null);
         assertEquals(
-                "unavailable MIDI falls back to tones",
-                AudioBackends.PROFILE_TONE,
-                unavailable.activeProfileName());
-        assertEquals(
-                "unavailable MIDI reason",
-                "MMAPI MIDI playback unavailable",
-                unavailable.fallbackReason());
+                "unavailable MIDI falls back to tones", AudioBackends.PROFILE_TONE, unavailable.activeProfileName());
+        assertEquals("unavailable MIDI reason", "MMAPI MIDI playback unavailable", unavailable.fallbackReason());
         System.out.println(
-                "PASS mmapi-smf one-player polyphony frame-coalescing"
-                        + " lifecycle explicit-profile-status");
+                "PASS mmapi-smf one-player polyphony frame-coalescing" + " lifecycle explicit-profile-status");
     }
 
     private static void requireHeader(byte[] midi) {
@@ -88,12 +80,12 @@ public final class MmapiMidiBackendSmoke {
 
     private static void requireDesktopMidiParser(byte[] midi) {
         try {
-            Sequence sequence =
-                    MidiSystem.getSequence(new ByteArrayInputStream(midi));
+            Sequence sequence = MidiSystem.getSequence(new ByteArrayInputStream(midi));
             assertEquals("parsed MIDI tracks", 2, sequence.getTracks().length);
             assertEquals("parsed MIDI resolution", 60, sequence.getResolution());
         } catch (Exception failure) {
-            throw new AssertionError("desktop MIDI parser rejected SMF: " + failure);
+            throw new AssertionError( // NOPMD -- CLDC 1.1 has no cause chaining.
+                    "desktop MIDI parser rejected SMF: " + failure);
         }
     }
 
@@ -106,24 +98,14 @@ public final class MmapiMidiBackendSmoke {
                 return;
             }
         }
-        throw new AssertionError(
-                "missing MIDI bytes "
-                        + first
-                        + ","
-                        + second
-                        + ","
-                        + third);
+        throw new AssertionError("missing MIDI bytes " + first + "," + second + "," + third);
     }
 
     private static void requireAscii(byte[] data, int offset, String expected) {
         int index;
         for (index = 0; index < expected.length(); index++) {
             if ((data[offset + index] & 0xff) != expected.charAt(index)) {
-                throw new AssertionError(
-                        "missing "
-                                + expected
-                                + " at "
-                                + offset);
+                throw new AssertionError("missing " + expected + " at " + offset);
             }
         }
     }
@@ -141,20 +123,17 @@ public final class MmapiMidiBackendSmoke {
 
     private static void assertEquals(String label, int expected, int actual) {
         if (expected != actual) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 
     private static void assertEquals(String label, String expected, String actual) {
         if (!expected.equals(actual)) {
-            throw new AssertionError(
-                    label + ": expected " + expected + ", got " + actual);
+            throw new AssertionError(label + ": expected " + expected + ", got " + actual);
         }
     }
 
-    private static final class FakeMidiPlayerFactory
-            implements MmapiMidiBackend.MidiPlayerFactory {
+    private static final class FakeMidiPlayerFactory implements MmapiMidiBackend.MidiPlayerFactory {
         private int openCount;
         private byte[] lastMidi;
         private FakeMidiPlayback lastPlayback;
@@ -167,8 +146,7 @@ public final class MmapiMidiBackendSmoke {
         }
     }
 
-    private static final class FakeMidiPlayback
-            implements MmapiMidiBackend.MidiPlayback {
+    private static final class FakeMidiPlayback implements MmapiMidiBackend.MidiPlayback {
         private boolean closed;
 
         public void close() {

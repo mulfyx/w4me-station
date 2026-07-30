@@ -1,14 +1,15 @@
 package w4me.midp;
 
+/** Provides the system menu smoke implementation. */
 public final class SystemMenuSmoke {
     private SystemMenuSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] args) {
         verifyActionOrdering();
         verifyFrameBoundaryState();
         verifySettingsOrdering();
-        System.out.println(
-                "PASS system-menu ordering=PASS state=PASS input=PASS settings=PASS");
+        System.out.println("PASS system-menu ordering=PASS state=PASS input=PASS settings=PASS");
     }
 
     private static void verifyActionOrdering() {
@@ -24,8 +25,7 @@ public final class SystemMenuSmoke {
         assertEquals("save size", 6, saveState.size());
         assertEquals("save action", SystemMenuModel.ACTION_SAVE_STATE, saveState.actionAt(1));
         assertEquals("load action", SystemMenuModel.ACTION_LOAD_STATE, saveState.actionAt(2));
-        assertEquals(
-                "save exit", SystemMenuModel.ACTION_EXIT, saveState.actionAt(saveState.size() - 1));
+        assertEquals("save exit", SystemMenuModel.ACTION_EXIT, saveState.actionAt(saveState.size() - 1));
     }
 
     private static void verifyFrameBoundaryState() {
@@ -33,10 +33,7 @@ public final class SystemMenuSmoke {
         int updates = 0;
         updates += state.state() == SystemMenuState.RUNNING ? 1 : 0;
         assertTrue("menu request accepted", state.requestMenu());
-        assertEquals(
-                "request waits for boundary",
-                SystemMenuState.MENU_REQUESTED,
-                state.state());
+        assertEquals("request waits for boundary", SystemMenuState.MENU_REQUESTED, state.state());
         updates += state.state() == SystemMenuState.RUNNING ? 1 : 0;
         assertTrue("worker opens at boundary", state.acceptMenuAtFrameBoundary());
         updates += state.state() == SystemMenuState.RUNNING ? 1 : 0;
@@ -50,20 +47,14 @@ public final class SystemMenuSmoke {
         assertTrue("second menu request", state.requestMenu());
         assertTrue("second boundary", state.acceptMenuAtFrameBoundary());
         assertTrue("save request", state.requestSave());
-        assertEquals(
-                "save waits for worker",
-                SystemMenuState.SAVE_REQUESTED,
-                state.state());
+        assertEquals("save waits for worker", SystemMenuState.SAVE_REQUESTED, state.state());
         state.completeSaveStateAction();
         assertTrue("save confirmation input suppressed", state.consumeInputSuppression());
 
         assertTrue("third menu request", state.requestMenu());
         assertTrue("third boundary", state.acceptMenuAtFrameBoundary());
         assertTrue("load request", state.requestLoad());
-        assertEquals(
-                "load waits for worker",
-                SystemMenuState.LOAD_REQUESTED,
-                state.state());
+        assertEquals("load waits for worker", SystemMenuState.LOAD_REQUESTED, state.state());
         state.completeSaveStateAction();
         assertTrue("load confirmation input suppressed", state.consumeInputSuppression());
 

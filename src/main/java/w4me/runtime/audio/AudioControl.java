@@ -6,6 +6,7 @@ public interface AudioControl {
     int MUTE_ONLY = 1;
     int VOLUME_CONTINUOUS = 2;
 
+    /** Performs the volume capability operation. */
     int volumeCapability();
 
     /** Stops current output as completely as the backend permits. */

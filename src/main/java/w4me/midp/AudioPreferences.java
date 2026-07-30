@@ -30,7 +30,7 @@ final class AudioPreferences {
                 return Settings.defaults();
             }
             return decode(store.getRecord(records.nextRecordId()));
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return Settings.defaults();
         } finally {
             destroy(records);
@@ -51,7 +51,7 @@ final class AudioPreferences {
                 store.addRecord(value, 0, value.length);
             }
             return true;
-        } catch (Throwable unavailable) {
+        } catch (Throwable unavailable) { // NOPMD -- Java ME API linkage fallback.
             return false;
         } finally {
             destroy(records);
@@ -76,16 +76,12 @@ final class AudioPreferences {
             return Settings.defaults();
         }
         if (value.length == 1) {
-            return new Settings(
-                    value[0] == 1 ? PROFILE_MIDI : PROFILE_WAV,
-                    false,
-                    100);
+            return new Settings(value[0] == 1 ? PROFILE_MIDI : PROFILE_WAV, false, 100);
         }
         if (value.length < 3) {
             return Settings.defaults();
         }
-        if ((value[0] & 0xff) != MAGIC_W
-                || (value[1] & 0xff) != MAGIC_4) {
+        if ((value[0] & 0xff) != MAGIC_W || (value[1] & 0xff) != MAGIC_4) {
             return Settings.defaults();
         }
         int version = value[2] & 0xff;
@@ -96,9 +92,7 @@ final class AudioPreferences {
                 return Settings.defaults();
             }
             return new Settings(
-                    (legacyFlags & FLAG_V2_COMPATIBILITY) != 0
-                            ? PROFILE_MIDI
-                            : PROFILE_WAV,
+                    (legacyFlags & FLAG_V2_COMPATIBILITY) != 0 ? PROFILE_MIDI : PROFILE_WAV,
                     (legacyFlags & FLAG_V2_MUTED) != 0,
                     legacyGain);
         }
@@ -111,10 +105,7 @@ final class AudioPreferences {
         if (!isProfile(profile) || gain > 100) {
             return Settings.defaults();
         }
-        return new Settings(
-                profile,
-                (flags & FLAG_MUTED) != 0,
-                gain);
+        return new Settings(profile, (flags & FLAG_MUTED) != 0, gain);
     }
 
     static boolean isProfile(int profile) {
@@ -134,7 +125,7 @@ final class AudioPreferences {
         }
         try {
             store.closeRecordStore();
-        } catch (Throwable ignored) {
+        } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
             // Best effort for an optional preference.
         }
     }
@@ -145,27 +136,22 @@ final class AudioPreferences {
         }
         try {
             records.destroy();
-        } catch (Throwable ignored) {
+        } catch (Throwable ignored) { // NOPMD -- Java ME API linkage fallback.
             // Best effort after reading or writing an optional preference.
         }
     }
 
     static final class Settings {
         final int profile;
-        final boolean compatibilityMode;
         final boolean muted;
         final int gain;
 
         Settings(boolean compatibilityMode, boolean muted, int gain) {
-            this(
-                    compatibilityMode ? PROFILE_MIDI : PROFILE_WAV,
-                    muted,
-                    gain);
+            this(compatibilityMode ? PROFILE_MIDI : PROFILE_WAV, muted, gain);
         }
 
         Settings(int profile, boolean muted, int gain) {
             this.profile = isProfile(profile) ? profile : PROFILE_WAV;
-            this.compatibilityMode = this.profile == PROFILE_MIDI;
             this.muted = muted;
             this.gain = clampGain(gain);
         }

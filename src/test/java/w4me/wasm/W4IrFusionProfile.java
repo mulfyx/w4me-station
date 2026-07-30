@@ -3,7 +3,6 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.FramebufferOracle;
 import w4me.UntangleBenchmarkRoute;
 import w4me.runtime.Wasm4Runtime;
@@ -18,22 +17,17 @@ public final class W4IrFusionProfile {
 
     private W4IrFusionProfile() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 3) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin plasma-cube.wasm untangle.wasm");
+            throw new IllegalArgumentException("usage: font.bin plasma-cube.wasm untangle.wasm");
         }
         byte[] font = readFile(arguments[0]);
         profile("plasma-cube", font, readFile(arguments[1]), PLASMA_FRAMES);
-        profile(
-                "untangle",
-                font,
-                readFile(arguments[2]),
-                UntangleBenchmarkRoute.FRAMES);
+        profile("untangle", font, readFile(arguments[2]), UntangleBenchmarkRoute.FRAMES);
     }
 
-    private static void profile(String name, byte[] font, byte[] cartridge, int frames)
-            throws Exception {
+    private static void profile(String name, byte[] font, byte[] cartridge, int frames) throws Exception {
         WasmModule extendedModule = WasmModule.read(cartridge, null, true, false);
         WasmModule baselineModule = WasmModule.read(cartridge, null, false, false);
         Wasm4Runtime extendedRuntime = new Wasm4Runtime(font);
@@ -61,14 +55,13 @@ public final class W4IrFusionProfile {
                 update(name, frame, baselineModule, baselineRuntime, baseline);
                 assertState(name, frame, extendedModule, baselineModule);
                 if (extended.instructionsExecuted() != baseline.instructionsExecuted()) {
-                    throw new AssertionError(
-                            name
-                                    + " logical instruction mismatch at frame "
-                                    + frame
-                                    + ": extended="
-                                    + extended.instructionsExecuted()
-                                    + ", baseline="
-                                    + baseline.instructionsExecuted());
+                    throw new AssertionError(name
+                            + " logical instruction mismatch at frame "
+                            + frame
+                            + ": extended="
+                            + extended.instructionsExecuted()
+                            + ", baseline="
+                            + baseline.instructionsExecuted());
                 }
                 if (extended.fastPathCalls() != 0 || baseline.fastPathCalls() != 0) {
                     throw new AssertionError(name + " used a cartridge-specific fast path");
@@ -76,36 +69,30 @@ public final class W4IrFusionProfile {
                 logicalTotal += extended.instructionsExecuted();
                 extendedTotal += extended.dispatchesExecuted();
                 baselineTotal += baseline.dispatchesExecuted();
-                collectFunctions(
-                        extendedModule, extended, extendedDispatches, extendedCalls);
-                collectFunctions(
-                        baselineModule, baseline, baselineDispatches, baselineCalls);
+                collectFunctions(extendedModule, extended, extendedDispatches, extendedCalls);
+                collectFunctions(baselineModule, baseline, baselineDispatches, baselineCalls);
                 collectOpcodes(extended, opcodeTotals);
             }
-            int expected = "plasma-cube".equals(name)
-                    ? PLASMA_FINAL_FNV1A
-                    : UntangleBenchmarkRoute.FINAL_FRAMEBUFFER_FNV1A;
+            int expected =
+                    "plasma-cube".equals(name) ? PLASMA_FINAL_FNV1A : UntangleBenchmarkRoute.FINAL_FRAMEBUFFER_FNV1A;
             int actual = FramebufferOracle.fnv1a(extendedModule);
             if (actual != expected) {
-                throw new AssertionError(
-                        name + " final framebuffer mismatch: " + Integer.toHexString(actual));
+                throw new AssertionError(name + " final framebuffer mismatch: " + Integer.toHexString(actual));
             }
-            assertTierSelection(
-                    name, extendedModule, baselineModule, extendedTotal, baselineTotal);
+            assertTierSelection(name, extendedModule, baselineModule, extendedTotal, baselineTotal);
 
-            System.out.println(
-                    "W4IR_FUSION_PROFILE cart="
-                            + name
-                            + " frames="
-                            + frames
-                            + " tier=pattern-f32 memory=65536 globals=exact fast-paths=0 logical="
-                            + logicalTotal
-                            + " extended-dispatches="
-                            + extendedTotal
-                            + " baseline-dispatches="
-                            + baselineTotal
-                            + " dispatches-saved="
-                            + (baselineTotal - extendedTotal));
+            System.out.println("W4IR_FUSION_PROFILE cart="
+                    + name
+                    + " frames="
+                    + frames
+                    + " tier=pattern-f32 memory=65536 globals=exact fast-paths=0 logical="
+                    + logicalTotal
+                    + " extended-dispatches="
+                    + extendedTotal
+                    + " baseline-dispatches="
+                    + baselineTotal
+                    + " dispatches-saved="
+                    + (baselineTotal - extendedTotal));
             printOpcodeTotals(name, opcodeTotals);
             printFunctions(
                     name,
@@ -136,13 +123,11 @@ public final class W4IrFusionProfile {
         }
         if ("plasma-cube".equals(name)) {
             if (tieredOpcodes == 0 || baselineDispatches - tieredDispatches < 52000000L) {
-                throw new AssertionError(
-                        "Plasma pattern tier did not retain the float fusion hot path");
+                throw new AssertionError("Plasma pattern tier did not retain the float fusion hot path");
             }
         } else if ("untangle".equals(name)) {
             if (tieredOpcodes == 0 || tieredDispatches >= baselineDispatches) {
-                throw new AssertionError(
-                        "Untangle integer/control functions did not enter the integer fusion tier");
+                throw new AssertionError("Untangle integer/control functions did not enter the integer fusion tier");
             }
         }
     }
@@ -156,11 +141,8 @@ public final class W4IrFusionProfile {
                 continue;
             }
             int instructionIndex;
-            for (instructionIndex = 0;
-                    instructionIndex < body.instructionCount();
-                    instructionIndex++) {
-                int opcode = WasmModule.originalOpcode(
-                        body.code[instructionIndex * WasmModule.W4IR_STRIDE] & 0xffff);
+            for (instructionIndex = 0; instructionIndex < body.instructionCount(); instructionIndex++) {
+                int opcode = WasmModule.originalOpcode(body.code[instructionIndex * WasmModule.W4IR_STRIDE] & 0xffff);
                 if (isExtendedFusion(opcode)) {
                     count++;
                 }
@@ -180,11 +162,7 @@ public final class W4IrFusionProfile {
     }
 
     private static void update(
-            String name,
-            int frame,
-            WasmModule module,
-            Wasm4Runtime runtime,
-            WasmInterpreter interpreter)
+            String name, int frame, WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter)
             throws Exception {
         int mouseX = 0;
         int mouseY = 0;
@@ -200,10 +178,7 @@ public final class W4IrFusionProfile {
     }
 
     private static void collectFunctions(
-            WasmModule module,
-            WasmInterpreter interpreter,
-            long[] dispatches,
-            long[] calls) {
+            WasmModule module, WasmInterpreter interpreter, long[] dispatches, long[] calls) {
         int index;
         for (index = 0; index < module.functionCount(); index++) {
             dispatches[index] += interpreter.functionDispatchCount(index);
@@ -296,13 +271,11 @@ public final class W4IrFusionProfile {
         }
     }
 
-    private static void appendStaticExtended(
-            StringBuffer output, WasmModule.FunctionBody body) {
+    private static void appendStaticExtended(StringBuffer output, WasmModule.FunctionBody body) {
         int[] counts = new int[W4IR_LAST - W4IR_FIRST + 1];
         int index;
         for (index = 0; index < body.instructionCount(); index++) {
-            int opcode = WasmModule.originalOpcode(
-                    body.code[index * WasmModule.W4IR_STRIDE] & 0xffff);
+            int opcode = WasmModule.originalOpcode(body.code[index * WasmModule.W4IR_STRIDE] & 0xffff);
             if (opcode >= W4IR_FIRST && opcode <= W4IR_LAST && isExtendedFusion(opcode)) {
                 counts[opcode - W4IR_FIRST]++;
             }
@@ -326,17 +299,14 @@ public final class W4IrFusionProfile {
     }
 
     private static boolean isExtendedFusion(int opcode) {
-        return (opcode >= 0x1007 && opcode <= 0x100f)
-                || (opcode >= 0x101c && opcode <= 0x102f);
+        return (opcode >= 0x1007 && opcode <= 0x100f) || (opcode >= 0x101c && opcode <= 0x102f);
     }
 
-    private static void assertState(
-            String name, int frame, WasmModule extended, WasmModule baseline) {
+    private static void assertState(String name, int frame, WasmModule extended, WasmModule baseline) {
         int index;
         for (index = 0; index < extended.memory.length; index++) {
             if (extended.memory[index] != baseline.memory[index]) {
-                throw new AssertionError(
-                        name + " memory mismatch at frame " + frame + ", address " + index);
+                throw new AssertionError(name + " memory mismatch at frame " + frame + ", address " + index);
             }
         }
         if (extended.globals.length != baseline.globals.length) {
@@ -344,8 +314,7 @@ public final class W4IrFusionProfile {
         }
         for (index = 0; index < extended.globals.length; index++) {
             if (extended.globals[index] != baseline.globals[index]) {
-                throw new AssertionError(
-                        name + " global mismatch at frame " + frame + ", index " + index);
+                throw new AssertionError(name + " global mismatch at frame " + frame + ", index " + index);
             }
         }
     }

@@ -3,8 +3,8 @@ package w4me.midp;
 /**
  * Worker/UI handshake for the in-game menu.
  *
- * <p>The UI thread only records requests. The worker accepts MENU_REQUESTED
- * after the current frame and owns restart, leave, and resource teardown.
+ * <p>The UI thread only records requests. The worker accepts MENU_REQUESTED after the current frame and owns restart,
+ * leave, and resource teardown.
  */
 final class SystemMenuState {
     static final int RUNNING = 0;
@@ -15,9 +15,9 @@ final class SystemMenuState {
     static final int SAVE_REQUESTED = 5;
     static final int LOAD_REQUESTED = 6;
 
-    volatile int state = RUNNING;
-    volatile boolean stopped;
-    volatile boolean suppressNextGameInput;
+    volatile int state = RUNNING; // NOPMD -- Required cross-thread visibility.
+    volatile boolean stopped; // NOPMD -- Required cross-thread visibility.
+    volatile boolean suppressNextGameInput; // NOPMD -- Required cross-thread visibility.
 
     synchronized boolean requestMenu() {
         if (stopped || state != RUNNING) {
@@ -79,8 +79,7 @@ final class SystemMenuState {
     }
 
     synchronized void completeSaveStateAction() {
-        if (!stopped
-                && (state == SAVE_REQUESTED || state == LOAD_REQUESTED)) {
+        if (!stopped && (state == SAVE_REQUESTED || state == LOAD_REQUESTED)) {
             state = RUNNING;
             suppressNextGameInput = true;
             notifyAll();
@@ -119,7 +118,7 @@ final class SystemMenuState {
     }
 
     synchronized void awaitChange() throws InterruptedException {
-        if (!stopped && state == MENU_OPEN) {
+        while (!stopped && state == MENU_OPEN) {
             wait();
         }
     }

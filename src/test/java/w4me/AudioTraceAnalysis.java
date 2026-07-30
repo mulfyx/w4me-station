@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.StringTokenizer;
-
 import w4me.runtime.Wasm4Runtime;
 import w4me.runtime.audio.AudioBackend;
 import w4me.runtime.audio.Wasm4Apu;
@@ -18,28 +17,25 @@ import w4me.wasm.WasmModule;
 /**
  * Emits cartridge tone calls together with PCM boundary-discontinuity metrics.
  *
- * <p>The optional input uses the sparse browser-route CSV format. Frames after
- * the last input row keep its state.
+ * <p>The optional input uses the sparse browser-route CSV format. Frames after the last input row keep its state.
  */
 public final class AudioTraceAnalysis {
     private static final int WAV_HEADER_SIZE = 44;
 
     private AudioTraceAnalysis() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length < 3 || arguments.length > 4) {
-            throw new IllegalArgumentException(
-                    "usage: font.bin cart.wasm frames [input.csv]");
+            throw new IllegalArgumentException("usage: font.bin cart.wasm frames [input.csv]");
         }
         int frameCount = Integer.parseInt(arguments[2]);
         if (frameCount <= 0) {
             throw new IllegalArgumentException("frames must be positive");
         }
 
-        InputState[] inputs =
-                arguments.length == 4
-                        ? readInputTrace(arguments[3], frameCount)
-                        : emptyInputTrace(frameCount);
+        final InputState[] inputs =
+                arguments.length == 4 ? readInputTrace(arguments[3], frameCount) : emptyInputTrace(frameCount);
         WasmModule module = WasmModule.read(readFile(arguments[1]));
         RecordingBackend backend = new RecordingBackend(System.out);
         Wasm4Apu apu = new Wasm4Apu(backend);
@@ -53,12 +49,7 @@ public final class AudioTraceAnalysis {
         for (frame = 0; frame < frameCount; frame++) {
             InputState input = inputs[frame];
             backend.frame = frame;
-            runtime.beginFrame(
-                    module,
-                    input.gamepad,
-                    input.mouseX,
-                    input.mouseY,
-                    input.mouseButtons);
+            runtime.beginFrame(module, input.gamepad, input.mouseX, input.mouseY, input.mouseButtons);
             interpreter.invoke("update");
             runtime.endFrame();
         }
@@ -77,8 +68,7 @@ public final class AudioTraceAnalysis {
         return states;
     }
 
-    private static InputState[] readInputTrace(String path, int frameCount)
-            throws Exception {
+    private static InputState[] readInputTrace(String path, int frameCount) throws Exception {
         BufferedReader input = new BufferedReader(new FileReader(path));
         try {
             String header = input.readLine();
@@ -99,17 +89,16 @@ public final class AudioTraceAnalysis {
                     throw new IllegalArgumentException("invalid input row: " + line);
                 }
                 int frame = Integer.parseInt(fields.nextToken());
-                int gamepad = Integer.parseInt(fields.nextToken());
-                int mouseX = Integer.parseInt(fields.nextToken());
-                int mouseY = Integer.parseInt(fields.nextToken());
-                int mouseButtons = Integer.parseInt(fields.nextToken());
+                final int gamepad = Integer.parseInt(fields.nextToken());
+                final int mouseX = Integer.parseInt(fields.nextToken());
+                final int mouseY = Integer.parseInt(fields.nextToken());
+                final int mouseButtons = Integer.parseInt(fields.nextToken());
                 fields.nextToken();
                 if (frame <= previousFrame || frame < 0 || frame >= frameCount) {
                     throw new IllegalArgumentException("invalid input frame: " + frame);
                 }
                 eventFrames[eventCount] = frame;
-                events[eventCount] =
-                        new InputState(gamepad, mouseX, mouseY, mouseButtons);
+                events[eventCount] = new InputState(gamepad, mouseX, mouseY, mouseButtons);
                 eventCount++;
                 previousFrame = frame;
             }
@@ -123,7 +112,9 @@ public final class AudioTraceAnalysis {
             int frame;
             for (frame = 0; frame < frameCount; frame++) {
                 if (event < eventCount && eventFrames[event] == frame) {
-                    current = events[event++];
+                    current = events[
+                            event++]; // NOPMD -- Cursor mutation stays adjacent to the access to preserve compact Java
+                    // 1.3 bytecode.
                 }
                 states[frame] = current;
             }
@@ -170,8 +161,7 @@ public final class AudioTraceAnalysis {
         private final int mouseY;
         private final int mouseButtons;
 
-        private InputState(
-                int gamepad, int mouseX, int mouseY, int mouseButtons) {
+        private InputState(int gamepad, int mouseX, int mouseY, int mouseButtons) {
             this.gamepad = gamepad;
             this.mouseX = mouseX;
             this.mouseY = mouseY;
@@ -203,51 +193,48 @@ public final class AudioTraceAnalysis {
             int attack = (duration >>> 24) & 0xff;
             int totalFrames = attack + decay + sustain + release;
             int previousEndFrame = channelEndFrames[channel];
-            boolean overlappingReplacement =
-                    previousEndFrame >= 0 && frame < previousEndFrame;
-            boolean referenceContinuity =
-                    previousEndFrame >= 0 && frame <= previousEndFrame;
+            boolean overlappingReplacement = previousEndFrame >= 0 && frame < previousEndFrame;
+            boolean referenceContinuity = previousEndFrame >= 0 && frame <= previousEndFrame;
             byte[] wav = Wasm4Pcm.synthesize(frequency, duration, volume, flags);
             PcmMetrics metrics = PcmMetrics.measure(wav);
 
-            output.println(
-                    eventCount
-                            + ","
-                            + frame
-                            + ","
-                            + frequency
-                            + ","
-                            + duration
-                            + ","
-                            + volume
-                            + ","
-                            + flags
-                            + ","
-                            + channel
-                            + ","
-                            + attack
-                            + ","
-                            + decay
-                            + ","
-                            + sustain
-                            + ","
-                            + release
-                            + ","
-                            + totalFrames
-                            + ","
-                            + previousEndFrame
-                            + ","
-                            + (overlappingReplacement ? 1 : 0)
-                            + ","
-                            + (referenceContinuity ? 1 : 0)
-                            + ","
-                            + metrics.pcmBytes
-                            + ","
-                            + metrics.firstDistance
-                            + ","
-                            + metrics.lastDistance
-                            + ","
-                            + metrics.maximumAdjacentStep);
+            output.println(eventCount
+                    + ","
+                    + frame
+                    + ","
+                    + frequency
+                    + ","
+                    + duration
+                    + ","
+                    + volume
+                    + ","
+                    + flags
+                    + ","
+                    + channel
+                    + ","
+                    + attack
+                    + ","
+                    + decay
+                    + ","
+                    + sustain
+                    + ","
+                    + release
+                    + ","
+                    + totalFrames
+                    + ","
+                    + previousEndFrame
+                    + ","
+                    + (overlappingReplacement ? 1 : 0)
+                    + ","
+                    + (referenceContinuity ? 1 : 0)
+                    + ","
+                    + metrics.pcmBytes
+                    + ","
+                    + metrics.firstDistance
+                    + ","
+                    + metrics.lastDistance
+                    + ","
+                    + metrics.maximumAdjacentStep);
 
             eventCount++;
             if (release == 0) {
@@ -271,60 +258,57 @@ public final class AudioTraceAnalysis {
             channelEndFrames[channel] = frame + totalFrames;
         }
 
-        public void tick() {}
+        public void tick() {
+            /* Intentionally no-op. */
+        }
 
-        public void close() {}
+        public void close() {
+            /* Intentionally no-op. */
+        }
 
         public String grade() {
             return "trace";
         }
 
         private void printHeader() {
-            output.println(
-                    "event,frame,frequency,duration,volume,flags,channel,"
-                            + "attack,decay,sustain,release,total_frames,"
-                            + "previous_end_frame,overlapping_replacement,"
-                            + "web_phase_continuity,pcm_bytes,first_distance,"
-                            + "last_distance,max_adjacent_step");
+            output.println("event,frame,frequency,duration,volume,flags,channel,"
+                    + "attack,decay,sustain,release,total_frames,"
+                    + "previous_end_frame,overlapping_replacement,"
+                    + "web_phase_continuity,pcm_bytes,first_distance,"
+                    + "last_distance,max_adjacent_step");
         }
 
         private void printSummary(int frames, int framebufferFnv1a) {
-            output.println(
-                    "SUMMARY frames="
-                            + frames
-                            + " events="
-                            + eventCount
-                            + " zero-release="
-                            + zeroReleaseCount
-                            + " overlapping-replacements="
-                            + overlappingReplacementCount
-                            + " web-phase-continuity="
-                            + referenceContinuityCount
-                            + " non-silent-starts="
-                            + nonSilentStarts
-                            + " non-silent-ends="
-                            + nonSilentEnds
-                            + " max-adjacent-step="
-                            + maximumAdjacentStep
-                            + " framebuffer-fnv1a="
-                            + Integer.toHexString(framebufferFnv1a));
+            output.println("SUMMARY frames="
+                    + frames
+                    + " events="
+                    + eventCount
+                    + " zero-release="
+                    + zeroReleaseCount
+                    + " overlapping-replacements="
+                    + overlappingReplacementCount
+                    + " web-phase-continuity="
+                    + referenceContinuityCount
+                    + " non-silent-starts="
+                    + nonSilentStarts
+                    + " non-silent-ends="
+                    + nonSilentEnds
+                    + " max-adjacent-step="
+                    + maximumAdjacentStep
+                    + " framebuffer-fnv1a="
+                    + Integer.toHexString(framebufferFnv1a));
         }
     }
 
     private static final class PcmMetrics {
-        private static final PcmMetrics EMPTY =
-                new PcmMetrics(0, 0, 0, 0);
+        private static final PcmMetrics EMPTY = new PcmMetrics(0, 0, 0, 0);
 
         private final int pcmBytes;
         private final int firstDistance;
         private final int lastDistance;
         private final int maximumAdjacentStep;
 
-        private PcmMetrics(
-                int pcmBytes,
-                int firstDistance,
-                int lastDistance,
-                int maximumAdjacentStep) {
+        private PcmMetrics(int pcmBytes, int firstDistance, int lastDistance, int maximumAdjacentStep) {
             this.pcmBytes = pcmBytes;
             this.firstDistance = firstDistance;
             this.lastDistance = lastDistance;
@@ -347,12 +331,7 @@ public final class AudioTraceAnalysis {
             int channel;
             for (channel = 0; channel < channels; channel++) {
                 int first = wav[WAV_HEADER_SIZE + channel] & 0xff;
-                int last =
-                        wav[
-                                        WAV_HEADER_SIZE
-                                                + (samples - 1) * channels
-                                                + channel]
-                                & 0xff;
+                int last = wav[WAV_HEADER_SIZE + (samples - 1) * channels + channel] & 0xff;
                 int distance = distanceFromSilence(first);
                 if (distance > firstDistance) {
                     firstDistance = distance;
@@ -364,9 +343,7 @@ public final class AudioTraceAnalysis {
                 int previous = first;
                 int sample;
                 for (sample = 1; sample < samples; sample++) {
-                    int current =
-                            wav[WAV_HEADER_SIZE + sample * channels + channel]
-                                    & 0xff;
+                    int current = wav[WAV_HEADER_SIZE + sample * channels + channel] & 0xff;
                     int step = current - previous;
                     if (step < 0) {
                         step = -step;
@@ -377,11 +354,7 @@ public final class AudioTraceAnalysis {
                     previous = current;
                 }
             }
-            return new PcmMetrics(
-                    dataLength,
-                    firstDistance,
-                    lastDistance,
-                    maximumAdjacentStep);
+            return new PcmMetrics(dataLength, firstDistance, lastDistance, maximumAdjacentStep);
         }
     }
 }

@@ -7,9 +7,8 @@ import w4me.wasm.WasmModule;
 /**
  * Optional session instrumentation supplied by diagnostic MIDlets.
  *
- * <p>The release MIDlet never creates a monitor. Test JARs can add an
- * implementation without placing replay routes, framebuffer oracles, or
- * benchmark reporting in the product classes.
+ * <p>The release MIDlet never creates a monitor. Test JARs can add an implementation without placing replay routes,
+ * framebuffer oracles, or benchmark reporting in the product classes.
  */
 interface W4SessionMonitor {
     boolean audioDiagnostics();
@@ -22,8 +21,7 @@ interface W4SessionMonitor {
 
     int gamepad2(int frame, int current);
 
-    void onInstallState(
-            String state, int recordId, int bytes, int chunks, int hash);
+    void onInstallState(String state, int recordId, int bytes, int chunks, int hash);
 
     void onLoad(
             int cartridgeBytes,
@@ -35,14 +33,7 @@ interface W4SessionMonitor {
             boolean traceExecutorEnabled,
             boolean directNumericIntrinsicsEnabled);
 
-    void onInput(
-            int frame,
-            int gamepad,
-            int gamepad2,
-            int touch,
-            int mouseButtons,
-            int pointerX,
-            int pointerY);
+    void onInput(int frame, int gamepad, int gamepad2, int touch, int mouseButtons, int pointerX, int pointerY);
 
     void onFrame(
             int frame,
@@ -65,8 +56,7 @@ interface W4SessionMonitor {
             int controlsTop,
             int controlsHeight);
 
-    void onSaveState(
-            String operation, String outcome, WasmModule module);
+    void onSaveState(String operation, String outcome, WasmModule module);
 
     void onSessionClosed(String reason);
 }

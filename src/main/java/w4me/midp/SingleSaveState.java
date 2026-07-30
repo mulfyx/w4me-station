@@ -11,27 +11,15 @@ final class SingleSaveState {
     static final int LOAD_FAILED = 2;
 
     interface SnapshotFactory {
-        RuntimeSnapshot capture(
-                int cartridgeIdentity,
-                int cartridgeLength,
-                WasmModule module,
-                Wasm4Runtime runtime);
+        RuntimeSnapshot capture(int cartridgeIdentity, int cartridgeLength, WasmModule module, Wasm4Runtime runtime);
     }
 
-    private static final SnapshotFactory DEFAULT_FACTORY =
-            new SnapshotFactory() {
-                public RuntimeSnapshot capture(
-                        int cartridgeIdentity,
-                        int cartridgeLength,
-                        WasmModule module,
-                        Wasm4Runtime runtime) {
-                    return RuntimeSnapshot.capture(
-                            cartridgeIdentity,
-                            cartridgeLength,
-                            module,
-                            runtime);
-                }
-            };
+    private static final SnapshotFactory DEFAULT_FACTORY = new SnapshotFactory() {
+        public RuntimeSnapshot capture(
+                int cartridgeIdentity, int cartridgeLength, WasmModule module, Wasm4Runtime runtime) {
+            return RuntimeSnapshot.capture(cartridgeIdentity, cartridgeLength, module, runtime);
+        }
+    };
 
     private final SnapshotFactory factory;
     private RuntimeSnapshot snapshot;
@@ -47,18 +35,9 @@ final class SingleSaveState {
         this.factory = factory;
     }
 
-    boolean save(
-            int cartridgeIdentity,
-            int cartridgeLength,
-            WasmModule module,
-            Wasm4Runtime runtime) {
+    boolean save(int cartridgeIdentity, int cartridgeLength, WasmModule module, Wasm4Runtime runtime) {
         try {
-            RuntimeSnapshot replacement =
-                    factory.capture(
-                            cartridgeIdentity,
-                            cartridgeLength,
-                            module,
-                            runtime);
+            RuntimeSnapshot replacement = factory.capture(cartridgeIdentity, cartridgeLength, module, runtime);
             if (replacement == null) {
                 return false;
             }
@@ -66,31 +45,21 @@ final class SingleSaveState {
             return true;
         } catch (OutOfMemoryError unavailable) {
             return false;
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             return false;
         }
     }
 
-    int load(
-            int cartridgeIdentity,
-            int cartridgeLength,
-            WasmModule module,
-            Wasm4Runtime runtime) {
+    int load(int cartridgeIdentity, int cartridgeLength, WasmModule module, Wasm4Runtime runtime) {
         RuntimeSnapshot current = snapshot;
         if (current == null) {
             return LOAD_MISSING;
         }
         try {
-            return current.restore(
-                            cartridgeIdentity,
-                            cartridgeLength,
-                            module,
-                            runtime)
-                    ? LOAD_OK
-                    : LOAD_FAILED;
+            return current.restore(cartridgeIdentity, cartridgeLength, module, runtime) ? LOAD_OK : LOAD_FAILED;
         } catch (OutOfMemoryError unavailable) {
             return LOAD_FAILED;
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             return LOAD_FAILED;
         }
     }

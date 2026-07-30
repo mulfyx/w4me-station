@@ -5,42 +5,19 @@ import w4me.runtime.Wasm4Runtime;
 /** Explicit artifact configuration used by differential and benchmark evidence. */
 final class InterpreterVariant {
     static final InterpreterVariant REFERENCE =
-            new InterpreterVariant(
-                    "reference", false, false, false, false, false, false, false, false);
+            new InterpreterVariant("reference", false, false, false, false, false, false, false, false);
     static final InterpreterVariant CURRENT =
-            new InterpreterVariant(
-                    "current", true, false, true, true, true, false, false, true);
+            new InterpreterVariant("current", true, false, true, true, true, false, false, true);
     static final InterpreterVariant SEVEN_OPCODE =
-            new InterpreterVariant(
-                    "seven-opcode", true, false, true, true, true, true, false, true);
+            new InterpreterVariant("seven-opcode", true, false, true, true, true, true, false, true);
     static final InterpreterVariant HOST_IMPORT_ID =
-            new InterpreterVariant(
-                    "host-import-id", true, false, true, true, true, true, true, true);
+            new InterpreterVariant("host-import-id", true, false, true, true, true, true, true, true);
     static final InterpreterVariant LOAD_TEE_BASELINE =
-            new InterpreterVariant(
-                    "load-tee-baseline",
-                    true,
-                    false,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    false);
+            new InterpreterVariant("load-tee-baseline", true, false, true, true, true, true, true, false);
     static final InterpreterVariant LOAD_TEE =
-            new InterpreterVariant(
-                    "load-tee",
-                    true,
-                    false,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true,
-                    true);
+            new InterpreterVariant("load-tee", true, false, true, true, true, true, true, true);
     static final InterpreterVariant PROFILE =
-            new InterpreterVariant(
-                    "profile", true, false, false, false, true, true, true, true);
+            new InterpreterVariant("profile", true, false, false, false, true, true, true, true);
 
     final String name;
     final boolean extendedFusions;
@@ -74,8 +51,7 @@ final class InterpreterVariant {
     }
 
     WasmModule read(byte[] cartridge) throws Exception {
-        return WasmModule.read(
-                cartridge, null, extendedFusions, loadTeeFusions);
+        return WasmModule.read(cartridge, null, extendedFusions, loadTeeFusions);
     }
 
     WasmInterpreter interpreter(WasmModule module, Wasm4Runtime runtime) {

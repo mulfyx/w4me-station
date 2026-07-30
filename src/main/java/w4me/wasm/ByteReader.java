@@ -31,10 +31,10 @@ final class ByteReader {
 
     int readU8() throws WasmException {
         require(1);
-        return data[position++] & 0xff;
+        return data[position++] & 0xff; // NOPMD -- Compact Java 1.3 cursor bytecode.
     }
 
-    int readU32LE() throws WasmException {
+    int readUnsigned32LittleEndian() throws WasmException {
         int b0 = readU8();
         int b1 = readU8();
         int b2 = readU8();
@@ -42,15 +42,15 @@ final class ByteReader {
         return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
     }
 
-    long readU64LE() throws WasmException {
-        long low = readU32LE() & 0xffffffffL;
-        long high = readU32LE() & 0xffffffffL;
+    long readUnsigned64LittleEndian() throws WasmException {
+        long low = readUnsigned32LittleEndian() & 0xffffffffL;
+        long high = readUnsigned32LittleEndian() & 0xffffffffL;
         return low | (high << 32);
     }
 
-    int readVarUInt32() throws WasmException {
+    int readVariableUnsigned32() throws WasmException {
         require(1);
-        int value = data[position++] & 0xff;
+        int value = data[position++] & 0xff; // NOPMD -- Compact Java 1.3 cursor bytecode.
         if ((value & 0x80) == 0) {
             return value;
         }
@@ -85,7 +85,7 @@ final class ByteReader {
 
     private long readVarInt(int bits) throws WasmException {
         require(1);
-        int value = data[position++] & 0xff;
+        int value = data[position++] & 0xff; // NOPMD -- Compact Java 1.3 cursor bytecode.
         if ((value & 0x80) == 0) {
             long result = value & 0x7f;
             if ((value & 0x40) != 0) {
@@ -140,7 +140,8 @@ final class ByteReader {
             position += length;
             return value;
         } catch (UnsupportedEncodingException exception) {
-            throw error("UTF-8 is unavailable");
+            throw error( // NOPMD -- CLDC 1.1 has no cause chaining.
+                    "UTF-8 is unavailable");
         }
     }
 
@@ -166,7 +167,7 @@ final class ByteReader {
     }
 
     int readLength(String label) throws WasmException {
-        int length = readVarUInt32();
+        int length = readVariableUnsigned32();
         if (length < 0) {
             throw error(label + " length exceeds Java array limits");
         }

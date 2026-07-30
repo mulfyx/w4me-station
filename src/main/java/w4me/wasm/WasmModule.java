@@ -1,8 +1,8 @@
 package w4me.wasm;
 
+/** Provides the WASM module implementation. */
 public final class WasmModule {
-    public static final int W4IR_FORMAT_VERSION =
-            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 17 : 15;
+    public static final int W4IR_FORMAT_VERSION = OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 17 : 15;
     static final int I32 = 0x7f;
     static final int I64 = 0x7e;
     static final int F32 = 0x7d;
@@ -25,18 +25,12 @@ public final class WasmModule {
     static final int ORIGINAL_BULK_LAST = 0xfc0b;
     static final int ORIGINAL_W4IR_FIRST = 0x1000;
     static final int ORIGINAL_W4IR_LAST = 0x1032;
-    static final int EXECUTION_BULK_FIRST =
-            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 0xc5 : ORIGINAL_BULK_FIRST;
-    static final int EXECUTION_BULK_LAST =
-            EXECUTION_BULK_FIRST + ORIGINAL_BULK_LAST - ORIGINAL_BULK_FIRST;
+    static final int EXECUTION_BULK_FIRST = OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? 0xc5 : ORIGINAL_BULK_FIRST;
+    static final int EXECUTION_BULK_LAST = EXECUTION_BULK_FIRST + ORIGINAL_BULK_LAST - ORIGINAL_BULK_FIRST;
     static final int EXECUTION_W4IR_FIRST =
-            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH
-                    ? EXECUTION_BULK_LAST + 1
-                    : ORIGINAL_W4IR_FIRST;
-    static final int EXECUTION_W4IR_LAST =
-            EXECUTION_W4IR_FIRST + ORIGINAL_W4IR_LAST - ORIGINAL_W4IR_FIRST;
-    static final int W4IR_EXECUTION_OFFSET =
-            EXECUTION_W4IR_FIRST - ORIGINAL_W4IR_FIRST;
+            OpcodeBuildConfig.DENSE_OPCODE_DISPATCH ? EXECUTION_BULK_LAST + 1 : ORIGINAL_W4IR_FIRST;
+    static final int EXECUTION_W4IR_LAST = EXECUTION_W4IR_FIRST + ORIGINAL_W4IR_LAST - ORIGINAL_W4IR_FIRST;
+    static final int W4IR_EXECUTION_OFFSET = EXECUTION_W4IR_FIRST - ORIGINAL_W4IR_FIRST;
     static final int W4IR_LOCAL_LOCAL_F32_MUL = 0x1000;
     static final int W4IR_LOCAL_F32_CONST_MUL = 0x1001;
     static final int W4IR_F32_CONST_MUL_ADD = 0x1002;
@@ -137,25 +131,25 @@ public final class WasmModule {
 
     private WasmModule() {}
 
+    /** Performs the read operation. */
     public static WasmModule read(byte[] bytes) throws WasmException {
         return read(bytes, null);
     }
 
+    /** Performs the read operation. */
     public static WasmModule read(byte[] bytes, W4IrStore w4irStore) throws WasmException {
         return read(bytes, w4irStore, true, true);
     }
 
-    public static WasmModule read(
-            byte[] bytes, W4IrStore w4irStore, boolean extendedFusionsEnabled)
+    /** Performs the read operation. */
+    public static WasmModule read(byte[] bytes, W4IrStore w4irStore, boolean extendedFusionsEnabled)
             throws WasmException {
         return read(bytes, w4irStore, extendedFusionsEnabled, true);
     }
 
+    /** Performs the read operation. */
     public static WasmModule read(
-            byte[] bytes,
-            W4IrStore w4irStore,
-            boolean extendedFusionsEnabled,
-            boolean loadTeeFusionsEnabled)
+            byte[] bytes, W4IrStore w4irStore, boolean extendedFusionsEnabled, boolean loadTeeFusionsEnabled)
             throws WasmException {
         if (bytes == null || bytes.length < 8) {
             throw new WasmException("module is shorter than the WebAssembly header");
@@ -176,6 +170,7 @@ public final class WasmModule {
         }
     }
 
+    /** Performs the memory operation. */
     public byte[] memory() {
         return memory;
     }
@@ -196,13 +191,8 @@ public final class WasmModule {
         return dataSegments.length;
     }
 
-    void captureMutableState(
-            byte[] memoryState,
-            long[] globalState,
-            int[] tableState,
-            byte[][] dataSegmentState) {
-        if (!canRestoreMutableState(
-                memoryState, globalState, tableState, dataSegmentState)) {
+    void captureMutableState(byte[] memoryState, long[] globalState, int[] tableState, byte[][] dataSegmentState) {
+        if (!canRestoreMutableState(memoryState, globalState, tableState, dataSegmentState)) {
             throw new IllegalArgumentException("module snapshot shape mismatch");
         }
         System.arraycopy(memory, 0, memoryState, 0, memory.length);
@@ -210,38 +200,23 @@ public final class WasmModule {
         if (table != null) {
             System.arraycopy(table, 0, tableState, 0, table.length);
         }
-        System.arraycopy(
-                dataSegments,
-                0,
-                dataSegmentState,
-                0,
-                dataSegments.length);
+        System.arraycopy(dataSegments, 0, dataSegmentState, 0, dataSegments.length);
     }
 
     boolean canRestoreMutableState(
-            byte[] memoryState,
-            long[] globalState,
-            int[] tableState,
-            byte[][] dataSegmentState) {
+            byte[] memoryState, long[] globalState, int[] tableState, byte[][] dataSegmentState) {
         return memoryState != null
                 && memoryState.length == memory.length
                 && globalState != null
                 && globalState.length == globals.length
                 && ((table == null && tableState == null)
-                        || (table != null
-                                && tableState != null
-                                && tableState.length == table.length))
+                        || (table != null && tableState != null && tableState.length == table.length))
                 && dataSegmentState != null
                 && dataSegmentState.length == dataSegments.length;
     }
 
-    void restoreMutableState(
-            byte[] memoryState,
-            long[] globalState,
-            int[] tableState,
-            byte[][] dataSegmentState) {
-        if (!canRestoreMutableState(
-                memoryState, globalState, tableState, dataSegmentState)) {
+    void restoreMutableState(byte[] memoryState, long[] globalState, int[] tableState, byte[][] dataSegmentState) {
+        if (!canRestoreMutableState(memoryState, globalState, tableState, dataSegmentState)) {
             throw new IllegalArgumentException("module snapshot shape mismatch");
         }
         System.arraycopy(memoryState, 0, memory, 0, memory.length);
@@ -249,14 +224,10 @@ public final class WasmModule {
         if (table != null) {
             System.arraycopy(tableState, 0, table, 0, table.length);
         }
-        System.arraycopy(
-                dataSegmentState,
-                0,
-                dataSegments,
-                0,
-                dataSegments.length);
+        System.arraycopy(dataSegmentState, 0, dataSegments, 0, dataSegments.length);
     }
 
+    /** Performs the exported function operation. */
     public int exportedFunction(String name) throws WasmException {
         int index;
         for (index = 0; index < exports.length; index++) {
@@ -268,6 +239,7 @@ public final class WasmModule {
         throw new WasmException("missing function export: " + name);
     }
 
+    /** Reports whether exported function. */
     public boolean hasExportedFunction(String name) {
         int index;
         for (index = 0; index < exports.length; index++) {
@@ -279,10 +251,12 @@ public final class WasmModule {
         return false;
     }
 
+    /** Performs the function count operation. */
     public int functionCount() {
         return functions.length;
     }
 
+    /** Performs the w 4ir status operation. */
     public String w4irStatus() {
         if (w4irStore == null) {
             return "RAM";
@@ -290,14 +264,17 @@ public final class WasmModule {
         return w4irCacheHit ? "RMS-hit" : "RMS-build";
     }
 
+    /** Performs the w 4ir page faults operation. */
     public int w4irPageFaults() {
         return w4irStore == null ? 0 : w4irStore.pageFaults();
     }
 
+    /** Performs the w 4ir page hits operation. */
     public int w4irPageHits() {
         return w4irStore == null ? 0 : w4irStore.pageHits();
     }
 
+    /** Performs the w 4ir promoted functions operation. */
     public int w4irPromotedFunctions() {
         if (functions == null) {
             return 0;
@@ -312,6 +289,7 @@ public final class WasmModule {
         return promoted;
     }
 
+    /** Performs the close operation. */
     public void close() {
         if (w4irStore != null) {
             w4irStore.close();
@@ -319,6 +297,7 @@ public final class WasmModule {
         }
     }
 
+    /** Performs the function fingerprint operation. */
     public long functionFingerprint(int functionIndex) {
         if (functionIndex < 0 || functionIndex >= functions.length) {
             throw new IllegalArgumentException("function index is out of range");
@@ -331,27 +310,20 @@ public final class WasmModule {
         if (originalOpcode >= 0 && originalOpcode <= 0xc4) {
             return originalOpcode;
         }
-        if (originalOpcode >= ORIGINAL_BULK_FIRST
-                && originalOpcode <= ORIGINAL_BULK_LAST) {
+        if (originalOpcode >= ORIGINAL_BULK_FIRST && originalOpcode <= ORIGINAL_BULK_LAST) {
             if (!OpcodeBuildConfig.DENSE_OPCODE_DISPATCH) {
                 return originalOpcode;
             }
-            return EXECUTION_BULK_FIRST
-                    + originalOpcode
-                    - ORIGINAL_BULK_FIRST;
+            return EXECUTION_BULK_FIRST + originalOpcode - ORIGINAL_BULK_FIRST;
         }
-        if (originalOpcode >= ORIGINAL_W4IR_FIRST
-                && originalOpcode <= ORIGINAL_W4IR_LAST) {
+        if (originalOpcode >= ORIGINAL_W4IR_FIRST && originalOpcode <= ORIGINAL_W4IR_LAST) {
             if (!OpcodeBuildConfig.DENSE_OPCODE_DISPATCH) {
                 return originalOpcode;
             }
-            return EXECUTION_W4IR_FIRST
-                    + originalOpcode
-                    - ORIGINAL_W4IR_FIRST;
+            return EXECUTION_W4IR_FIRST + originalOpcode - ORIGINAL_W4IR_FIRST;
         }
         throw new IllegalArgumentException(
-                "opcode is outside the execution map: 0x"
-                        + Integer.toHexString(originalOpcode));
+                "opcode is outside the execution map: 0x" + Integer.toHexString(originalOpcode));
     }
 
     static int originalOpcode(int executionOpcode) {
@@ -359,39 +331,27 @@ public final class WasmModule {
             return executionOpcode;
         }
         if (!OpcodeBuildConfig.DENSE_OPCODE_DISPATCH) {
-            if ((executionOpcode >= ORIGINAL_BULK_FIRST
-                            && executionOpcode <= ORIGINAL_BULK_LAST)
-                    || (executionOpcode >= ORIGINAL_W4IR_FIRST
-                            && executionOpcode <= ORIGINAL_W4IR_LAST)) {
+            if ((executionOpcode >= ORIGINAL_BULK_FIRST && executionOpcode <= ORIGINAL_BULK_LAST)
+                    || (executionOpcode >= ORIGINAL_W4IR_FIRST && executionOpcode <= ORIGINAL_W4IR_LAST)) {
                 return executionOpcode;
             }
-            throw new IllegalArgumentException(
-                    "unknown execution opcode: 0x"
-                            + Integer.toHexString(executionOpcode));
+            throw new IllegalArgumentException("unknown execution opcode: 0x" + Integer.toHexString(executionOpcode));
         }
-        if (executionOpcode >= EXECUTION_BULK_FIRST
-                && executionOpcode <= EXECUTION_BULK_LAST) {
-            return ORIGINAL_BULK_FIRST
-                    + executionOpcode
-                    - EXECUTION_BULK_FIRST;
+        if (executionOpcode >= EXECUTION_BULK_FIRST && executionOpcode <= EXECUTION_BULK_LAST) {
+            return ORIGINAL_BULK_FIRST + executionOpcode - EXECUTION_BULK_FIRST;
         }
-        if (executionOpcode >= EXECUTION_W4IR_FIRST
-                && executionOpcode <= EXECUTION_W4IR_LAST) {
-            return ORIGINAL_W4IR_FIRST
-                    + executionOpcode
-                    - EXECUTION_W4IR_FIRST;
+        if (executionOpcode >= EXECUTION_W4IR_FIRST && executionOpcode <= EXECUTION_W4IR_LAST) {
+            return ORIGINAL_W4IR_FIRST + executionOpcode - EXECUTION_W4IR_FIRST;
         }
-        throw new IllegalArgumentException(
-                "unknown execution opcode: 0x"
-                        + Integer.toHexString(executionOpcode));
+        throw new IllegalArgumentException("unknown execution opcode: 0x" + Integer.toHexString(executionOpcode));
     }
 
     private void parse(byte[] bytes) throws WasmException {
         ByteReader reader = new ByteReader(bytes);
-        if (reader.readU32LE() != 0x6d736100) {
+        if (reader.readUnsigned32LittleEndian() != 0x6d736100) {
             throw reader.error("invalid WebAssembly magic");
         }
-        if (reader.readU32LE() != 1) {
+        if (reader.readUnsigned32LittleEndian() != 1) {
             throw reader.error("unsupported WebAssembly version");
         }
 
@@ -441,7 +401,7 @@ public final class WasmModule {
                     parseExportSection(section);
                     break;
                 case 8:
-                    startFunction = section.readVarUInt32();
+                    startFunction = section.readVariableUnsigned32();
                     break;
                 case 9:
                     parseElementSection(section);
@@ -498,8 +458,7 @@ public final class WasmModule {
             int previous;
             for (previous = 0; previous < index; previous++) {
                 FuncType candidate = types[previous];
-                if (sameTypes(parameters, candidate.parameters)
-                        && sameTypes(results, candidate.results)) {
+                if (sameTypes(parameters, candidate.parameters) && sameTypes(results, candidate.results)) {
                     canonicalId = candidate.canonicalId;
                     break;
                 }
@@ -516,18 +475,15 @@ public final class WasmModule {
             String fieldName = section.readName();
             int kind = section.readU8();
             if (kind == 0) {
-                int typeIndex = section.readVarUInt32();
+                int typeIndex = section.readVariableUnsigned32();
                 requireType(typeIndex, section);
-                int hostId =
-                        validateFunctionImport(moduleName, fieldName, typeIndex, section);
-                importList.addElement(
-                        new ImportedFunction(moduleName, fieldName, typeIndex, hostId));
+                int hostId = validateFunctionImport(moduleName, fieldName, typeIndex, section);
+                importList.addElement(new ImportedFunction(moduleName, fieldName, typeIndex, hostId));
             } else if (kind == 1) {
                 throw section.error("imported tables are not supported yet");
             } else if (kind == 2) {
                 if (!"env".equals(moduleName) || !"memory".equals(fieldName)) {
-                    throw section.error(
-                            "unsupported memory import " + moduleName + "." + fieldName);
+                    throw section.error("unsupported memory import " + moduleName + "." + fieldName);
                 }
                 if (memoryDeclared) {
                     throw section.error("multiple memories are not supported");
@@ -549,7 +505,7 @@ public final class WasmModule {
         }
         int index;
         for (index = 0; index < count; index++) {
-            int typeIndex = section.readVarUInt32();
+            int typeIndex = section.readVariableUnsigned32();
             requireType(typeIndex, section);
             definedFunctionTypes.addElement(new Integer(typeIndex));
         }
@@ -612,7 +568,7 @@ public final class WasmModule {
         for (index = 0; index < count; index++) {
             String name = section.readName();
             int kind = section.readU8();
-            int itemIndex = section.readVarUInt32();
+            int itemIndex = section.readVariableUnsigned32();
             exportList.addElement(new Export(name, kind, itemIndex));
         }
     }
@@ -621,7 +577,7 @@ public final class WasmModule {
         int count = section.readLength("element vector", 4096);
         int segment;
         for (segment = 0; segment < count; segment++) {
-            int flags = section.readVarUInt32();
+            int flags = section.readVariableUnsigned32();
             if (flags != 0) {
                 throw section.error("only active function-index element segments are supported");
             }
@@ -632,7 +588,7 @@ public final class WasmModule {
             }
             int index;
             for (index = 0; index < functionCount; index++) {
-                table[offset + index] = section.readVarUInt32();
+                table[offset + index] = section.readVariableUnsigned32();
             }
         }
     }
@@ -649,11 +605,8 @@ public final class WasmModule {
                 cachedFunctions = new W4IrFunction[count];
                 int cachedIndex;
                 for (cachedIndex = 0; cachedIndex < count; cachedIndex++) {
-                    W4IrFunction cachedFunction =
-                            w4irStore.loadFunction(cachedIndex);
-                    int typeIndex =
-                            ((Integer) definedFunctionTypes.elementAt(cachedIndex))
-                                    .intValue();
+                    W4IrFunction cachedFunction = w4irStore.loadFunction(cachedIndex);
+                    int typeIndex = ((Integer) definedFunctionTypes.elementAt(cachedIndex)).intValue();
                     validateCachedFunction(cachedFunction, types[typeIndex]);
                     cachedFunctions[cachedIndex] = cachedFunction;
                 }
@@ -683,8 +636,7 @@ public final class WasmModule {
                 bodyReader.skip(bodyReader.remaining());
                 body = new FunctionBody(cachedFunctions[index], w4irStore);
             } else {
-                int typeIndex =
-                        ((Integer) definedFunctionTypes.elementAt(index)).intValue();
+                int typeIndex = ((Integer) definedFunctionTypes.elementAt(index)).intValue();
                 FuncType functionType = types[typeIndex];
                 int parameterCount = functionType.parameters.length;
                 int[] localTypes = new int[MAX_LOCALS];
@@ -704,16 +656,11 @@ public final class WasmModule {
                     }
                     int local;
                     for (local = 0; local < amount; local++) {
-                        localTypes[localCount++] = localType;
+                        localTypes[localCount++] = localType; // NOPMD -- Compact Java 1.3 cursor bytecode.
                     }
                     declaredLocalCount += amount;
                 }
-                body = decodeBody(
-                        bodyReader,
-                        declaredLocalCount,
-                        localTypes,
-                        localCount,
-                        functionType);
+                body = decodeBody(bodyReader, declaredLocalCount, localTypes, localCount, functionType);
             }
             bodyReader.requireEnd("function body");
             functionBodies.addElement(body);
@@ -752,15 +699,12 @@ public final class WasmModule {
         }
     }
 
-    private void validateCachedFunction(W4IrFunction function, FuncType type)
-            throws WasmException {
-        if (function.declaredLocalCount()
-                > MAX_LOCALS - type.parameters.length) {
+    private void validateCachedFunction(W4IrFunction function, FuncType type) throws WasmException {
+        if (function.declaredLocalCount() > MAX_LOCALS - type.parameters.length) {
             throw new WasmException("cached function has too many locals");
         }
         int intrinsic = function.intrinsic();
-        if ((intrinsic == INTRINSIC_F32_FLOOR
-                        || intrinsic == INTRINSIC_F32_SIN)
+        if ((intrinsic == INTRINSIC_F32_FLOOR || intrinsic == INTRINSIC_F32_SIN)
                 && (type.parameters.length != 1
                         || type.parameters[0] != F32
                         || type.results.length != 1
@@ -789,7 +733,7 @@ public final class WasmModule {
         dataSegmentPassive = new boolean[count];
         int segment;
         for (segment = 0; segment < count; segment++) {
-            int flags = section.readVarUInt32();
+            int flags = section.readVariableUnsigned32();
             if (flags == 1) {
                 int passiveLength = section.readLength("passive data segment");
                 dataSegments[segment] = section.readBytes(passiveLength);
@@ -797,7 +741,7 @@ public final class WasmModule {
                 continue;
             }
             if (flags == 2) {
-                int memoryIndex = section.readVarUInt32();
+                int memoryIndex = section.readVariableUnsigned32();
                 if (memoryIndex != 0) {
                     throw section.error("active data segment requires memory 0");
                 }
@@ -814,8 +758,7 @@ public final class WasmModule {
         }
     }
 
-    private static Instruction[] growInstructionBuffer(
-            Instruction[] values, int maximum) {
+    private static Instruction[] growInstructionBuffer(Instruction[] values, int maximum) {
         int capacity = values.length << 1;
         if (capacity > maximum) {
             capacity = maximum;
@@ -826,11 +769,7 @@ public final class WasmModule {
     }
 
     private FunctionBody decodeBody(
-            ByteReader reader,
-            int declaredLocalCount,
-            int[] localTypes,
-            int localCount,
-            FuncType functionType)
+            ByteReader reader, int declaredLocalCount, int[] localTypes, int localCount, FuncType functionType)
             throws WasmException {
         Instruction[] code = new Instruction[64];
         int codeSize = 0;
@@ -852,11 +791,10 @@ public final class WasmModule {
                     readBlockType(reader, instruction);
                     if (openBlockTop < MAX_CONTROL_STACK) {
                         if (openBlockTop >= openBlocks.length) {
-                            openBlocks =
-                                    growInstructionBuffer(
-                                            openBlocks, MAX_CONTROL_STACK);
+                            openBlocks = growInstructionBuffer(openBlocks, MAX_CONTROL_STACK);
                         }
-                        openBlocks[openBlockTop++] = instruction;
+                        openBlocks[openBlockTop] = instruction;
+                        openBlockTop++;
                     }
                     break;
                 case 0x05:
@@ -874,7 +812,9 @@ public final class WasmModule {
                         instruction.functionEnd = true;
                         complete = true;
                     } else {
-                        Instruction block = openBlocks[--openBlockTop];
+                        Instruction block = openBlocks[
+                                --openBlockTop]; // NOPMD -- Cursor mutation stays adjacent to the access to preserve
+                        // compact Java 1.3 bytecode.
                         openBlocks[openBlockTop] = null;
                         block.endPc = instructionIndex;
                         if (block.elsePc >= 0) {
@@ -885,50 +825,47 @@ public final class WasmModule {
                     break;
                 case 0x0c:
                 case 0x0d:
-                    instruction.a = reader.readVarUInt32();
-                    requireBranchDepth(instruction.a, openBlockTop, reader);
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    requireBranchDepth(instruction.firstOperand, openBlockTop, reader);
                     break;
                 case 0x10:
-                    instruction.a = reader.readVarUInt32();
-                    if (instruction.a < 0 || instruction.a >= totalFunctions) {
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    if (instruction.firstOperand < 0 || instruction.firstOperand >= totalFunctions) {
                         throw reader.error("call function index is out of range");
                     }
                     break;
                 case 0x20:
                 case 0x21:
                 case 0x22:
-                    instruction.a = reader.readVarUInt32();
-                    if (instruction.a < 0 || instruction.a >= localCount) {
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    if (instruction.firstOperand < 0 || instruction.firstOperand >= localCount) {
                         throw reader.error("local index is out of range");
                     }
                     break;
                 case 0x23:
                 case 0x24:
-                    instruction.a = reader.readVarUInt32();
-                    if (instruction.a < 0 || instruction.a >= globalList.size()) {
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    if (instruction.firstOperand < 0 || instruction.firstOperand >= globalList.size()) {
                         throw reader.error("global index is out of range");
                     }
-                    if (opcode == 0x24
-                            && !((Global) globalList.elementAt(instruction.a)).mutable) {
+                    if (opcode == 0x24 && !((Global) globalList.elementAt(instruction.firstOperand)).mutable) {
                         throw reader.error("global.set targets an immutable global");
                     }
                     break;
                 case 0x0e:
-                    int targetCount =
-                            reader.readLength("branch table", MAX_BRANCH_TARGETS);
+                    int targetCount = reader.readLength("branch table", MAX_BRANCH_TARGETS);
                     instruction.vector = new int[targetCount + 1];
                     int target;
                     for (target = 0; target <= targetCount; target++) {
-                        instruction.vector[target] = reader.readVarUInt32();
-                        requireBranchDepth(
-                                instruction.vector[target], openBlockTop, reader);
+                        instruction.vector[target] = reader.readVariableUnsigned32();
+                        requireBranchDepth(instruction.vector[target], openBlockTop, reader);
                     }
                     break;
                 case 0x11:
-                    instruction.a = reader.readVarUInt32();
-                    instruction.b = reader.readVarUInt32();
-                    requireType(instruction.a, reader);
-                    if (!tableDeclared || instruction.b != 0) {
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    instruction.secondOperand = reader.readVariableUnsigned32();
+                    requireType(instruction.firstOperand, reader);
+                    if (!tableDeclared || instruction.secondOperand != 0) {
                         throw reader.error("call_indirect requires table 0");
                     }
                     break;
@@ -964,17 +901,17 @@ public final class WasmModule {
                     if (!memoryDeclared) {
                         throw reader.error("memory instruction requires memory 0");
                     }
-                    int alignment = reader.readVarUInt32();
+                    int alignment = reader.readVariableUnsigned32();
                     int maximumAlignment = maximumAlignment(opcode);
                     if (alignment < 0 || alignment > maximumAlignment) {
                         throw reader.error("memory alignment exceeds natural alignment");
                     }
-                    instruction.a = reader.readVarUInt32();
+                    instruction.firstOperand = reader.readVariableUnsigned32();
                     break;
                 case 0x3f:
                 case 0x40:
-                    instruction.a = reader.readVarUInt32();
-                    if (!memoryDeclared || instruction.a != 0) {
+                    instruction.firstOperand = reader.readVariableUnsigned32();
+                    if (!memoryDeclared || instruction.firstOperand != 0) {
                         throw reader.error("memory instruction requires memory 0");
                     }
                     break;
@@ -985,51 +922,50 @@ public final class WasmModule {
                     instruction.longValue = reader.readVarInt64();
                     break;
                 case 0x43:
-                    instruction.longValue = reader.readU32LE() & 0xffffffffL;
+                    instruction.longValue = reader.readUnsigned32LittleEndian() & 0xffffffffL;
                     break;
                 case 0x44:
-                    instruction.longValue = reader.readU64LE();
+                    instruction.longValue = reader.readUnsigned64LittleEndian();
                     break;
                 case 0xfc:
-                    int extension = reader.readVarUInt32();
+                    int extension = reader.readVariableUnsigned32();
                     instruction.opcode = 0xfc00 | extension;
-                    if (extension >= 0 && extension <= 7) {
-                        // Saturating float-to-integer conversions have no immediates.
-                    } else if (extension == 8) {
+                    if (extension < 0 || extension > 11) {
+                        throw reader.error("unsupported 0xfc opcode " + extension);
+                    }
+                    if (extension == 8) {
                         if (declaredDataCount < 0) {
                             throw reader.error("memory.init requires a data count section");
                         }
-                        instruction.a = reader.readVarUInt32();
-                        instruction.b = reader.readVarUInt32();
-                        if (instruction.a < 0 || instruction.a >= declaredDataCount) {
+                        instruction.firstOperand = reader.readVariableUnsigned32();
+                        instruction.secondOperand = reader.readVariableUnsigned32();
+                        if (instruction.firstOperand < 0 || instruction.firstOperand >= declaredDataCount) {
                             throw reader.error("memory.init data index is out of range");
                         }
-                        if (!memoryDeclared || instruction.b != 0) {
+                        if (!memoryDeclared || instruction.secondOperand != 0) {
                             throw reader.error("memory.init requires memory 0");
                         }
-                        passiveDataUses.addElement(new Integer(instruction.a));
+                        passiveDataUses.addElement(new Integer(instruction.firstOperand));
                     } else if (extension == 9) {
                         if (declaredDataCount < 0) {
                             throw reader.error("data.drop requires a data count section");
                         }
-                        instruction.a = reader.readVarUInt32();
-                        if (instruction.a < 0 || instruction.a >= declaredDataCount) {
+                        instruction.firstOperand = reader.readVariableUnsigned32();
+                        if (instruction.firstOperand < 0 || instruction.firstOperand >= declaredDataCount) {
                             throw reader.error("data.drop index is out of range");
                         }
-                        passiveDataUses.addElement(new Integer(instruction.a));
+                        passiveDataUses.addElement(new Integer(instruction.firstOperand));
                     } else if (extension == 10) {
-                        instruction.a = reader.readVarUInt32();
-                        instruction.b = reader.readVarUInt32();
-                        if (!memoryDeclared || instruction.a != 0 || instruction.b != 0) {
+                        instruction.firstOperand = reader.readVariableUnsigned32();
+                        instruction.secondOperand = reader.readVariableUnsigned32();
+                        if (!memoryDeclared || instruction.firstOperand != 0 || instruction.secondOperand != 0) {
                             throw reader.error("memory.copy requires memory 0");
                         }
                     } else if (extension == 11) {
-                        instruction.a = reader.readVarUInt32();
-                        if (!memoryDeclared || instruction.a != 0) {
+                        instruction.firstOperand = reader.readVariableUnsigned32();
+                        if (!memoryDeclared || instruction.firstOperand != 0) {
                             throw reader.error("memory.fill requires memory 0");
                         }
-                    } else {
-                        throw reader.error("unsupported 0xfc opcode " + extension);
                     }
                     break;
                 default:
@@ -1038,20 +974,14 @@ public final class WasmModule {
                     }
                     break;
             }
-            validateInstruction(
-                    instruction,
-                    validation,
-                    localTypes,
-                    localCount,
-                    totalFunctions,
-                    reader);
+            validateInstruction(instruction, validation, localTypes, totalFunctions, reader);
             if (codeSize >= MAX_INSTRUCTIONS) {
                 throw reader.error("function exceeds instruction limit " + MAX_INSTRUCTIONS);
             }
             if (codeSize >= code.length) {
                 code = growInstructionBuffer(code, MAX_INSTRUCTIONS);
             }
-            code[codeSize++] = instruction;
+            code[codeSize++] = instruction; // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
 
         if (!complete || openBlockTop != 0) {
@@ -1060,20 +990,13 @@ public final class WasmModule {
         validation.requireComplete(reader);
         Instruction[] instructions = new Instruction[codeSize];
         System.arraycopy(code, 0, instructions, 0, codeSize);
-        int[] branchDescriptors =
-                buildBranchDescriptors(instructions, functionType.results.length, reader);
-        validateBranchDescriptors(
-                instructions, branchDescriptors, functionType.results.length, reader);
+        int[] branchDescriptors = buildBranchDescriptors(instructions, functionType.results.length, reader);
+        validateBranchDescriptors(instructions, branchDescriptors, functionType.results.length, reader);
         return new FunctionBody(
-                declaredLocalCount,
-                instructions,
-                branchDescriptors,
-                extendedFusionsEnabled,
-                loadTeeFusionsEnabled);
+                declaredLocalCount, instructions, branchDescriptors, extendedFusionsEnabled, loadTeeFusionsEnabled);
     }
 
-    private int[] buildBranchDescriptors(
-            Instruction[] instructions, int functionResultCount, ByteReader reader)
+    private int[] buildBranchDescriptors(Instruction[] instructions, int functionResultCount, ByteReader reader)
             throws WasmException {
         int descriptorCount = 0;
         int index;
@@ -1085,14 +1008,11 @@ public final class WasmModule {
                 descriptorCount += instruction.vector.length;
             }
             if (descriptorCount > MAX_BRANCH_DESCRIPTORS) {
-                throw reader.error(
-                        "function exceeds branch descriptor limit "
-                                + MAX_BRANCH_DESCRIPTORS);
+                throw reader.error("function exceeds branch descriptor limit " + MAX_BRANCH_DESCRIPTORS);
             }
         }
 
-        int[] descriptors =
-                new int[descriptorCount * BRANCH_DESCRIPTOR_STRIDE];
+        int[] descriptors = new int[descriptorCount * BRANCH_DESCRIPTOR_STRIDE];
         int[] controls = new int[MAX_CONTROL_STACK];
         int controlTop = 0;
         int nextDescriptor = 0;
@@ -1101,31 +1021,29 @@ public final class WasmModule {
             int opcode = instruction.opcode;
             if (opcode == BLOCK || opcode == LOOP || opcode == IF) {
                 if (controlTop >= controls.length) {
-                    throw reader.error(
-                            "static control stack exceeds runtime limit "
-                                    + MAX_CONTROL_STACK);
+                    throw reader.error("static control stack exceeds runtime limit " + MAX_CONTROL_STACK);
                 }
-                controls[controlTop++] = index;
+                controls[controlTop++] = index; // NOPMD -- Compact Java 1.3 cursor bytecode.
             } else if (opcode == 0x0c || opcode == 0x0d) {
                 instruction.branchDescriptorIndex = nextDescriptor;
                 writeBranchDescriptor(
                         descriptors,
-                        nextDescriptor++,
-                        instruction.a,
+                        nextDescriptor++, // NOPMD -- Compact Java 1.3 cursor bytecode.
+                        instruction.firstOperand,
                         controls,
                         controlTop,
                         instructions,
                         functionResultCount,
                         reader);
             } else if (opcode == 0x0e) {
-                instruction.branchDescriptorVector =
-                        new int[instruction.vector.length];
+                instruction.branchDescriptorVector = new int[instruction.vector.length];
                 int target;
                 for (target = 0; target < instruction.vector.length; target++) {
                     instruction.branchDescriptorVector[target] = nextDescriptor;
                     writeBranchDescriptor(
                             descriptors,
-                            nextDescriptor++,
+                            nextDescriptor++, // NOPMD -- Cursor mutation stays adjacent to the access to preserve
+                            // compact Java 1.3 bytecode.
                             instruction.vector[target],
                             controls,
                             controlTop,
@@ -1196,26 +1114,20 @@ public final class WasmModule {
                 || valueHeight > MAX_VALUE_STACK - arity
                 || activeControlDepth < 0
                 || activeControlDepth > MAX_CONTROL_STACK
-                || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) != 0
-                        && targetPc != -1)
-                || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) == 0
-                        && targetPc < 0)) {
+                || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) != 0 && targetPc != -1)
+                || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) == 0 && targetPc < 0)) {
             throw reader.error("invalid static branch descriptor");
         }
         int offset = descriptorIndex * BRANCH_DESCRIPTOR_STRIDE;
         descriptors[offset + BRANCH_DESCRIPTOR_TARGET_PC] = targetPc;
         descriptors[offset + BRANCH_DESCRIPTOR_VALUE_HEIGHT] = valueHeight;
         descriptors[offset + BRANCH_DESCRIPTOR_ARITY] = arity;
-        descriptors[offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH] =
-                activeControlDepth;
+        descriptors[offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH] = activeControlDepth;
         descriptors[offset + BRANCH_DESCRIPTOR_FLAGS] = flags;
     }
 
     private void validateBranchDescriptors(
-            Instruction[] instructions,
-            int[] descriptors,
-            int functionResultCount,
-            ByteReader reader)
+            Instruction[] instructions, int[] descriptors, int functionResultCount, ByteReader reader)
             throws WasmException {
         if (descriptors.length % BRANCH_DESCRIPTOR_STRIDE != 0) {
             throw reader.error("invalid static branch descriptor data length");
@@ -1229,13 +1141,10 @@ public final class WasmModule {
             int opcode = instruction.opcode;
             if (opcode == BLOCK || opcode == LOOP || opcode == IF) {
                 if (controlTop >= controls.length) {
-                    throw reader.error(
-                            "static control stack exceeds runtime limit "
-                                    + MAX_CONTROL_STACK);
+                    throw reader.error("static control stack exceeds runtime limit " + MAX_CONTROL_STACK);
                 }
-                controls[controlTop++] = index;
-                if (instruction.controlHeight < 0
-                        || instruction.controlHeight > MAX_VALUE_STACK) {
+                controls[controlTop++] = index; // NOPMD -- Compact Java 1.3 cursor bytecode.
+                if (instruction.controlHeight < 0 || instruction.controlHeight > MAX_VALUE_STACK) {
                     throw reader.error("invalid static control height");
                 }
             } else if (opcode == 0x0c || opcode == 0x0d) {
@@ -1244,8 +1153,9 @@ public final class WasmModule {
                 }
                 verifyBranchDescriptor(
                         descriptors,
-                        expectedDescriptor++,
-                        instruction.a,
+                        expectedDescriptor++, // NOPMD -- Cursor mutation stays adjacent to the access to preserve
+                        // compact Java 1.3 bytecode.
+                        instruction.firstOperand,
                         controls,
                         controlTop,
                         instructions,
@@ -1253,20 +1163,18 @@ public final class WasmModule {
                         reader);
             } else if (opcode == 0x0e) {
                 if (instruction.branchDescriptorVector == null
-                        || instruction.branchDescriptorVector.length
-                                != instruction.vector.length) {
+                        || instruction.branchDescriptorVector.length != instruction.vector.length) {
                     throw reader.error("inconsistent branch descriptor table");
                 }
                 int target;
                 for (target = 0; target < instruction.vector.length; target++) {
-                    if (instruction.branchDescriptorVector[target]
-                            != expectedDescriptor) {
-                        throw reader.error(
-                                "inconsistent branch descriptor table index");
+                    if (instruction.branchDescriptorVector[target] != expectedDescriptor) {
+                        throw reader.error("inconsistent branch descriptor table index");
                     }
                     verifyBranchDescriptor(
                             descriptors,
-                            expectedDescriptor++,
+                            expectedDescriptor++, // NOPMD -- Cursor mutation stays adjacent to the access to preserve
+                            // compact Java 1.3 bytecode.
                             instruction.vector[target],
                             controls,
                             controlTop,
@@ -1275,10 +1183,8 @@ public final class WasmModule {
                             reader);
                 }
             } else {
-                if (instruction.branchDescriptorIndex != -1
-                        || instruction.branchDescriptorVector != null) {
-                    throw reader.error(
-                            "non-branch instruction has a branch descriptor");
+                if (instruction.branchDescriptorIndex != -1 || instruction.branchDescriptorVector != null) {
+                    throw reader.error("non-branch instruction has a branch descriptor");
                 }
                 if (opcode == 0x0b && !instruction.functionEnd) {
                     if (controlTop <= 0) {
@@ -1288,9 +1194,7 @@ public final class WasmModule {
                 }
             }
         }
-        if (controlTop != 0
-                || expectedDescriptor * BRANCH_DESCRIPTOR_STRIDE
-                        != descriptors.length) {
+        if (controlTop != 0 || expectedDescriptor * BRANCH_DESCRIPTOR_STRIDE != descriptors.length) {
             throw reader.error("incomplete static branch descriptor coverage");
         }
     }
@@ -1339,28 +1243,18 @@ public final class WasmModule {
         int offset = descriptorIndex * BRANCH_DESCRIPTOR_STRIDE;
         if (offset < 0
                 || offset > descriptors.length - BRANCH_DESCRIPTOR_STRIDE
-                || descriptors[offset + BRANCH_DESCRIPTOR_TARGET_PC]
-                        != expectedTargetPc
-                || descriptors[offset + BRANCH_DESCRIPTOR_VALUE_HEIGHT]
-                        != expectedValueHeight
-                || descriptors[offset + BRANCH_DESCRIPTOR_ARITY]
-                        != expectedArity
-                || descriptors[offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH]
-                        != expectedControlDepth
-                || descriptors[offset + BRANCH_DESCRIPTOR_FLAGS]
-                        != expectedFlags
+                || descriptors[offset + BRANCH_DESCRIPTOR_TARGET_PC] != expectedTargetPc
+                || descriptors[offset + BRANCH_DESCRIPTOR_VALUE_HEIGHT] != expectedValueHeight
+                || descriptors[offset + BRANCH_DESCRIPTOR_ARITY] != expectedArity
+                || descriptors[offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH] != expectedControlDepth
+                || descriptors[offset + BRANCH_DESCRIPTOR_FLAGS] != expectedFlags
                 || expectedValueHeight > MAX_VALUE_STACK - expectedArity) {
             throw reader.error("static branch descriptor mismatch");
         }
     }
 
     private void validateInstruction(
-            Instruction instruction,
-            ValidationState state,
-            int[] localTypes,
-            int localCount,
-            int totalFunctions,
-            ByteReader reader)
+            Instruction instruction, ValidationState state, int[] localTypes, int totalFunctions, ByteReader reader)
             throws WasmException {
         int opcode = instruction.opcode;
         switch (opcode) {
@@ -1372,20 +1266,12 @@ public final class WasmModule {
             case BLOCK:
             case LOOP:
                 instruction.controlHeight =
-                        state.pushControl(
-                                opcode,
-                                instruction.parameterTypes,
-                                instruction.resultTypes,
-                                reader);
+                        state.pushControl(opcode, instruction.parameterTypes, instruction.resultTypes, reader);
                 return;
             case IF:
                 state.popExpected(I32, reader);
                 instruction.controlHeight =
-                        state.pushControl(
-                                opcode,
-                                instruction.parameterTypes,
-                                instruction.resultTypes,
-                                reader);
+                        state.pushControl(opcode, instruction.parameterTypes, instruction.resultTypes, reader);
                 return;
             case 0x05:
                 state.beginElse(reader);
@@ -1394,12 +1280,12 @@ public final class WasmModule {
                 state.endControl(reader);
                 return;
             case 0x0c:
-                state.popTypes(state.labelTypes(instruction.a), reader);
+                state.popTypes(state.labelTypes(instruction.firstOperand), reader);
                 state.markUnreachable();
                 return;
             case 0x0d:
                 state.popExpected(I32, reader);
-                int[] conditionalLabelTypes = state.labelTypes(instruction.a);
+                int[] conditionalLabelTypes = state.labelTypes(instruction.firstOperand);
                 state.popTypes(conditionalLabelTypes, reader);
                 state.pushTypes(conditionalLabelTypes, reader);
                 return;
@@ -1408,8 +1294,7 @@ public final class WasmModule {
                 int[] tableLabelTypes = state.labelTypes(instruction.vector[0]);
                 int target;
                 for (target = 1; target < instruction.vector.length; target++) {
-                    if (!sameTypes(
-                            tableLabelTypes, state.labelTypes(instruction.vector[target]))) {
+                    if (!sameTypes(tableLabelTypes, state.labelTypes(instruction.vector[target]))) {
                         throw reader.error("br_table targets have different label types");
                     }
                 }
@@ -1421,14 +1306,14 @@ public final class WasmModule {
                 state.markUnreachable();
                 return;
             case 0x10:
-                if (instruction.a < 0 || instruction.a >= totalFunctions) {
+                if (instruction.firstOperand < 0 || instruction.firstOperand >= totalFunctions) {
                     throw reader.error("call function index is out of range");
                 }
-                validateCall(functionTypeDuringParse(instruction.a), state, reader);
+                validateCall(functionTypeDuringParse(instruction.firstOperand), state, reader);
                 return;
             case 0x11:
                 state.popExpected(I32, reader);
-                validateCall(types[instruction.a], state, reader);
+                validateCall(types[instruction.firstOperand], state, reader);
                 return;
             case 0x1a:
                 state.popAny(reader);
@@ -1440,21 +1325,20 @@ public final class WasmModule {
                 state.validateTypedSelect(instruction.vector[0], reader);
                 return;
             case 0x20:
-                state.push(localTypes[instruction.a], reader);
+                state.push(localTypes[instruction.firstOperand], reader);
                 return;
             case 0x21:
-                state.popExpected(localTypes[instruction.a], reader);
+                state.popExpected(localTypes[instruction.firstOperand], reader);
                 return;
             case 0x22:
-                state.popExpected(localTypes[instruction.a], reader);
-                state.push(localTypes[instruction.a], reader);
+                state.popExpected(localTypes[instruction.firstOperand], reader);
+                state.push(localTypes[instruction.firstOperand], reader);
                 return;
             case 0x23:
-                state.push(((Global) globalList.elementAt(instruction.a)).type, reader);
+                state.push(((Global) globalList.elementAt(instruction.firstOperand)).type, reader);
                 return;
             case 0x24:
-                state.popExpected(
-                        ((Global) globalList.elementAt(instruction.a)).type, reader);
+                state.popExpected(((Global) globalList.elementAt(instruction.firstOperand)).type, reader);
                 return;
             case 0x28:
             case 0x2c:
@@ -1603,9 +1487,7 @@ public final class WasmModule {
         } else if (opcode == 0xfc06 || opcode == 0xfc07) {
             validateUnary(F64, I64, state, reader);
         } else {
-            throw reader.error(
-                    "validator has no type rule for opcode 0x"
-                            + Integer.toHexString(opcode));
+            throw reader.error("validator has no type rule for opcode 0x" + Integer.toHexString(opcode));
         }
     }
 
@@ -1614,41 +1496,33 @@ public final class WasmModule {
         if (functionIndex < importList.size()) {
             typeIndex = ((ImportedFunction) importList.elementAt(functionIndex)).typeIndex;
         } else {
-            typeIndex =
-                    ((Integer) definedFunctionTypes.elementAt(
-                                    functionIndex - importList.size()))
-                            .intValue();
+            typeIndex = ((Integer) definedFunctionTypes.elementAt(functionIndex - importList.size())).intValue();
         }
         return types[typeIndex];
     }
 
-    private void validateCall(FuncType type, ValidationState state, ByteReader reader)
-            throws WasmException {
+    private void validateCall(FuncType type, ValidationState state, ByteReader reader) throws WasmException {
         state.popTypes(type.parameters, reader);
         state.pushTypes(type.results, reader);
     }
 
-    private void validateLoad(int resultType, ValidationState state, ByteReader reader)
-            throws WasmException {
+    private void validateLoad(int resultType, ValidationState state, ByteReader reader) throws WasmException {
         state.popExpected(I32, reader);
         state.push(resultType, reader);
     }
 
-    private void validateStore(int valueType, ValidationState state, ByteReader reader)
-            throws WasmException {
+    private void validateStore(int valueType, ValidationState state, ByteReader reader) throws WasmException {
         state.popExpected(valueType, reader);
         state.popExpected(I32, reader);
     }
 
-    private void validateUnary(
-            int inputType, int resultType, ValidationState state, ByteReader reader)
+    private void validateUnary(int inputType, int resultType, ValidationState state, ByteReader reader)
             throws WasmException {
         state.popExpected(inputType, reader);
         state.push(resultType, reader);
     }
 
-    private void validateBinary(
-            int inputType, int resultType, ValidationState state, ByteReader reader)
+    private void validateBinary(int inputType, int resultType, ValidationState state, ByteReader reader)
             throws WasmException {
         state.popExpected(inputType, reader);
         state.popExpected(inputType, reader);
@@ -1669,22 +1543,17 @@ public final class WasmModule {
     }
 
     static boolean sameFunctionType(FuncType first, FuncType second) {
-        return sameTypes(first.parameters, second.parameters)
-                && sameTypes(first.results, second.results);
+        return sameTypes(first.parameters, second.parameters) && sameTypes(first.results, second.results);
     }
 
-    private void requireBranchDepth(int depth, int openBlockCount, ByteReader reader)
-            throws WasmException {
+    private void requireBranchDepth(int depth, int openBlockCount, ByteReader reader) throws WasmException {
         if (depth < 0 || depth > openBlockCount) {
             throw reader.error("branch depth is out of range");
         }
     }
 
     private int maximumAlignment(int opcode) {
-        if (opcode == 0x29
-                || opcode == 0x2b
-                || opcode == 0x37
-                || opcode == 0x39) {
+        if (opcode == 0x29 || opcode == 0x2b || opcode == 0x37 || opcode == 0x39) {
             return 3;
         }
         if (opcode == 0x28
@@ -1743,9 +1612,9 @@ public final class WasmModule {
         } else if (opcode == 0x42 && expectedType == I64) {
             value = reader.readVarInt64();
         } else if (opcode == 0x43 && expectedType == F32) {
-            value = reader.readU32LE() & 0xffffffffL;
+            value = reader.readUnsigned32LittleEndian() & 0xffffffffL;
         } else if (opcode == 0x44 && expectedType == F64) {
-            value = reader.readU64LE();
+            value = reader.readUnsigned64LittleEndian();
         } else {
             throw reader.error("unsupported constant expression");
         }
@@ -1756,17 +1625,17 @@ public final class WasmModule {
     }
 
     private int readLimits(ByteReader reader, String label) throws WasmException {
-        int flags = reader.readVarUInt32();
+        int flags = reader.readVariableUnsigned32();
         if ((flags & ~1) != 0) {
             throw reader.error("unsupported " + label + " limits flags");
         }
-        int minimum = reader.readVarUInt32();
+        int minimum = reader.readVariableUnsigned32();
         if (minimum < 0) {
             throw reader.error(label + " minimum is too large");
         }
         int maximum = -1;
         if ((flags & 1) != 0) {
-            maximum = reader.readVarUInt32();
+            maximum = reader.readVariableUnsigned32();
             if (maximum < 0) {
                 throw reader.error(label + " maximum is too large");
             }
@@ -1779,8 +1648,7 @@ public final class WasmModule {
                 throw reader.error("memory limits cannot accept the WASM-4 one-page memory");
             }
         } else if ("table".equals(label)
-                && (minimum > MAX_TABLE_ELEMENTS
-                        || (maximum >= 0 && maximum > MAX_TABLE_ELEMENTS))) {
+                && (minimum > MAX_TABLE_ELEMENTS || (maximum >= 0 && maximum > MAX_TABLE_ELEMENTS))) {
             throw reader.error("table exceeds runtime limit " + MAX_TABLE_ELEMENTS);
         }
         return minimum;
@@ -1810,8 +1678,7 @@ public final class WasmModule {
         }
     }
 
-    private int validateFunctionImport(
-            String moduleName, String fieldName, int typeIndex, ByteReader reader)
+    private int validateFunctionImport(String moduleName, String fieldName, int typeIndex, ByteReader reader)
             throws WasmException {
         if (!"env".equals(moduleName)) {
             throw reader.error("unsupported function import " + moduleName + "." + fieldName);
@@ -1918,10 +1785,8 @@ public final class WasmModule {
             functionTypes[index] = types[functionTypeIndices[index]];
         }
         for (index = 0; index < definedFunctionTypes.size(); index++) {
-            functionTypeIndices[imports.length + index] =
-                    ((Integer) definedFunctionTypes.elementAt(index)).intValue();
-            functionTypes[imports.length + index] =
-                    types[functionTypeIndices[imports.length + index]];
+            functionTypeIndices[imports.length + index] = ((Integer) definedFunctionTypes.elementAt(index)).intValue();
+            functionTypes[imports.length + index] = types[functionTypeIndices[imports.length + index]];
             functions[imports.length + index] = (FunctionBody) functionBodies.elementAt(index);
         }
 
@@ -1942,9 +1807,7 @@ public final class WasmModule {
         }
         for (index = 0; index < passiveDataUses.size(); index++) {
             int dataIndex = ((Integer) passiveDataUses.elementAt(index)).intValue();
-            if (dataIndex < 0
-                    || dataIndex >= dataSegmentPassive.length
-                    || !dataSegmentPassive[dataIndex]) {
+            if (dataIndex < 0 || dataIndex >= dataSegmentPassive.length || !dataSegmentPassive[dataIndex]) {
                 throw new WasmException("bulk-memory instruction requires a passive data segment");
             }
         }
@@ -2015,8 +1878,7 @@ public final class WasmModule {
                 if (targetDefinedIndex < 0 || targetDefinedIndex >= functionBodies.size()) {
                     continue;
                 }
-                int targetTypeIndex =
-                        ((Integer) definedFunctionTypes.elementAt(targetDefinedIndex)).intValue();
+                int targetTypeIndex = ((Integer) definedFunctionTypes.elementAt(targetDefinedIndex)).intValue();
                 FuncType targetType = types[targetTypeIndex];
                 if (targetType.parameters.length != 1
                         || targetType.parameters[0] != F32
@@ -2024,8 +1886,7 @@ public final class WasmModule {
                         || targetType.results[0] != F32) {
                     continue;
                 }
-                FunctionBody target =
-                        (FunctionBody) functionBodies.elementAt(targetDefinedIndex);
+                FunctionBody target = (FunctionBody) functionBodies.elementAt(targetDefinedIndex);
                 int intrinsicOpcode = 0;
                 if (target.intrinsic == INTRINSIC_F32_FLOOR) {
                     intrinsicOpcode = W4IR_F32_FLOOR_INTRINSIC;
@@ -2033,9 +1894,7 @@ public final class WasmModule {
                     intrinsicOpcode = W4IR_F32_SIN_INTRINSIC;
                 }
                 if (intrinsicOpcode != 0) {
-                    body.code[offset] =
-                            (body.code[offset] & 0xffff0000)
-                                    | executionOpcode(intrinsicOpcode);
+                    body.code[offset] = (body.code[offset] & 0xffff0000) | executionOpcode(intrinsicOpcode);
                 }
             }
         }
@@ -2069,16 +1928,14 @@ public final class WasmModule {
         private static final int UNKNOWN = 0;
 
         private final int[] values = new int[MAX_VALUE_STACK];
-        private final ValidationControl[] controls =
-                new ValidationControl[MAX_CONTROL_STACK];
+        private final ValidationControl[] controls = new ValidationControl[MAX_CONTROL_STACK];
         private final int[] functionResults;
         private int valueTop;
         private int controlTop;
 
         ValidationState(int[] functionResults) {
             this.functionResults = functionResults;
-            controls[0] =
-                    new ValidationControl(-1, new int[0], functionResults, 0);
+            controls[0] = new ValidationControl(-1, new int[0], functionResults, 0);
             controlTop = 1;
         }
 
@@ -2086,15 +1943,13 @@ public final class WasmModule {
             return functionResults;
         }
 
-        int pushControl(int kind, int[] startTypes, int[] endTypes, ByteReader reader)
-                throws WasmException {
+        int pushControl(int kind, int[] startTypes, int[] endTypes, ByteReader reader) throws WasmException {
             if (controlTop >= controls.length) {
                 throw reader.error("control stack exceeds runtime limit " + MAX_CONTROL_STACK);
             }
             popTypes(startTypes, reader);
-            ValidationControl control =
-                    new ValidationControl(kind, startTypes, endTypes, valueTop);
-            controls[controlTop++] = control;
+            ValidationControl control = new ValidationControl(kind, startTypes, endTypes, valueTop);
+            controls[controlTop++] = control; // NOPMD -- Compact Java 1.3 cursor bytecode.
             pushTypes(startTypes, reader);
             return control.height;
         }
@@ -2114,15 +1969,13 @@ public final class WasmModule {
 
         void endControl(ByteReader reader) throws WasmException {
             ValidationControl control = current(reader);
-            if (control.kind == IF
-                    && !control.sawElse
-                    && !sameTypes(control.startTypes, control.endTypes)) {
+            if (control.kind == IF && !control.sawElse && !sameTypes(control.startTypes, control.endTypes)) {
                 throw reader.error("if without else has incompatible result types");
             }
             popTypes(control.endTypes, reader);
             requireControlHeight(control, reader);
             valueTop = control.height;
-            controls[--controlTop] = null;
+            controls[--controlTop] = null; // NOPMD -- Compact Java 1.3 cursor bytecode.
             pushTypes(control.endTypes, reader);
         }
 
@@ -2165,7 +2018,7 @@ public final class WasmModule {
             if (valueTop >= values.length) {
                 throw reader.error("operand stack exceeds runtime limit " + MAX_VALUE_STACK);
             }
-            values[valueTop++] = type;
+            values[valueTop++] = type; // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
 
         void popTypes(int[] types, ByteReader reader) throws WasmException {
@@ -2183,13 +2036,10 @@ public final class WasmModule {
             if (valueTop <= control.height) {
                 throw reader.error("operand stack underflow");
             }
-            int actual = values[--valueTop];
+            int actual = values[--valueTop]; // NOPMD -- Compact Java 1.3 cursor bytecode.
             if (actual != UNKNOWN && expected != UNKNOWN && actual != expected) {
                 throw reader.error(
-                        "operand stack type mismatch: expected "
-                                + typeName(expected)
-                                + ", got "
-                                + typeName(actual));
+                        "operand stack type mismatch: expected " + typeName(expected) + ", got " + typeName(actual));
             }
             return actual;
         }
@@ -2220,8 +2070,7 @@ public final class WasmModule {
             return controls[controlTop - 1];
         }
 
-        private void requireControlHeight(ValidationControl control, ByteReader reader)
-                throws WasmException {
+        private void requireControlHeight(ValidationControl control, ByteReader reader) throws WasmException {
             if (valueTop != control.height) {
                 throw reader.error("operand stack has extra values at control boundary");
             }
@@ -2332,8 +2181,7 @@ public final class WasmModule {
             for (index = 0; index < instructions.length; index++) {
                 if (instructions[index].opcode == 0x0e) {
                     tableCount++;
-                } else if (instructions[index].opcode == 0x0c
-                        || instructions[index].opcode == 0x0d) {
+                } else if (instructions[index].opcode == 0x0c || instructions[index].opcode == 0x0d) {
                     directBranchCount++;
                 }
             }
@@ -2348,9 +2196,7 @@ public final class WasmModule {
                 Instruction instruction = instructions[index];
                 int opcode = instruction.opcode;
                 int codeOffset = index * W4IR_STRIDE;
-                code[codeOffset] = opcode
-                        | (instruction.parameterCount << 16)
-                        | (instruction.resultCount << 24);
+                code[codeOffset] = opcode | (instruction.parameterCount << 16) | (instruction.resultCount << 24);
                 if (opcode == BLOCK || opcode == LOOP || opcode == IF) {
                     code[codeOffset + 1] = instruction.endPc;
                     code[codeOffset + 2] = instruction.elsePc;
@@ -2359,19 +2205,19 @@ public final class WasmModule {
                 } else if (opcode == 0x0e) {
                     code[codeOffset + 1] = tableIndex;
                     branchTables[tableIndex] = instruction.vector;
-                    branchDescriptorTables[tableIndex++] =
-                            instruction.branchDescriptorVector;
+                    branchDescriptorTables[tableIndex] = instruction.branchDescriptorVector;
+                    tableIndex++;
                 } else if (opcode >= 0x41 && opcode <= 0x44) {
                     code[codeOffset + 1] = (int) instruction.longValue;
                     code[codeOffset + 2] = (int) (instruction.longValue >>> 32);
                 } else {
-                    code[codeOffset + 1] = instruction.a;
-                    code[codeOffset + 2] = instruction.b;
+                    code[codeOffset + 1] = instruction.firstOperand;
+                    code[codeOffset + 2] = instruction.secondOperand;
                 }
                 if (opcode == 0x0c || opcode == 0x0d) {
                     branchDescriptorPcs[directBranchIndex] = index;
-                    branchDescriptorIndices[directBranchIndex++] =
-                            instruction.branchDescriptorIndex;
+                    branchDescriptorIndices[directBranchIndex] = instruction.branchDescriptorIndex;
+                    directBranchIndex++;
                 }
             }
             fingerprint = calculateFingerprint();
@@ -2382,10 +2228,7 @@ public final class WasmModule {
             } else {
                 intrinsic = INTRINSIC_NONE;
             }
-            fuseInstructions(
-                    instructions,
-                    extendedFusionsEnabled,
-                    loadTeeFusionsEnabled);
+            fuseInstructions(instructions, extendedFusionsEnabled, loadTeeFusionsEnabled);
             if (OpcodeBuildConfig.DENSE_OPCODE_DISPATCH) {
                 remapExecutionOpcodes();
             }
@@ -2422,8 +2265,7 @@ public final class WasmModule {
             int[] heights = new int[siteCount];
             int[] arities = new int[siteCount];
             int[] controls = new int[siteCount];
-            int descriptorCount =
-                    branchDescriptors.length / BRANCH_DESCRIPTOR_STRIDE;
+            int descriptorCount = branchDescriptors.length / BRANCH_DESCRIPTOR_STRIDE;
             int index;
             for (index = 0; index < siteByPc.length; index++) {
                 siteByPc[index] = -1;
@@ -2438,29 +2280,19 @@ public final class WasmModule {
                     throw new WasmTrap("invalid direct branch descriptor mapping");
                 }
                 int offset = descriptorIndex * BRANCH_DESCRIPTOR_STRIDE;
-                int targetPc =
-                        branchDescriptors[offset + BRANCH_DESCRIPTOR_TARGET_PC];
-                int height =
-                        branchDescriptors[offset + BRANCH_DESCRIPTOR_VALUE_HEIGHT];
+                int targetPc = branchDescriptors[offset + BRANCH_DESCRIPTOR_TARGET_PC];
+                int height = branchDescriptors[offset + BRANCH_DESCRIPTOR_VALUE_HEIGHT];
                 int arity = branchDescriptors[offset + BRANCH_DESCRIPTOR_ARITY];
-                int controlDepth =
-                        branchDescriptors[
-                                offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH];
-                int flags =
-                        branchDescriptors[offset + BRANCH_DESCRIPTOR_FLAGS];
+                int controlDepth = branchDescriptors[offset + BRANCH_DESCRIPTOR_CONTROL_DEPTH];
+                int flags = branchDescriptors[offset + BRANCH_DESCRIPTOR_FLAGS];
                 if (targetPc < -1
                         || targetPc >= instructionCount
                         || height < 0
                         || arity < 0
                         || controlDepth < 0
-                        || (flags
-                                        & ~(BRANCH_DESCRIPTOR_LOOP_TARGET
-                                                | BRANCH_DESCRIPTOR_FUNCTION_RETURN))
-                                != 0
-                        || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) != 0)
-                                != (targetPc == -1)
-                        || ((flags & BRANCH_DESCRIPTOR_LOOP_TARGET) != 0
-                                && targetPc < 0)
+                        || (flags & ~(BRANCH_DESCRIPTOR_LOOP_TARGET | BRANCH_DESCRIPTOR_FUNCTION_RETURN)) != 0
+                        || ((flags & BRANCH_DESCRIPTOR_FUNCTION_RETURN) != 0) != (targetPc == -1)
+                        || ((flags & BRANCH_DESCRIPTOR_LOOP_TARGET) != 0 && targetPc < 0)
                         || siteByPc[sitePc] != -1) {
                     throw new WasmTrap("invalid direct branch descriptor");
                 }
@@ -2521,7 +2353,7 @@ public final class WasmModule {
             if (code != null) {
                 return 0;
             }
-            return (codeOffset / W4IrFunction.PAGE_INTS) * W4IrFunction.PAGE_INTS;
+            return codeOffset / W4IrFunction.PAGE_INTS * W4IrFunction.PAGE_INTS;
         }
 
         boolean isPromoted() {
@@ -2532,7 +2364,7 @@ public final class WasmModule {
             int codeLength = instructionCount * W4IR_STRIDE;
             if (codeLength > MAX_PROMOTED_CODE_INTS) {
                 promotionDisabled = true;
-                return null;
+                return null; // NOPMD -- Null is the established no-result sentinel and avoids a CLDC heap allocation.
             }
             try {
                 int[] materialized = new int[codeLength];
@@ -2553,7 +2385,7 @@ public final class WasmModule {
                 return code;
             } catch (OutOfMemoryError unavailable) {
                 promotionDisabled = true;
-                return null;
+                return null; // NOPMD -- Null is the established no-result sentinel and avoids a CLDC heap allocation.
             }
         }
 
@@ -2571,8 +2403,7 @@ public final class WasmModule {
             int index;
             for (index = 0; index < instructionCount; index++) {
                 int offset = index * W4IR_STRIDE;
-                code[offset] = (code[offset] & 0xffff0000)
-                        | executionOpcode(code[offset] & 0xffff);
+                code[offset] = (code[offset] & 0xffff0000) | executionOpcode(code[offset] & 0xffff);
             }
         }
 
@@ -2586,14 +2417,11 @@ public final class WasmModule {
         }
 
         private void fuseInstructions(
-                Instruction[] instructions,
-                boolean extendedFusionsEnabled,
-                boolean loadTeeFusionsEnabled) {
+                Instruction[] instructions, boolean extendedFusionsEnabled, boolean loadTeeFusionsEnabled) {
             boolean[] branchTarget = findBranchTargets(instructions);
-            boolean useExtendedFusions = extendedFusionsEnabled
-                    && hasExtendedFloatFusionCandidate(instructions, branchTarget);
-            boolean useIntegerExtendedFusions =
-                    extendedFusionsEnabled;
+            boolean useExtendedFusions =
+                    extendedFusionsEnabled && hasExtendedFloatFusionCandidate(instructions, branchTarget);
+            boolean useIntegerExtendedFusions = extendedFusionsEnabled;
             int index;
             for (index = 0; index + 2 < instructions.length; index++) {
                 if (branchTarget[index + 1] || branchTarget[index + 2]) {
@@ -2650,9 +2478,7 @@ public final class WasmModule {
                     replacement = W4IR_LOCAL_SET_F32_CONST;
                 } else if (first == 0x94 && second == 0x20) {
                     replacement = W4IR_F32_MUL_LOCAL;
-                } else if (loadTeeFusionsEnabled
-                        && first == 0x28
-                        && second == 0x22) {
+                } else if (loadTeeFusionsEnabled && first == 0x28 && second == 0x22) {
                     replacement = W4IR_I32_LOAD_LOCAL_TEE;
                 }
                 if (replacement != 0) {
@@ -2800,8 +2626,7 @@ public final class WasmModule {
                         && opcodeAt(index + 3) == W4IR_LOCAL_SET_LOCAL_LOCAL) {
                     int secondOffset = firstOffset + 3 * W4IR_STRIDE;
                     int teeTarget = code[firstOffset + 1];
-                    code[firstOffset] =
-                            W4IR_LOCAL_TEE_MUL_ADD_SET_LOCAL_LOCAL | (teeTarget << 16);
+                    code[firstOffset] = W4IR_LOCAL_TEE_MUL_ADD_SET_LOCAL_LOCAL | (teeTarget << 16);
                     code[firstOffset + 1] = code[secondOffset + 1];
                     code[firstOffset + 2] = code[secondOffset + 2];
                     clearInstruction(secondOffset);
@@ -2854,8 +2679,7 @@ public final class WasmModule {
                     int setTarget = code[firstOffset + 1] >>> 16;
                     int firstSource = code[firstOffset + 1] & 0xffff;
                     int addressSource = code[firstOffset + 2];
-                    code[firstOffset] =
-                            W4IR_LOCAL_SET_LOCAL_LOCAL_F32_LOAD | (setTarget << 16);
+                    code[firstOffset] = W4IR_LOCAL_SET_LOCAL_LOCAL_F32_LOAD | (setTarget << 16);
                     code[firstOffset + 1] = (firstSource << 16) | addressSource;
                     code[firstOffset + 2] = code[secondOffset + 1];
                     clearInstruction(secondOffset);
@@ -2866,8 +2690,7 @@ public final class WasmModule {
                         && opcodeAt(index + 3) == 0x20) {
                     int secondOffset = firstOffset + 3 * W4IR_STRIDE;
                     int thirdSource = code[secondOffset + 1];
-                    code[firstOffset] =
-                            W4IR_LOCAL_LOCAL_F32_LOAD_LOCAL | (thirdSource << 16);
+                    code[firstOffset] = W4IR_LOCAL_LOCAL_F32_LOAD_LOCAL | (thirdSource << 16);
                     clearInstruction(secondOffset);
                 } else if (useExtendedFusions
                         && first == 0x2a
@@ -2908,12 +2731,9 @@ public final class WasmModule {
                 if (first == 0x95
                         && index + 1 < instructions.length
                         && !branchTarget[index + 1]
-                        && opcodeAt(index + 1)
-                                == W4IR_LOCAL_TEE_MUL_ADD_SET_LOCAL_LOCAL) {
+                        && opcodeAt(index + 1) == W4IR_LOCAL_TEE_MUL_ADD_SET_LOCAL_LOCAL) {
                     int secondOffset = firstOffset + W4IR_STRIDE;
-                    code[firstOffset] =
-                            W4IR_F32_DIV_TEE_MUL_ADD_SET_LOCAL_LOCAL
-                                    | (code[secondOffset] & 0xffff0000);
+                    code[firstOffset] = W4IR_F32_DIV_TEE_MUL_ADD_SET_LOCAL_LOCAL | (code[secondOffset] & 0xffff0000);
                     code[firstOffset + 1] = code[secondOffset + 1];
                     code[firstOffset + 2] = code[secondOffset + 2];
                     clearInstruction(secondOffset);
@@ -2923,8 +2743,7 @@ public final class WasmModule {
                         && opcodeAt(index + 4) == 0x21) {
                     int secondOffset = firstOffset + 4 * W4IR_STRIDE;
                     int setTarget = code[secondOffset + 1];
-                    code[firstOffset] =
-                            W4IR_F32_LOAD_LOCAL_MUL_ADD_SET | (setTarget << 16);
+                    code[firstOffset] = W4IR_F32_LOAD_LOCAL_MUL_ADD_SET | (setTarget << 16);
                     clearInstruction(secondOffset);
                 }
             }
@@ -2953,12 +2772,9 @@ public final class WasmModule {
                         int firstValueLocal = code[firstOffset + 1] & 0xffff;
                         int secondValueLocal = code[secondOffset + 1] & 0xffff;
                         int thirdValueLocal = code[thirdOffset + 1] & 0xffff;
-                        code[firstOffset] =
-                                W4IR_LOCAL_TRIPLE_F32_STORE | (addressLocal << 16);
-                        code[firstOffset + 1] =
-                                (firstValueLocal << 16) | secondValueLocal;
-                        code[firstOffset + 2] =
-                                (thirdValueLocal << 16) | baseOffset;
+                        code[firstOffset] = W4IR_LOCAL_TRIPLE_F32_STORE | (addressLocal << 16);
+                        code[firstOffset + 1] = (firstValueLocal << 16) | secondValueLocal;
+                        code[firstOffset + 2] = (thirdValueLocal << 16) | baseOffset;
                         clearInstruction(secondOffset);
                         clearInstruction(thirdOffset);
                     }
@@ -2985,8 +2801,7 @@ public final class WasmModule {
                             && fourthSource <= 0xffff
                             && teeTarget >= 0
                             && teeTarget <= 0xffff) {
-                        code[firstOffset] =
-                                W4IR_LOCAL4_F32_MUL_ADD_TEE | (firstSource << 16);
+                        code[firstOffset] = W4IR_LOCAL4_F32_MUL_ADD_TEE | (firstSource << 16);
                         code[firstOffset + 1] = (secondSource << 16) | thirdSource;
                         code[firstOffset + 2] = (fourthSource << 16) | teeTarget;
                         clearInstruction(secondOffset);
@@ -3019,8 +2834,7 @@ public final class WasmModule {
                             && mask <= 0xffff
                             && shift >= 0
                             && shift <= 31) {
-                        code[firstOffset] =
-                                W4IR_F32_LOAD_NEG_INDEX_DIV | (loadOffset << 16);
+                        code[firstOffset] = W4IR_F32_LOAD_NEG_INDEX_DIV | (loadOffset << 16);
                         code[firstOffset + 1] = code[indexOffset + 1];
                         code[firstOffset + 2] = (mask << 16) | shift;
                         clearInstruction(indexOffset);
@@ -3059,15 +2873,11 @@ public final class WasmModule {
                             && storeOffset <= 0xff
                             && loadOffset >= 0
                             && loadOffset <= 0xff) {
-                        code[firstOffset] = W4IR_TRIPLE_F32_STORE_LOCAL_LOAD_LOCAL
-                                | (((storeAddress << 8) | firstValue) << 16);
-                        code[firstOffset + 1] = (secondValue << 24)
-                                | (thirdValue << 16)
-                                | (firstSource << 8)
-                                | loadAddress;
-                        code[firstOffset + 2] = (thirdSource << 24)
-                                | (storeOffset << 16)
-                                | (loadOffset << 8);
+                        code[firstOffset] =
+                                W4IR_TRIPLE_F32_STORE_LOCAL_LOAD_LOCAL | (((storeAddress << 8) | firstValue) << 16);
+                        code[firstOffset + 1] =
+                                (secondValue << 24) | (thirdValue << 16) | (firstSource << 8) | loadAddress;
+                        code[firstOffset + 2] = (thirdSource << 24) | (storeOffset << 16) | (loadOffset << 8);
                         clearInstruction(secondOffset);
                     }
                 } else if (first == W4IR_LOCAL_TEE_MUL_ADD_SET_LOCAL_LOCAL
@@ -3087,11 +2897,9 @@ public final class WasmModule {
                             && secondSource <= 0xff
                             && multiplySource >= 0
                             && multiplySource <= 0xff) {
-                        code[firstOffset] = W4IR_LOCAL_TEE_MUL_ADD_SET_LOAD_MUL_ADD
-                                | (((teeTarget << 8) | setTarget) << 16);
-                        code[firstOffset + 1] = (firstSource << 24)
-                                | (secondSource << 16)
-                                | (multiplySource << 8);
+                        code[firstOffset] =
+                                W4IR_LOCAL_TEE_MUL_ADD_SET_LOAD_MUL_ADD | (((teeTarget << 8) | setTarget) << 16);
+                        code[firstOffset + 1] = (firstSource << 24) | (secondSource << 16) | (multiplySource << 8);
                         code[firstOffset + 2] = code[secondOffset + 1];
                         clearInstruction(secondOffset);
                     }
@@ -3116,13 +2924,9 @@ public final class WasmModule {
                             && firstConstant <= Short.MAX_VALUE
                             && secondConstant >= Short.MIN_VALUE
                             && secondConstant <= Short.MAX_VALUE) {
-                        code[firstOffset] = W4IR_LOCAL_SET_DUAL_ADD_SET
-                                | (((firstTarget << 8) | firstSource) << 16);
-                        code[firstOffset + 1] = (secondTarget << 24)
-                                | (secondSource << 16)
-                                | (thirdTarget << 8);
-                        code[firstOffset + 2] = ((firstConstant & 0xffff) << 16)
-                                | (secondConstant & 0xffff);
+                        code[firstOffset] = W4IR_LOCAL_SET_DUAL_ADD_SET | (((firstTarget << 8) | firstSource) << 16);
+                        code[firstOffset + 1] = (secondTarget << 24) | (secondSource << 16) | (thirdTarget << 8);
+                        code[firstOffset + 2] = ((firstConstant & 0xffff) << 16) | (secondConstant & 0xffff);
                         clearInstruction(secondOffset);
                     }
                 }
@@ -3132,11 +2936,9 @@ public final class WasmModule {
                 if (!branchTarget[index]
                         || opcodeAt(index - 1) != LOOP
                         || opcodeAt(index) != W4IR_LOCAL_I32_CONST_EQ_BR_IF
-                        || opcodeAt(index + 4)
-                                != W4IR_TRIPLE_F32_STORE_LOCAL_LOAD_LOCAL
+                        || opcodeAt(index + 4) != W4IR_TRIPLE_F32_STORE_LOCAL_LOAD_LOCAL
                         || opcodeAt(index + 17) != W4IR_F32_LOAD_NEG_INDEX_DIV
-                        || opcodeAt(index + 28)
-                                != W4IR_LOCAL_TEE_MUL_ADD_SET_LOAD_MUL_ADD
+                        || opcodeAt(index + 28) != W4IR_LOCAL_TEE_MUL_ADD_SET_LOAD_MUL_ADD
                         || opcodeAt(index + 38) != W4IR_LOCAL_SET_DUAL_ADD_SET
                         || opcodeAt(index + 47) != W4IR_LOCAL_ADD_SET_BR) {
                     continue;
@@ -3168,29 +2970,23 @@ public final class WasmModule {
             }
         }
 
-        private boolean hasExtendedFloatFusionCandidate(
-                Instruction[] instructions, boolean[] branchTarget) {
+        private boolean hasExtendedFloatFusionCandidate(Instruction[] instructions, boolean[] branchTarget) {
             int index;
             for (index = 0; index < instructions.length; index++) {
                 int first = instructions[index].opcode;
                 if (first == 0x20) {
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x20)
-                            && (straightLineOpcode(
-                                            instructions, branchTarget, index + 2, 0x95)
-                                    || straightLineOpcode(
-                                            instructions, branchTarget, index + 2, 0x2a))) {
+                            && (straightLineOpcode(instructions, branchTarget, index + 2, 0x95)
+                                    || straightLineOpcode(instructions, branchTarget, index + 2, 0x2a))) {
                         return true;
                     }
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x94)
-                            && straightLineOpcode(
-                                    instructions, branchTarget, index + 2, 0x92)) {
+                            && straightLineOpcode(instructions, branchTarget, index + 2, 0x92)) {
                         return true;
                     }
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x20)
-                            && straightLineOpcode(
-                                    instructions, branchTarget, index + 2, 0x94)
-                            && straightLineOpcode(
-                                    instructions, branchTarget, index + 3, 0x92)) {
+                            && straightLineOpcode(instructions, branchTarget, index + 2, 0x94)
+                            && straightLineOpcode(instructions, branchTarget, index + 3, 0x92)) {
                         return true;
                     }
                     if (isTripleF32StoreCandidate(instructions, branchTarget, index)) {
@@ -3198,20 +2994,17 @@ public final class WasmModule {
                     }
                 } else if (first == 0x21) {
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x43)
-                            && straightLineOpcode(
-                                    instructions, branchTarget, index + 2, 0x21)) {
+                            && straightLineOpcode(instructions, branchTarget, index + 2, 0x21)) {
                         return true;
                     }
                 } else if (first == 0x22) {
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x94)
-                            && straightLineOpcode(
-                                    instructions, branchTarget, index + 2, 0x92)) {
+                            && straightLineOpcode(instructions, branchTarget, index + 2, 0x92)) {
                         return true;
                     }
                 } else if (first == 0x2a) {
                     if (straightLineOpcode(instructions, branchTarget, index + 1, 0x8c)
-                            || straightLineOpcode(
-                                    instructions, branchTarget, index + 1, 0x95)) {
+                            || straightLineOpcode(instructions, branchTarget, index + 1, 0x95)) {
                         return true;
                     }
                 }
@@ -3219,8 +3012,7 @@ public final class WasmModule {
             return false;
         }
 
-        private boolean isTripleF32StoreCandidate(
-                Instruction[] instructions, boolean[] branchTarget, int index) {
+        private boolean isTripleF32StoreCandidate(Instruction[] instructions, boolean[] branchTarget, int index) {
             if (!straightLineOpcode(instructions, branchTarget, index + 1, 0x20)
                     || !straightLineOpcode(instructions, branchTarget, index + 2, 0x38)
                     || !straightLineOpcode(instructions, branchTarget, index + 3, 0x20)
@@ -3231,24 +3023,19 @@ public final class WasmModule {
                     || !straightLineOpcode(instructions, branchTarget, index + 8, 0x38)) {
                 return false;
             }
-            int addressLocal = instructions[index].a;
-            int baseOffset = instructions[index + 2].a;
-            return addressLocal == instructions[index + 3].a
-                    && addressLocal == instructions[index + 6].a
+            int addressLocal = instructions[index].firstOperand;
+            int baseOffset = instructions[index + 2].firstOperand;
+            return addressLocal == instructions[index + 3].firstOperand
+                    && addressLocal == instructions[index + 6].firstOperand
                     && baseOffset >= 0
                     && baseOffset <= 65527
-                    && instructions[index + 5].a == baseOffset + 4
-                    && instructions[index + 8].a == baseOffset + 8;
+                    && instructions[index + 5].firstOperand == baseOffset + 4
+                    && instructions[index + 8].firstOperand == baseOffset + 8;
         }
 
         private boolean straightLineOpcode(
-                Instruction[] instructions,
-                boolean[] branchTarget,
-                int index,
-                int expectedOpcode) {
-            return index < instructions.length
-                    && !branchTarget[index]
-                    && instructions[index].opcode == expectedOpcode;
+                Instruction[] instructions, boolean[] branchTarget, int index, int expectedOpcode) {
+            return index < instructions.length && !branchTarget[index] && instructions[index].opcode == expectedOpcode;
         }
 
         private boolean[] findBranchTargets(Instruction[] instructions) {
@@ -3260,15 +3047,11 @@ public final class WasmModule {
                 if (instruction.opcode == LOOP && index + 1 < result.length) {
                     result[index + 1] = true;
                 }
-                if ((instruction.opcode == BLOCK
-                                || instruction.opcode == LOOP
-                                || instruction.opcode == IF)
+                if ((instruction.opcode == BLOCK || instruction.opcode == LOOP || instruction.opcode == IF)
                         && instruction.endPc + 1 < result.length) {
                     result[instruction.endPc + 1] = true;
                 }
-                if (instruction.opcode == IF
-                        && instruction.elsePc >= 0
-                        && instruction.elsePc + 1 < result.length) {
+                if (instruction.opcode == IF && instruction.elsePc >= 0 && instruction.elsePc + 1 < result.length) {
                     result[instruction.elsePc + 1] = true;
                 }
             }
@@ -3313,7 +3096,7 @@ public final class WasmModule {
                 System.arraycopy(values, 0, grown, 0, size);
                 values = grown;
             }
-            values[size++] = value;
+            values[size++] = value; // NOPMD -- Compact Java 1.3 cursor bytecode.
         }
 
         Object elementAt(int index) {
@@ -3321,17 +3104,6 @@ public final class WasmModule {
                 throw new ArrayIndexOutOfBoundsException(index);
             }
             return values[index];
-        }
-
-        void removeElementAt(int index) {
-            if (index < 0 || index >= size) {
-                throw new ArrayIndexOutOfBoundsException(index);
-            }
-            int moved = size - index - 1;
-            if (moved > 0) {
-                System.arraycopy(values, index + 1, values, index, moved);
-            }
-            values[--size] = null;
         }
 
         void copyInto(Object[] target) {
@@ -3345,8 +3117,8 @@ public final class WasmModule {
 
     static final class Instruction {
         int opcode;
-        int a;
-        int b;
+        int firstOperand;
+        int secondOperand;
         long longValue;
         int[] vector;
         int parameterCount;

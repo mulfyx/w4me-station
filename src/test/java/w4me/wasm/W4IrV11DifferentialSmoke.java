@@ -3,14 +3,15 @@ package w4me.wasm;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
-
 import w4me.runtime.Wasm4Runtime;
 
+/** Provides the W4IR v 11 differential smoke implementation. */
 public final class W4IrV11DifferentialSmoke {
     private static final int FRAMES = 60;
 
     private W4IrV11DifferentialSmoke() {}
 
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 2) {
             throw new IllegalArgumentException("usage: font.bin plasma.wasm");
@@ -41,13 +42,12 @@ public final class W4IrV11DifferentialSmoke {
             update(ordinaryModule, ordinaryRuntime, ordinary);
             assertState(frame, tracedModule, ordinaryModule);
             if (traced.instructionsExecuted() != ordinary.instructionsExecuted()) {
-                throw new AssertionError(
-                        "instruction accounting mismatch at frame "
-                                + frame
-                                + ": traced="
-                                + traced.instructionsExecuted()
-                                + ", ordinary="
-                                + ordinary.instructionsExecuted());
+                throw new AssertionError("instruction accounting mismatch at frame "
+                        + frame
+                        + ": traced="
+                        + traced.instructionsExecuted()
+                        + ", ordinary="
+                        + ordinary.instructionsExecuted());
             }
             if (ordinary.traceLoopCalls() != 0 || ordinary.traceLoopIterations() != 0) {
                 throw new AssertionError("disabled trace executor recorded trace work");
@@ -62,30 +62,25 @@ public final class W4IrV11DifferentialSmoke {
         ordinaryModule.close();
         tracedRuntime.close();
         ordinaryRuntime.close();
-        System.out.println(
-                "PASS W4IR-v11 differential frames="
-                        + FRAMES
-                        + " memory=65536 globals=exact calls="
-                        + traceCalls
-                        + " iterations="
-                        + traceIterations);
+        System.out.println("PASS W4IR-v11 differential frames="
+                + FRAMES
+                + " memory=65536 globals=exact calls="
+                + traceCalls
+                + " iterations="
+                + traceIterations);
     }
 
-    private static void update(
-            WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter)
-            throws Exception {
+    private static void update(WasmModule module, Wasm4Runtime runtime, WasmInterpreter interpreter) throws Exception {
         runtime.beginFrame(module, 0, 0, 0, 0);
         interpreter.invoke("update");
         runtime.endFrame();
     }
 
-    private static void assertState(
-            int frame, WasmModule traced, WasmModule ordinary) {
+    private static void assertState(int frame, WasmModule traced, WasmModule ordinary) {
         int index;
         for (index = 0; index < traced.memory.length; index++) {
             if (traced.memory[index] != ordinary.memory[index]) {
-                throw new AssertionError(
-                        "memory mismatch at frame " + frame + ", address " + index);
+                throw new AssertionError("memory mismatch at frame " + frame + ", address " + index);
             }
         }
         if (traced.globals.length != ordinary.globals.length) {
@@ -93,8 +88,7 @@ public final class W4IrV11DifferentialSmoke {
         }
         for (index = 0; index < traced.globals.length; index++) {
             if (traced.globals[index] != ordinary.globals[index]) {
-                throw new AssertionError(
-                        "global mismatch at frame " + frame + ", index " + index);
+                throw new AssertionError("global mismatch at frame " + frame + ", index " + index);
             }
         }
     }
