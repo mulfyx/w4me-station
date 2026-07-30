@@ -353,7 +353,7 @@ cmd_verify_launcher() {
     )"
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
         --snapshot "${snapshot_id}" >/dev/null
-    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1500 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1600 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
         >"${RESULT_DIR}/restarted.json"
     if ! grep -F -q -- '"displayableKind":"canvas"' \
@@ -1037,15 +1037,43 @@ cmd_verify_install() {
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key fire --duration 80 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd key rsk --duration 80 >/dev/null
-    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 500 >/dev/null
+    menu_ready=no
+    attempt=0
+    while [ "${attempt}" -lt 15 ]; do
+        "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 200 >/dev/null
+        "${ROOT_DIR}/tools/kemu/run.sh" session cmd observe --json \
+            >"${TEMP_DIR}/system-menu.json"
+        if grep -F -q -- '"displayableKind":"list"' \
+            "${TEMP_DIR}/system-menu.json" &&
+            grep -F -q -- '"title":"Paused"' \
+                "${TEMP_DIR}/system-menu.json" &&
+            grep -F -q -- '"selectedIndex":5' \
+                "${TEMP_DIR}/system-menu.json"; then
+            menu_ready=yes
+            break
+        fi
+        attempt=$((attempt + 1))
+    done
+    if [ "${menu_ready}" != "yes" ]; then
+        printf 'error: install probe did not reach the selected Exit action\n' >&2
+        exit 1
+    fi
+    snapshot_id="$(
+        sed -n 's/.*"commandSnapshotId":\([0-9][0-9]*\).*/\1/p' \
+            "${TEMP_DIR}/system-menu.json"
+    )"
+    if ! [[ "${snapshot_id}" =~ ^[0-9]+$ ]]; then
+        printf 'error: install probe system menu has no command snapshot\n' >&2
+        exit 1
+    fi
 
     kill "${HTTP_PID}" || true
     wait "${HTTP_PID}" 2>/dev/null || true
     HTTP_PID=""
 
-    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 900 >/dev/null
-    "${ROOT_DIR}/tools/kemu/run.sh" session cmd key fire --duration 80 >/dev/null
-    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 300 >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd command run 1 \
+        --snapshot "${snapshot_id}" >/dev/null
+    "${ROOT_DIR}/tools/kemu/run.sh" session cmd wait 1500 >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd screenshot \
         --out "${RESULT_DIR}/installed-offline.png" >/dev/null
     "${ROOT_DIR}/tools/kemu/run.sh" session cmd logs worker --lines 500 \
@@ -1328,9 +1356,13 @@ cmd_verify_rubido() {
     trap cleanup EXIT
 
     rm -rf -- "${RESULT_DIR}"
-    mkdir -p -- "${RESULT_DIR}" "${TEMP_DIR}/classes"
+    mkdir -p -- \
+        "${RESULT_DIR}" \
+        "${TEMP_DIR}/classes/cartridges"
     cp -- "${SOURCE_JAR}" "${TEMP_DIR}/rubido-probe.jar"
-    cp -- "${ROOT_DIR}/cartridges/rubido.wasm" "${TEMP_DIR}/classes/rubido.wasm"
+    cp -- \
+        "${ROOT_DIR}/cartridges/rubido.wasm" \
+        "${TEMP_DIR}/classes/cartridges/rubido.wasm"
     javac \
         -source "${J2ME_SOURCE}" \
         -target "${J2ME_TARGET}" \

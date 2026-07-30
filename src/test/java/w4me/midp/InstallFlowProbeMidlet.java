@@ -14,6 +14,18 @@ public final class InstallFlowProbeMidlet extends DiagnosticW4MeMidlet {
         return super.getAppProperty(name);
     }
 
+    protected int initialSystemMenuAction() {
+        return SystemMenuModel.ACTION_EXIT;
+    }
+
+    protected boolean replayRoute(String resource, String title) {
+        return offlineRelaunch;
+    }
+
+    void finishCanvasExit(W4Canvas source) {
+        showLibrary();
+    }
+
     void showLibrary() {
         if (offlineRelaunch) {
             super.showLibrary();
