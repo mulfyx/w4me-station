@@ -7,7 +7,7 @@ Thirteen of them make up the release catalog and ship unchanged in both JAR
 variants. The list and its order live in `tools/build.sh` and
 `w4me.midp.LibraryList`, and `tools/verify.sh` pins each packaged hash.
 
-`mandelbrot.wasm`, `sound-test.wasm`, `tankle.wasm` and
+`mandelbrot.wasm`, `rubido.wasm`, `sound-test.wasm`, `tankle.wasm` and
 `game-of-life-zig-edition.wasm` are fixtures only. They stay here for the
 framebuffer oracle, the corpus profiler and the phoneME benchmark, but are kept
 out of the release JARs: their per-frame cost, or a mouse-only control scheme,

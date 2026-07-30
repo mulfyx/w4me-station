@@ -65,8 +65,8 @@ Both release JARs contain the same thirteen cartridges, packaged under
 | 7 | Watris | real-time falling-block game |
 | 8 | Glowfish Chess | board game, two players on one gamepad, static frame |
 | 9 | Duck Maze | gamepad input and multi-frame state |
-| 10 | Rubido | mixed pointer/gamepad input, palette, audio, and disk writes |
-| 11 | Untangle | pointer dragging, rotated/flipped blits, disk, `f64`, and tables |
+| 10 | Untangle | pointer dragging, rotated/flipped blits, disk, `f64`, and tables |
+| 11 | Nyan Cat | continuous multi-channel music and animation |
 | 12 | Sound Demo | basic tone playback |
 | 13 | Plasma Cube | floating-point computation and sustained rendering |
 
@@ -76,7 +76,7 @@ handset limitation is not visible; pointer-driven cartridges sit below
 keypad-driven ones, and the service and technical demos come last. Plasma Cube
 is by far the most expensive cartridge of the set and stays at the end.
 
-Mandelbrot, Sound Test, Tankle, and Game of Life: Zig Edition remain in
+Mandelbrot, Rubido, Sound Test, Tankle, and Game of Life: Zig Edition remain in
 `cartridges/` as regression and benchmark fixtures but are not packaged in the
 release JARs.
 
@@ -169,6 +169,10 @@ framebuffer whenever the screen provides enough space.
 - Sampled MMAPI behavior and latency vary between phone implementations. On the
   tested Nokia E71, short sound effects are audible, but continuous music
   stutters and is not timing-compatible with the reference runtime.
+- Nyan Cat is bundled as a sustained-music stress cartridge. Automatic mode
+  has produced audible clicks in user testing on J2ME Loader; this report is
+  not yet reproduced by the project device matrix. Use Compatible mode when
+  sampled playback clicks or breaks up.
 - Automatic audio uses sampled WAV Players only when MMAPI reports both WAV
   and mixing support, then falls back through a data-backed `audio/midi`
   Player, `Manager.playTone`, and silence as each tier proves unavailable.

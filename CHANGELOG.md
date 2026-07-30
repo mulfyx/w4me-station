@@ -14,7 +14,11 @@
 ### Audio
 
 - specializes constant mono pulse synthesis by hoisting the phase step and
-  precomputing the two output levels while preserving byte-exact PCM output.
+  precomputing the two output levels while preserving byte-exact PCM output;
+- replaces Rubido in the bundled catalog with Jake Ledoux's unmodified Nyan Cat
+  cartridge as a continuous-music stress case; Rubido remains a regression and
+  phoneME fixture;
+- documents the reported Automatic-mode clicks on J2ME Loader.
 
 ## 1.0.4 — 2026-07-29
 

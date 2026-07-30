@@ -203,6 +203,14 @@ javac \
     -Xlint:-options \
     -classpath "${CLASSES_DIR}" \
     -d "${CLASSES_DIR}" \
+    "${ROOT_DIR}/src/test/java/w4me/NyanCatSmoke.java"
+
+javac \
+    -source "${J2ME_SOURCE}" \
+    -target "${J2ME_TARGET}" \
+    -Xlint:-options \
+    -classpath "${CLASSES_DIR}" \
+    -d "${CLASSES_DIR}" \
     "${ROOT_DIR}/src/test/java/w4me/Wasm4PcmSmoke.java"
 
 javac \
@@ -423,6 +431,10 @@ java -classpath "${CLASSES_DIR}" w4me.RuntimeBenchmark \
 java -classpath "${CLASSES_DIR}" w4me.SoundDemoSmoke \
     "${ROOT_DIR}/src/main/resources/w4font.bin" \
     "${ROOT_DIR}/cartridges/sound-demo.wasm"
+
+java -classpath "${CLASSES_DIR}" w4me.NyanCatSmoke \
+    "${ROOT_DIR}/src/main/resources/w4font.bin" \
+    "${ROOT_DIR}/cartridges/nyancat.wasm"
 
 java -classpath "${CLASSES_DIR}" w4me.Wasm4PcmSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.Wasm4PcmDifferentialSmoke

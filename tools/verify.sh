@@ -123,12 +123,12 @@ cmd_jar() {
     check_cartridge cartridges/watris.wasm d66521048add571396bcaf7c80c2feb83fed0d5db3741f23f096bf389210d2d4
     check_cartridge cartridges/glowfish-chess.wasm 2804cc53da22eb62d54fd67f8d0c986bb8b12321aab07eb8486009701416e159
     check_cartridge cartridges/duck-maze.wasm 72805af4802d8f46d7f4a1f4a2edb97e9a5f5e587e17b234eda2e1b654d7dec8
-    check_cartridge cartridges/rubido.wasm 2b4b5d1c888d9286b87193d11420171eaeff3aff0bcb376b4396c9533ad115fd
     check_cartridge cartridges/untangle.wasm f2923336ede479ca4b47cb3fae75d4e252439908ab680d6dcb82a4f0ac0bfb62
+    check_cartridge cartridges/nyancat.wasm 42befc2b97c26ab4e0c792824741547229c4e3973614dc05351159388c8dd069
     check_cartridge cartridges/sound-demo.wasm cd6e1219f2c9a95b21984ffd78fe0933c76a2f89b4391e41f8d6549935ca09f9
     check_cartridge cartridges/plasma-cube.wasm b15a4cc80dacd759b85b471557a803216231a9b1cf0c4fae96e661127daaa0c9
 
-    for excluded in mandelbrot sound-test tankle game-of-life-zig-edition; do
+    for excluded in mandelbrot rubido sound-test tankle game-of-life-zig-edition; do
         if unzip -l "${JAR_PATH}" | grep -q -- "cartridges/${excluded}.wasm"; then
             printf 'error: test-only cartridge %s.wasm must not ship in the JAR\n' \
                 "${excluded}" >&2

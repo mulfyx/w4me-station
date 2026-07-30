@@ -253,7 +253,7 @@ cmd_verify_launcher() {
     DIAGNOSTIC_JAR="${TEMP_DIR}/launcher-diagnostic.jar"
     # Pins the release catalog and its order, which is a user-visible contract.
     # Keep in sync with w4me.midp.LibraryList and the list in tools/build.sh.
-    EXPECTED_ITEMS='"items":["Sokoban","Wasm Wars","Annoying Robots","Waternet","Dragon Poker Draw","Tic Tac Toe","Watris","Glowfish Chess","Duck Maze","Rubido","Untangle","Sound Demo","Plasma Cube"]'
+    EXPECTED_ITEMS='"items":["Sokoban","Wasm Wars","Annoying Robots","Waternet","Dragon Poker Draw","Tic Tac Toe","Watris","Glowfish Chess","Duck Maze","Untangle","Nyan Cat","Sound Demo","Plasma Cube"]'
 
     cleanup() {
         "${ROOT_DIR}/tools/kemu/run.sh" session stop >/dev/null 2>&1 || true

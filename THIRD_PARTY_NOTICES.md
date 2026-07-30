@@ -57,8 +57,8 @@ These thirteen files are included in both release JAR variants, packaged under
 | `cartridges/watris.wasm` | Watris — Bruno Garcia | <https://wasm4.org/play/watris/> | <https://github.com/aduros/wasm4> `examples/watris` (ISC) | `d66521048add571396bcaf7c80c2feb83fed0d5db3741f23f096bf389210d2d4` |
 | `cartridges/glowfish-chess.wasm` | Glowfish Chess — Analog Hors | <https://wasm4.org/play/glowfish-chess/> | <https://github.com/analog-hors/glowfish> (MIT) | `2804cc53da22eb62d54fd67f8d0c986bb8b12321aab07eb8486009701416e159` |
 | `cartridges/duck-maze.wasm` | Duck Maze — Julia Marques Sanches | <https://wasm4.org/play/duck-maze/> | not published | `72805af4802d8f46d7f4a1f4a2edb97e9a5f5e587e17b234eda2e1b654d7dec8` |
-| `cartridges/rubido.wasm` | Rubido — Davy Willems | <https://wasm4.org/play/rubido/> | <https://github.com/joyrider3774/rubido_wasm4> (MIT) | `2b4b5d1c888d9286b87193d11420171eaeff3aff0bcb376b4396c9533ad115fd` |
 | `cartridges/untangle.wasm` | Untangle — Mota Link | <https://wasm4.org/play/untangle/> | <https://github.com/Mota-Link/untangle-rs> (MIT) | `f2923336ede479ca4b47cb3fae75d4e252439908ab680d6dcb82a4f0ac0bfb62` |
+| `cartridges/nyancat.wasm` | Nyan Cat — Jake Ledoux | <https://wasm4.org/play/nyancat/> | not published | `42befc2b97c26ab4e0c792824741547229c4e3973614dc05351159388c8dd069` |
 | `cartridges/sound-demo.wasm` | Sound Demo — Bruno Garcia | <https://wasm4.org/play/sound-demo/> | <https://github.com/aduros/wasm4> (ISC) | `cd6e1219f2c9a95b21984ffd78fe0933c76a2f89b4391e41f8d6549935ca09f9` |
 | `cartridges/plasma-cube.wasm` | Plasma Cube — unnick | <https://wasm4.org/play/plasma-cube/> | not published | `b15a4cc80dacd759b85b471557a803216231a9b1cf0c4fae96e661127daaa0c9` |
 
@@ -71,6 +71,7 @@ packaged in the release JARs.
 | File | Work and author | Upstream page | SHA-256 |
 | --- | --- | --- | --- |
 | `cartridges/mandelbrot.wasm` | Mandelbrot — LukeGrahamLandry | <https://wasm4.org/play/mandelbrot/> | `400cef4768736233c2a3420817f2a27834614d2698116a089807fd8848fb3d0a` |
+| `cartridges/rubido.wasm` | Rubido — Davy Willems | <https://wasm4.org/play/rubido/> / <https://github.com/joyrider3774/rubido_wasm4> (MIT) | `2b4b5d1c888d9286b87193d11420171eaeff3aff0bcb376b4396c9533ad115fd` |
 | `cartridges/sound-test.wasm` | Sound Test — Mr.Rafael | <https://wasm4.org/play/sound-test/> | `8cf4c5dd51f47b4ed8738b673dbeb0caeecd6da75085afa6acbdf4e43cf9116a` |
 | `cartridges/tankle.wasm` | Tankle — Milky Natas | <https://wasm4.org/play/tankle/> | `3a99b6f7867d0f74db26333a317553885b9dce0cbedd9f922d7b8fc3df77aa48` |
 | `cartridges/game-of-life-zig-edition.wasm` | Game of Life: Zig Edition — David Roman | <https://wasm4.org/play/game-of-life-zig-edition/> / <https://github.com/davidroman0O/wasm4-game-of-life> | `ca57b23b8bda728a6f92848f8981cfb7837c1c389639cc568c29fddca597d4d3` |

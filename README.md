@@ -16,9 +16,9 @@ devices, including feature phones from the mid 2000s.
   <img src="docs/media/hero-phone.jpg" alt="W4ME Station running on a Nokia E71" width="680">
 </p>
 
-Thirteen bundled cartridges ship in a 270 KB JAR. The runtime uses no JIT, and
-the bundled library needs no network connection. Both release variants stay
-below 300 KB.
+Thirteen bundled cartridges ship in a roughly 286 KB JAR. The runtime uses no
+JIT, and the bundled library needs no network connection. Both release variants
+stay below 300 KB.
 
 ## Download
 
@@ -47,8 +47,8 @@ endorsed by the WASM-4 maintainers.
 | 7 | [Watris](https://wasm4.org/play/watris/) |
 | 8 | [Glowfish Chess](https://wasm4.org/play/glowfish-chess/) |
 | 9 | [Duck Maze](https://wasm4.org/play/duck-maze/) |
-| 10 | [Rubido](https://wasm4.org/play/rubido/) |
-| 11 | [Untangle](https://wasm4.org/play/untangle/) |
+| 10 | [Untangle](https://wasm4.org/play/untangle/) |
+| 11 | [Nyan Cat](https://wasm4.org/play/nyancat/) |
 | 12 | [Sound Demo](https://wasm4.org/play/sound-demo/) |
 | 13 | [Plasma Cube](https://wasm4.org/play/plasma-cube/) |
 

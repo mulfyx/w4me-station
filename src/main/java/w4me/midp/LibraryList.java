@@ -23,8 +23,8 @@ final class LibraryList extends List implements CommandListener {
         "Watris",
         "Glowfish Chess",
         "Duck Maze",
-        "Rubido",
         "Untangle",
+        "Nyan Cat",
         "Sound Demo",
         "Plasma Cube"
     };
@@ -38,8 +38,8 @@ final class LibraryList extends List implements CommandListener {
         "/cartridges/watris.wasm",
         "/cartridges/glowfish-chess.wasm",
         "/cartridges/duck-maze.wasm",
-        "/cartridges/rubido.wasm",
         "/cartridges/untangle.wasm",
+        "/cartridges/nyancat.wasm",
         "/cartridges/sound-demo.wasm",
         "/cartridges/plasma-cube.wasm"
     };

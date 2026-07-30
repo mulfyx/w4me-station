@@ -44,6 +44,9 @@ original file or network connection.
 - **Music stutters while sound effects work:** this is a confirmed limitation on
   the tested Nokia E71. `Compatible` mode may change which MMAPI path is used,
   but the current release does not guarantee gapless music on physical phones.
+- **Nyan Cat clicks in Automatic mode:** this has been reported on J2ME Loader.
+  Switch to `Compatible` mode; exact MMAPI behavior remains implementation-
+  dependent.
 - **Very slow cartridge:** return to the library and try Sokoban, Wasm Wars,
   Duck Maze, or another turn-based cartridge. Performance depends on the
   handset VM.

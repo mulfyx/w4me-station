@@ -49,8 +49,8 @@ for cartridge in \
     watris \
     glowfish-chess \
     duck-maze \
-    rubido \
     untangle \
+    nyancat \
     sound-demo \
     plasma-cube; do
     mkdir -p -- "${CLASSES_DIR}/cartridges"
