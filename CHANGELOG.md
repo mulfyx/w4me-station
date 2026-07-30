@@ -1,6 +1,21 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-07-30
+
+This release adds a native paused system menu, one temporary save-state slot,
+more predictable audio controls, and another round of universal runtime
+optimization while retaining Java 1.3 / CLDC 1.1 compatibility.
+
+### Interface
+
+- opens the native LCDUI paused menu directly from the gameplay soft key at a
+  completed frame boundary;
+- keeps game updates, presentation timing, input, and APU advancement paused
+  throughout the menu and its Settings screens;
+- orders actions as Continue, Save State, Load State, Settings, Restart Cart,
+  and Exit, with Exit returning cleanly to the cartridge library;
+- routes settings through a native category screen rather than mixing them into
+  the game Canvas.
 
 ### Reliability
 
@@ -15,6 +30,24 @@
 
 - decodes function bodies through bounded local instruction/control arrays,
   removing parse-loop `ObjectList` calls while preserving the existing limits.
+
+### Performance
+
+The same corrected route harness was applied to `v1.0.4@52c2723` and the 1.1.0
+runtime. Twelve balanced native i686 phoneME pairs per workload measured median
+headless frame-time reductions of 42.065% on the Duck Maze level-one route,
+6.061% in Game of Life, 5.475% in Rubido, and 3.595% in Untangle. All 48 pairs
+across those four workloads favored 1.1.0.
+
+Waternet remained effectively neutral: its median paired result was -0.114%,
+with four wins, six losses, and two ties. The five-microsecond median delta was
+smaller than the 10.638-microsecond-per-frame timer resolution, so it is not
+presented as a confirmed regression.
+
+All 60 pairs matched logical instruction counts, oracle checkpoints, and final
+framebuffer hashes. The measurements include WASM execution and synchronous
+host imports, but exclude MIDP presentation, physical-device FPS, and MMAPI
+device latency.
 
 ### Save states
 
@@ -42,6 +75,16 @@
   cartridge as a continuous-music stress case; Rubido remains a regression and
   phoneME fixture;
 - documents the reported Automatic-mode clicks on J2ME Loader.
+
+### Verification
+
+- passes the complete Java 1.3 / CLDC 1.1 release gate, including W4Bench,
+  full-state route differentials, malformed-cache recovery, save-state, audio,
+  storage, drawing, and production counterless checks;
+- passes all 21 KEmulator functional scenarios, including the native system
+  menu, Save State/Load State, audio settings, streamed install with offline RMS
+  relaunch, and the Waternet, Rubido, Untangle, and Duck Maze routes;
+- keeps both preverified release variants below 300 KiB.
 
 ## 1.0.4 — 2026-07-29
 

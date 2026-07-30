@@ -116,7 +116,7 @@ package_variant() {
     jar_size="$(stat -c '%s' -- "${jar_path}")"
     {
         printf '%s\n' 'MIDlet-Name: W4ME Station'
-        printf '%s\n' 'MIDlet-Version: 1.0.4'
+        printf '%s\n' 'MIDlet-Version: 1.1.0'
         printf '%s\n' 'MIDlet-Vendor: W4ME'
         # Keep these in step with src/main/manifest/MANIFEST.MF. The icon path is
         # what a handset shows in its application menu and install dialog; an empty

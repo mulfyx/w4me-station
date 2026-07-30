@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 MIDlet-Name: W4ME Station
-MIDlet-Version: 1.0.4
+MIDlet-Version: 1.1.0
 MIDlet-Vendor: W4ME
 MIDlet-Description: Run unmodified WASM-4 cartridges on Java ME phones
 MIDlet-Info-URL: https://github.com/mulfyx/w4me-station
