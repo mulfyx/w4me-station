@@ -45,6 +45,7 @@ public final class Wasm4Runtime implements WasmHost {
     private int opaque2bppBlitColors = -1;
     private final DiskBackend disk;
     private String lastTrace;
+    private boolean audioMuted;
 
     public Wasm4Runtime(byte[] font) {
         this(
@@ -70,6 +71,7 @@ public final class Wasm4Runtime implements WasmHost {
         this.font = font;
         this.apu = apu;
         this.disk = disk;
+        audioMuted = apu.muted();
     }
 
     public void initialize(WasmModule module) {
@@ -225,11 +227,13 @@ public final class Wasm4Runtime implements WasmHost {
                         (int) valueStack[argumentBase],
                         (int) valueStack[argumentBase + 1]);
             case WasmHost.IMPORT_TONE:
-                apu.tone(
-                        (int) valueStack[argumentBase],
-                        (int) valueStack[argumentBase + 1],
-                        (int) valueStack[argumentBase + 2],
-                        (int) valueStack[argumentBase + 3]);
+                if (!audioMuted) {
+                    apu.tone(
+                            (int) valueStack[argumentBase],
+                            (int) valueStack[argumentBase + 1],
+                            (int) valueStack[argumentBase + 2],
+                            (int) valueStack[argumentBase + 3]);
+                }
                 return 0;
             case WasmHost.IMPORT_TRACE:
                 lastTrace = readCString(memory, (int) valueStack[argumentBase]);
@@ -374,11 +378,13 @@ public final class Wasm4Runtime implements WasmHost {
                     (int) valueStack[argumentBase + 1]);
         }
         if ("tone".equals(name) && argumentCount == 4) {
-            apu.tone(
-                    (int) valueStack[argumentBase],
-                    (int) valueStack[argumentBase + 1],
-                    (int) valueStack[argumentBase + 2],
-                    (int) valueStack[argumentBase + 3]);
+            if (!audioMuted) {
+                apu.tone(
+                        (int) valueStack[argumentBase],
+                        (int) valueStack[argumentBase + 1],
+                        (int) valueStack[argumentBase + 2],
+                        (int) valueStack[argumentBase + 3]);
+            }
             return 0;
         }
         if ("trace".equals(name) && argumentCount == 1) {
@@ -414,7 +420,21 @@ public final class Wasm4Runtime implements WasmHost {
     }
 
     public void endFrame() {
-        apu.tick();
+        if (!audioMuted) {
+            apu.tick();
+        }
+    }
+
+    /**
+     * Applies the user-facing hard mute at the host-import boundary.
+     *
+     * <p>The cached flag avoids entering the synchronized APU and its backend
+     * while sound is disabled. Audio settings are applied while the game worker
+     * is stopped at the native system-menu boundary.
+     */
+    public void setAudioMuted(boolean value) {
+        apu.setMuted(value);
+        audioMuted = value;
     }
 
     public Wasm4Apu apu() {

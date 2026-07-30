@@ -2,7 +2,8 @@ package w4me.runtime.audio;
 
 import javax.microedition.media.Manager;
 
-public final class MmapiToneBackend implements AudioBackend, AudioControl {
+public final class MmapiToneBackend
+        implements AudioBackend, AudioControl, AudioBackendStatus {
     private boolean available = true;
 
     public void submitTone(int frequency, int duration, int volume, int flags) {
@@ -57,6 +58,16 @@ public final class MmapiToneBackend implements AudioBackend, AudioControl {
 
     public String grade() {
         return available ? "D-playTone" : "E-silent";
+    }
+
+    public String activeProfileName() {
+        return available
+                ? AudioBackends.PROFILE_TONE
+                : AudioBackends.PROFILE_SILENT;
+    }
+
+    public String fallbackReason() {
+        return available ? null : "Manager.playTone failed";
     }
 
     private int frequencyToMidi(int frequency) {

@@ -39,9 +39,15 @@ public final class Wasm4Apu {
 
     public void setDiagnostic(boolean diagnostic) {
         this.diagnostic = diagnostic;
+        if (backend instanceof AudioDiagnostics) {
+            ((AudioDiagnostics) backend).setAudioDiagnostics(diagnostic);
+        }
     }
 
     public synchronized void tone(int frequency, int duration, int volume, int flags) {
+        if (muted) {
+            return;
+        }
         int channel = flags & 3;
         int start = decodeFrequency(frequency & 0xffff, (flags & 0x40) != 0);
         int end = decodeFrequency((frequency >>> 16) & 0xffff, (flags & 0x40) != 0);
@@ -94,6 +100,9 @@ public final class Wasm4Apu {
     }
 
     public void tick() {
+        if (muted) {
+            return;
+        }
         int channel;
         for (channel = 0; channel < 4; channel++) {
             if (elapsedFrames[channel] < totalFrames[channel]) {
@@ -123,9 +132,13 @@ public final class Wasm4Apu {
     }
 
     public synchronized void setMuted(boolean value) {
+        if (muted == value) {
+            return;
+        }
         muted = value;
         if (value) {
             silence();
+            clearActiveChannels();
         }
     }
 
@@ -159,6 +172,14 @@ public final class Wasm4Apu {
 
     public String grade() {
         return backend.grade();
+    }
+
+    public String activeProfileName() {
+        return AudioBackends.activeProfileName(backend);
+    }
+
+    public String audioFallbackReason() {
+        return AudioBackends.fallbackReason(backend);
     }
 
     public int toneEventCount() {
@@ -334,6 +355,23 @@ public final class Wasm4Apu {
     private void silence() {
         if (control != null) {
             control.silence();
+        }
+    }
+
+    private void clearActiveChannels() {
+        int channel;
+        for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+            frequencyStart[channel] = 0;
+            frequencyEnd[channel] = 0;
+            totalFrames[channel] = 0;
+            elapsedFrames[channel] = 0;
+            attackFrames[channel] = 0;
+            decayFrames[channel] = 0;
+            sustainFrames[channel] = 0;
+            releaseFrames[channel] = 0;
+            sustainVolume[channel] = 0;
+            peakVolume[channel] = 0;
+            channelFlags[channel] = 0;
         }
     }
 

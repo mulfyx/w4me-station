@@ -4,6 +4,7 @@ package w4me.runtime.audio;
 public final class Wasm4Pcm {
     private static final int SAMPLE_RATE = 8000;
     private static final int WAV_HEADER_SIZE = 44;
+    private static final int DECLICK_SAMPLES = SAMPLE_RATE / 1000;
 
     private Wasm4Pcm() {}
 
@@ -65,6 +66,7 @@ public final class Wasm4Pcm {
                     startFrequency,
                     sustainVolume,
                     frequency);
+            applyEdgeRamp(wav, sampleCount, channels, true);
             return wav;
         }
         double phase = 0.0;
@@ -117,7 +119,59 @@ public final class Wasm4Pcm {
                 wav[offset] = (byte) pcm;
             }
         }
+        applyEdgeRamp(wav, sampleCount, channels, attack == 0);
         return wav;
+    }
+
+    /**
+     * Removes the discontinuity between unsigned 8-bit silence and a finite
+     * MMAPI WAV without extending the WASM-4 tone.
+     *
+     * <p>The one-millisecond ramps live inside the requested duration. A real
+     * attack already starts at silence, while every finite WAV must return to
+     * silence before its Player reaches end-of-media.
+     */
+    private static void applyEdgeRamp(
+            byte[] wav, int sampleCount, int channels, boolean rampStart) {
+        int rampSamples = DECLICK_SAMPLES;
+        if (rampSamples * 2 > sampleCount) {
+            rampSamples = sampleCount / 2;
+        }
+        if (rampSamples < 2) {
+            int channel;
+            for (channel = 0; channel < channels; channel++) {
+                wav[WAV_HEADER_SIZE + channel] = (byte) 128;
+                wav[WAV_HEADER_SIZE + (sampleCount - 1) * channels + channel] =
+                        (byte) 128;
+            }
+            return;
+        }
+
+        int sample;
+        for (sample = 0; sample < rampSamples; sample++) {
+            int endSample = sampleCount - rampSamples + sample;
+            int channel;
+            for (channel = 0; channel < channels; channel++) {
+                if (rampStart) {
+                    int startOffset = WAV_HEADER_SIZE + sample * channels + channel;
+                    int startValue = wav[startOffset] & 0xff;
+                    wav[startOffset] =
+                            (byte)
+                                    (128
+                                            + ((startValue - 128)
+                                                            * sample
+                                                    >> 3));
+                }
+                int endOffset = WAV_HEADER_SIZE + endSample * channels + channel;
+                int endValue = wav[endOffset] & 0xff;
+                wav[endOffset] =
+                        (byte)
+                                (128
+                                        + ((endValue - 128)
+                                                        * (rampSamples - 1 - sample)
+                                                >> 3));
+            }
+        }
     }
 
     private static void synthesizeConstantTone(

@@ -1,0 +1,4 @@
+frame,gamepad,mouse_x,mouse_y,mouse_buttons,action
+0,0,0,0,0,idle
+1,1,0,0,0,start-down
+2,0,0,0,0,start-up

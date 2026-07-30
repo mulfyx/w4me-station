@@ -11,6 +11,7 @@ import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
 
 import w4me.runtime.audio.AudioControl;
+import w4me.runtime.audio.AudioBackends;
 import w4me.runtime.audio.Wasm4Apu;
 
 public class W4MeMidlet extends MIDlet implements CommandListener {
@@ -19,7 +20,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     private TextBox locationEntry;
     private boolean autostartChecked;
     private boolean audioPreferenceLoaded;
-    private boolean compatibilityAudio;
+    private int audioProfile = AudioPreferences.PROFILE_WAV;
     private boolean soundMuted;
     private int audioGain = 100;
     private final SettingsMenuModel settingsModel = new SettingsMenuModel();
@@ -231,12 +232,23 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     String audioBackendPreference() {
         loadAudioPreference();
-        return compatibilityAudio ? "midi" : null;
+        if (audioProfile == AudioPreferences.PROFILE_MIDI) {
+            return AudioBackends.PREFERENCE_MIDI;
+        }
+        if (audioProfile == AudioPreferences.PROFILE_TONE) {
+            return AudioBackends.PREFERENCE_TONE;
+        }
+        return AudioBackends.PREFERENCE_WAV;
     }
 
     boolean compatibilityAudioEnabled() {
         loadAudioPreference();
-        return compatibilityAudio;
+        return audioProfile == AudioPreferences.PROFILE_MIDI;
+    }
+
+    int preferredAudioProfile() {
+        loadAudioPreference();
+        return audioProfile;
     }
 
     boolean soundMuted() {
@@ -406,7 +418,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
                                 source,
                                 settings,
                                 capability,
-                                compatibilityAudio,
+                                audioProfile,
                                 soundMuted,
                                 audioGain));
     }
@@ -415,18 +427,21 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
             W4Canvas source,
             SettingsList settings,
             boolean apply,
-            boolean compatible,
+            int profile,
             boolean muted,
             int gain) {
         boolean saved = true;
         if (apply) {
-            compatibilityAudio = compatible;
+            audioProfile =
+                    AudioPreferences.isProfile(profile)
+                            ? profile
+                            : AudioPreferences.PROFILE_WAV;
             soundMuted = muted;
             audioGain = gain;
             saved =
                     AudioPreferences.save(
                             new AudioPreferences.Settings(
-                                    compatibilityAudio,
+                                    audioProfile,
                                     soundMuted,
                                     audioGain));
         }
@@ -464,6 +479,11 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         return null;
     }
 
+    boolean audioDiagnosticsEnabled() {
+        String value = getAppProperty("W4ME-Audio-Diagnostics");
+        return "true".equals(value) || "1".equals(value);
+    }
+
     void exit() {
         notifyDestroyed();
     }
@@ -475,9 +495,14 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         audioPreferenceLoaded = true;
         AudioPreferences.Settings saved = AudioPreferences.load();
         String preference = getAppProperty("W4ME-Audio-Backend");
-        compatibilityAudio =
-                ("midi".equals(preference) || "tone".equals(preference))
-                        || saved.compatibilityMode;
+        audioProfile = saved.profile;
+        if (AudioBackends.PREFERENCE_MIDI.equals(preference)) {
+            audioProfile = AudioPreferences.PROFILE_MIDI;
+        } else if (AudioBackends.PREFERENCE_TONE.equals(preference)) {
+            audioProfile = AudioPreferences.PROFILE_TONE;
+        } else if (AudioBackends.PREFERENCE_WAV.equals(preference)) {
+            audioProfile = AudioPreferences.PROFILE_WAV;
+        }
         soundMuted = saved.muted;
         audioGain = saved.gain;
     }

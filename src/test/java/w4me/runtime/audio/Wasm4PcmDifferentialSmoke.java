@@ -108,7 +108,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 75,
                 1,
                 6711,
-                "f844e1b3d5ea49578821154e55e241bca7dcef93e0f37cbe527324c4cfec23f1");
+                "d6dc04c5bc7b1aa9c793c080ceab0898c8987521eeaca982969b9c75b90f2d44");
         checkFixture(
                 "rubido-900",
                 900,
@@ -116,7 +116,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 100,
                 0,
                 1111,
-                "b35dcb15e954cac510abd22f2c6f82fc0ad1d9177c89071e3ee9ec571a4a0814");
+                "9ad2332010bba68eb0327810a9207553d733bb7779a5bab615d4092095991555");
         checkFixture(
                 "slide-up",
                 440 | (880 << 16),
@@ -124,7 +124,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 25700,
                 0,
                 8044,
-                "22e25f167915097da1053114496e36d236ca1999fa060452b262d1c50f26d579");
+                "cfcc05ec2bb21fbf502b1d455b43053ae5e43a72736c77fc5e59b14d926a86b9");
         checkFixture(
                 "slide-down",
                 880 | (440 << 16),
@@ -132,7 +132,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 25700,
                 0,
                 8044,
-                "f4c91b123fbc1ac0408d31197a4452310f14c9fd8d61a8c2e8753c2f4be111c1");
+                "dc4e708dfd6d7d62f8ad8b4558a4cf88bfdab789c11d75f79875f284d8728e76");
         checkFixture(
                 "adsr",
                 440,
@@ -140,7 +140,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 (100 << 8) | 80,
                 0,
                 1111,
-                "ca59388dd6a48d7a5de7e49dfb46a95d0a3435e6d1b20b55d1b07ea28eefacc7");
+                "fa1bd7378969a53908cc1d294c6aa74e7f88c351c819f5a35fd21025d21fff95");
         checkFixture(
                 "note-bend-slide",
                 69 | (128 << 8) | ((72 | (64 << 8)) << 16),
@@ -148,7 +148,7 @@ public final class Wasm4PcmDifferentialSmoke {
                 (100 << 8) | 80,
                 0x40,
                 2444,
-                "14e39141f9d6f65a3f4c94c590152ac42fc8db2d8e3dc691a7084c9b702c4f37");
+                "cae99bc6534a107144b6fce99f04358353c16c8d9496445548ccbcf3a2627c3f");
         checkFixture(
                 "maximum",
                 1 | (65535 << 16),
@@ -339,7 +339,52 @@ public final class Wasm4PcmDifferentialSmoke {
                 wav[offset] = (byte) pcm;
             }
         }
+        referenceApplyEdgeRamp(
+                wav, sampleCount, channels, attack == 0);
         return wav;
+    }
+
+    private static void referenceApplyEdgeRamp(
+            byte[] wav, int sampleCount, int channels, boolean rampStart) {
+        int rampSamples = SAMPLE_RATE / 1000;
+        if (rampSamples * 2 > sampleCount) {
+            rampSamples = sampleCount / 2;
+        }
+        if (rampSamples < 2) {
+            int channel;
+            for (channel = 0; channel < channels; channel++) {
+                wav[WAV_HEADER_SIZE + channel] = (byte) 128;
+                wav[WAV_HEADER_SIZE + (sampleCount - 1) * channels + channel] =
+                        (byte) 128;
+            }
+            return;
+        }
+
+        int sample;
+        for (sample = 0; sample < rampSamples; sample++) {
+            int endSample = sampleCount - rampSamples + sample;
+            int channel;
+            for (channel = 0; channel < channels; channel++) {
+                if (rampStart) {
+                    int startOffset =
+                            WAV_HEADER_SIZE + sample * channels + channel;
+                    wav[startOffset] =
+                            (byte)
+                                    (128
+                                            + (((wav[startOffset] & 0xff) - 128)
+                                                            * sample
+                                                    >> 3));
+                }
+                int endOffset =
+                        WAV_HEADER_SIZE + endSample * channels + channel;
+                wav[endOffset] =
+                        (byte)
+                                (128
+                                        + (((wav[endOffset] & 0xff) - 128)
+                                                        * (rampSamples - 1 - sample)
+                                                >> 3));
+            }
+        }
     }
 
     private static int referenceEnvelopeVolume(

@@ -11,6 +11,13 @@ public final class MmapiMidiBackendSmoke {
         MmapiMidiBackend backend = new MmapiMidiBackend(factory);
 
         assertEquals("ready grade", "C-smf4-ready", backend.grade());
+        assertEquals(
+                "active technology",
+                AudioBackends.PROFILE_MIDI,
+                backend.activeProfileName());
+        if (backend.fallbackReason() != null) {
+            throw new AssertionError("available MIDI reported a fallback");
+        }
         backend.submitTone(440, 50, 100, 0);
         backend.submitTone(262, 20, 75, 1);
         assertEquals("events are coalesced until frame end", 0, factory.openCount);
@@ -50,8 +57,18 @@ public final class MmapiMidiBackendSmoke {
         }
 
         backend.close();
+        MmapiMidiBackend unavailable = new MmapiMidiBackend(null);
+        assertEquals(
+                "unavailable MIDI falls back to tones",
+                AudioBackends.PROFILE_TONE,
+                unavailable.activeProfileName());
+        assertEquals(
+                "unavailable MIDI reason",
+                "MMAPI MIDI playback unavailable",
+                unavailable.fallbackReason());
         System.out.println(
-                "PASS mmapi-smf one-player polyphony frame-coalescing lifecycle");
+                "PASS mmapi-smf one-player polyphony frame-coalescing"
+                        + " lifecycle explicit-profile-status");
     }
 
     private static void requireHeader(byte[] midi) {

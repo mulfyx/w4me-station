@@ -16,6 +16,7 @@ public final class Wasm4PcmSmoke {
         assertEquals("sample rate", 8000, readIntLe(pulse, 24));
         assertEquals("PCM bits", 8, readShortLe(pulse, 34));
         assertEquals("PCM data bytes", 8000, readIntLe(pulse, 40));
+        assertSilentEdges("pulse", pulse);
 
         byte[] pulseAgain = Wasm4Pcm.synthesize(440, 60, 25700, 0);
         assertBytes("deterministic pulse", pulse, pulseAgain);
@@ -27,11 +28,15 @@ public final class Wasm4PcmSmoke {
         byte[] triangle = Wasm4Pcm.synthesize(440, 60, 25700, 2);
         byte[] noise = Wasm4Pcm.synthesize(440, 60, 25700, 3);
         byte[] noiseAgain = Wasm4Pcm.synthesize(440, 60, 25700, 3);
+        byte[] retrigger = Wasm4Pcm.synthesize(660, 30, 25700, 0);
         assertDifferent("pulse duty", pulse, mode2);
         assertBytes("second pulse channel", pulse, pulse2);
         assertDifferent("triangle waveform", pulse, triangle);
         assertDifferent("noise waveform", pulse, noise);
         assertBytes("deterministic noise", noise, noiseAgain);
+        assertSilentEdges("triangle", triangle);
+        assertSilentEdges("noise", noise);
+        assertSequentialBoundary("same-channel retrigger", pulse, retrigger);
 
         byte[] slide = Wasm4Pcm.synthesize(440 | (880 << 16), 60, 25700, 0);
         assertDifferent("pitch slide", pulse, slide);
@@ -43,15 +48,22 @@ public final class Wasm4PcmSmoke {
         int releaseTailDistance = distanceFromCenter(envelope, sampleAtFrame(7));
         assertTrue("ADSR attack reaches peak", attackPeakDistance > 80);
         assertTrue("ADSR release fades", releaseTailDistance < attackPeakDistance);
+        assertSilentEdges("ADSR", envelope);
 
         byte[] left = Wasm4Pcm.synthesize(440, 60, 25700, 0x10);
         byte[] right = Wasm4Pcm.synthesize(440, 60, 25700, 0x20);
         assertEquals("left stereo channels", 2, readShortLe(left, 22));
         assertEquals("left stereo bytes", 16000, readIntLe(left, 40));
         assertEquals("left silent right lane", 128, left[WAV_HEADER_SIZE + 1] & 0xff);
-        assertTrue("left audible left lane", (left[WAV_HEADER_SIZE] & 0xff) != 128);
+        assertTrue(
+                "left audible left lane",
+                (left[WAV_HEADER_SIZE + 8 * 2] & 0xff) != 128);
         assertEquals("right silent left lane", 128, right[WAV_HEADER_SIZE] & 0xff);
-        assertTrue("right audible right lane", (right[WAV_HEADER_SIZE + 1] & 0xff) != 128);
+        assertTrue(
+                "right audible right lane",
+                (right[WAV_HEADER_SIZE + 8 * 2 + 1] & 0xff) != 128);
+        assertSilentEdges("left pan", left);
+        assertSilentEdges("right pan", right);
 
         assertNull("zero frequency", Wasm4Pcm.synthesize(0, 60, 100, 0));
         assertNull("zero duration", Wasm4Pcm.synthesize(440, 0, 100, 0));
@@ -59,7 +71,43 @@ public final class Wasm4PcmSmoke {
 
         System.out.println(
                 "PASS pcm waveforms=pulse,triangle,noise channels=4 "
-                        + "ADSR=exact slide=exact pan=stereo note-mode=exact");
+                        + "ADSR=exact slide=exact pan=stereo note-mode=exact "
+                        + "edge-ramp=1ms-in-duration");
+    }
+
+    private static void assertSilentEdges(String label, byte[] wav) {
+        int channels = readShortLe(wav, 22);
+        int dataLength = readIntLe(wav, 40);
+        int channel;
+        for (channel = 0; channel < channels; channel++) {
+            assertEquals(
+                    label + " start channel " + channel,
+                    128,
+                    wav[WAV_HEADER_SIZE + channel] & 0xff);
+            assertEquals(
+                    label + " end channel " + channel,
+                    128,
+                    wav[WAV_HEADER_SIZE + dataLength - channels + channel] & 0xff);
+        }
+    }
+
+    private static void assertSequentialBoundary(
+            String label, byte[] first, byte[] second) {
+        int firstChannels = readShortLe(first, 22);
+        int secondChannels = readShortLe(second, 22);
+        assertEquals(label + " first channels", 1, firstChannels);
+        assertEquals(label + " second channels", 1, secondChannels);
+        int firstEnd =
+                first[WAV_HEADER_SIZE + readIntLe(first, 40) - 1] & 0xff;
+        int secondStart = second[WAV_HEADER_SIZE] & 0xff;
+        assertEquals(label + " first end", 128, firstEnd);
+        assertEquals(label + " second start", 128, secondStart);
+        assertEquals(
+                label + " boundary step",
+                0,
+                firstEnd > secondStart
+                        ? firstEnd - secondStart
+                        : secondStart - firstEnd);
     }
 
     private static int sampleAtFrame(int frame) {

@@ -26,6 +26,16 @@
 
 ### Audio
 
+- removes click-capable WAV boundaries with a one-millisecond ramp inside the
+  requested tone duration; Watris and Nyan Cat traces now start and end at
+  unsigned 8-bit PCM silence;
+- renames Automatic/Compatible to the actual WAV synthesis, MIDI synthesis,
+  and Simple tones technologies, migrates the old RMS values, and reports the
+  active fallback and reason;
+- adds opt-in MMAPI lifecycle timings for PCM synthesis, Player creation,
+  realization, prefetch, start, stop, and close;
+- makes Sound Off a hard host-import fast path that skips APU bookkeeping,
+  synthesis, Player work, and end-of-frame audio ticks;
 - specializes constant mono pulse synthesis by hoisting the phase step and
   precomputing the two output levels while preserving byte-exact PCM output;
 - replaces Rubido in the bundled catalog with Jake Ledoux's unmodified Nyan Cat

@@ -250,7 +250,9 @@ final class W4Canvas extends GameCanvas implements Runnable {
                     new Wasm4Apu(
                             AudioBackends.create(midlet.audioBackendPreference()));
             midlet.configureAudio(audio);
-            audio.setDiagnostic(monitor != null && monitor.audioDiagnostics());
+            audio.setDiagnostic(
+                    midlet.audioDiagnosticsEnabled()
+                            || (monitor != null && monitor.audioDiagnostics()));
             int cartridgeIdentity = DiskBackends.cartridgeIdentity(cartridge);
             DiskBackend disk = DiskBackends.create(cartridgeIdentity);
             Wasm4Runtime runtime = new Wasm4Runtime(font, audio, disk);
@@ -591,6 +593,16 @@ final class W4Canvas extends GameCanvas implements Runnable {
                 : session.audio.volumeCapability();
     }
 
+    String activeAudioProfileName() {
+        Session session = activeSession;
+        return session == null ? null : session.audio.activeProfileName();
+    }
+
+    String audioFallbackReason() {
+        Session session = activeSession;
+        return session == null ? null : session.audio.audioFallbackReason();
+    }
+
     /**
      * MIDP never promises that a {@code keyPressed} is followed by a matching
      * {@code keyReleased} when the canvas stops being shown, so a button held
@@ -611,7 +623,7 @@ final class W4Canvas extends GameCanvas implements Runnable {
         if (session != null) {
             if (apply) {
                 session.audio.setMasterGain(gain);
-                session.audio.setMuted(muted);
+                session.runtime.setAudioMuted(muted);
                 showNotification("Audio updated");
             }
         }

@@ -169,23 +169,25 @@ framebuffer whenever the screen provides enough space.
 - Sampled MMAPI behavior and latency vary between phone implementations. On the
   tested Nokia E71, short sound effects are audible, but continuous music
   stutters and is not timing-compatible with the reference runtime.
-- Nyan Cat is bundled as a sustained-music stress cartridge. Automatic mode
-  has produced audible clicks in user testing on J2ME Loader; this report is
-  not yet reproduced by the project device matrix. Use Compatible mode when
-  sampled playback clicks or breaks up.
-- Automatic audio uses sampled WAV Players only when MMAPI reports both WAV
-  and mixing support, then falls back through a data-backed `audio/midi`
+- Nyan Cat is bundled as a sustained-music stress cartridge. WAV synthesis
+  produced audible clicks in user testing on J2ME Loader. The generated PCM
+  had non-silent starts and ends; a one-millisecond in-duration edge ramp now
+  returns finite WAVs to silence. Audible Player lifecycle behavior still
+  requires J2ME Loader and physical-device validation.
+- WAV synthesis uses sampled Players only when MMAPI reports both WAV and
+  mixing support, then falls back through a data-backed `audio/midi`
   Player, `Manager.playTone`, and silence as each tier proves unavailable.
-- `Compatible` mode in `Sound settings` bypasses sampled Players and renders
+- `MIDI synthesis` in `Sound settings` bypasses sampled Players and renders
   active WASM-4 channels into one Standard MIDI File Player. This avoids both
   concurrent-Player mixing and optional `device://midi` implementations that
   silently discard interactive events. MIDI preserves polyphony and timing but
   only approximates WASM-4 pulse, triangle, and noise waveforms.
-- `Sound settings` provides Automatic/Compatible mode, a global hard mute and,
-  when the active backend supports it, master volume from 0 through 100.
-  Confirmed values are restored from RMS before a cartridge can submit its
-  first tone. A mode change made during a game is used after reopening the
-  cartridge.
+- `Simple tones` exposes the monophonic `Manager.playTone` fallback directly.
+- `Sound settings` reports the preferred and active technology plus the
+  fallback reason. It also provides a global hard mute and, when supported,
+  master volume from 0 through 100. Confirmed values are restored from RMS
+  before a cartridge can submit its first tone. A profile change made during a
+  game is used after reopening the cartridge.
 - WebAssembly threads, SIMD, reference types beyond the supported table model,
   multiple memories, and memory growth are not supported.
 - The in-game menu provides one temporary Save State/Load State for the active

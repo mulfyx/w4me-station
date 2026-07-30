@@ -10,6 +10,7 @@ import javax.microedition.lcdui.Item;
 import javax.microedition.lcdui.ItemStateListener;
 import javax.microedition.lcdui.StringItem;
 
+import w4me.runtime.audio.AudioBackends;
 import w4me.runtime.audio.AudioControl;
 
 /** Global sound controls shared by all cartridges. */
@@ -37,7 +38,9 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
                 source,
                 null,
                 capability,
-                compatibilityMode,
+                compatibilityMode
+                        ? AudioPreferences.PROFILE_MIDI
+                        : AudioPreferences.PROFILE_WAV,
                 muted,
                 gain);
     }
@@ -45,9 +48,19 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
     AudioSettingsForm(
             W4MeMidlet midlet,
             W4Canvas source,
+            int capability,
+            int profile,
+            boolean muted,
+            int gain) {
+        this(midlet, source, null, capability, profile, muted, gain);
+    }
+
+    AudioSettingsForm(
+            W4MeMidlet midlet,
+            W4Canvas source,
             SettingsList settings,
             int capability,
-            boolean compatibilityMode,
+            int profile,
             boolean muted,
             int gain) {
         super("Audio");
@@ -60,15 +73,43 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
                 new ChoiceGroup(
                         "Audio mode",
                         ChoiceGroup.EXCLUSIVE,
-                        new String[] {"Automatic", "Compatible"},
+                        new String[] {
+                            AudioBackends.PROFILE_WAV,
+                            AudioBackends.PROFILE_MIDI,
+                            AudioBackends.PROFILE_TONE
+                        },
                         null);
-        modeChoice.setSelectedIndex(compatibilityMode ? 1 : 0, true);
+        modeChoice.setSelectedIndex(
+                AudioPreferences.isProfile(profile)
+                        ? profile
+                        : AudioPreferences.PROFILE_WAV,
+                true);
         append(modeChoice);
+        append(
+                new StringItem(
+                        null,
+                        "WAV synthesis: generated WASM-4 waveforms through"
+                                + " MMAPI WAV Players.\n"
+                                + "MIDI synthesis: approximate instruments through"
+                                + " one Standard MIDI File Player.\n"
+                                + "Simple tones: monophonic Manager.playTone output."));
         if (source != null) {
+            String active = source.activeAudioProfileName();
+            String reason = source.audioFallbackReason();
+            StringBuffer status = new StringBuffer();
+            status.append("Preferred: ");
+            status.append(profileName(profile));
+            status.append("\nActive: ");
+            status.append(active == null ? "Not initialized" : active);
+            if (reason != null && reason.length() != 0) {
+                status.append("\nReason: ");
+                status.append(reason);
+            }
             append(
                     new StringItem(
-                            null,
-                            "Audio mode changes apply when the cartridge is reopened."));
+                            "Output",
+                            status.toString()
+                                    + "\nProfile changes apply when the cartridge is reopened."));
         }
 
         if (capability == AudioControl.SILENT) {
@@ -126,7 +167,7 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
                     source,
                     settings,
                     true,
-                    modeChoice.getSelectedIndex() == 1,
+                    modeChoice.getSelectedIndex(),
                     muted,
                     gain);
         } else {
@@ -134,7 +175,7 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
                     source,
                     settings,
                     false,
-                    midlet.compatibilityAudioEnabled(),
+                    midlet.preferredAudioProfile(),
                     midlet.soundMuted(),
                     midlet.audioGain());
         }
@@ -155,5 +196,15 @@ final class AudioSettingsForm extends Form implements CommandListener, ItemState
             return 0;
         }
         return gain > 100 ? 100 : gain;
+    }
+
+    private String profileName(int profile) {
+        if (profile == AudioPreferences.PROFILE_MIDI) {
+            return AudioBackends.PROFILE_MIDI;
+        }
+        if (profile == AudioPreferences.PROFILE_TONE) {
+            return AudioBackends.PROFILE_TONE;
+        }
+        return AudioBackends.PROFILE_WAV;
     }
 }

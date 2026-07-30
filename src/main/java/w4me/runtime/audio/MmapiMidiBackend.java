@@ -14,7 +14,11 @@ import javax.microedition.media.control.VolumeControl;
  * Player uses the ordinary media playback path instead. Keeping all logical
  * channels in one SMF also avoids requiring concurrent Player mixing.
  */
-public final class MmapiMidiBackend implements AudioBackend, AudioControl {
+public final class MmapiMidiBackend
+        implements AudioBackend,
+                AudioControl,
+                AudioBackendStatus,
+                AudioDiagnostics {
     private static final int CHANNEL_COUNT = 4;
     private static final int MIDI_PERCUSSION_CHANNEL = 9;
     private static final int NOTE_ON = 0x90;
@@ -52,14 +56,20 @@ public final class MmapiMidiBackend implements AudioBackend, AudioControl {
     private boolean midiAvailable;
     private boolean midiStarted;
     private boolean dirty;
+    private String midiFailureReason;
+    private boolean diagnostic;
 
     public MmapiMidiBackend() {
-        this(new MmapiMidiPlayerFactory());
+        playerFactory = new MmapiMidiPlayerFactory();
+        midiAvailable = true;
     }
 
     MmapiMidiBackend(MidiPlayerFactory playerFactory) {
         this.playerFactory = playerFactory;
         midiAvailable = playerFactory != null;
+        if (!midiAvailable) {
+            midiFailureReason = "MMAPI MIDI playback unavailable";
+        }
     }
 
     public synchronized void submitTone(int frequency, int duration, int volume, int flags) {
@@ -140,6 +150,26 @@ public final class MmapiMidiBackend implements AudioBackend, AudioControl {
             return fallback.grade();
         }
         return midiStarted ? "C-smf4" : "C-smf4-ready";
+    }
+
+    public String activeProfileName() {
+        return midiAvailable
+                ? AudioBackends.PROFILE_MIDI
+                : AudioBackends.activeProfileName(fallback);
+    }
+
+    public String fallbackReason() {
+        if (midiAvailable) {
+            return null;
+        }
+        String nested = AudioBackends.fallbackReason(fallback);
+        return nested == null
+                ? midiFailureReason
+                : midiFailureReason + "; " + nested;
+    }
+
+    public void setAudioDiagnostics(boolean enabled) {
+        diagnostic = enabled;
     }
 
     public synchronized void silence() {
@@ -412,6 +442,7 @@ public final class MmapiMidiBackend implements AudioBackend, AudioControl {
 
     private void disableMidi() {
         midiAvailable = false;
+        midiFailureReason = "MMAPI MIDI Player failed";
         dirty = false;
         closePlayback();
     }
@@ -436,34 +467,73 @@ public final class MmapiMidiBackend implements AudioBackend, AudioControl {
         void close();
     }
 
-    private static final class MmapiMidiPlayerFactory implements MidiPlayerFactory {
+    private final class MmapiMidiPlayerFactory implements MidiPlayerFactory {
         public MidiPlayback open(byte[] midi) throws Exception {
             Player player = null;
+            String phase = "create";
+            long started = diagnostic ? System.currentTimeMillis() : 0;
+            long created = started;
+            long realized = started;
+            long prefetched = started;
             try {
                 player =
                         Manager.createPlayer(
                                 new ByteArrayInputStream(midi),
                                 "audio/midi");
+                created = diagnostic ? System.currentTimeMillis() : 0;
+                phase = "realize";
                 player.realize();
+                realized = diagnostic ? System.currentTimeMillis() : 0;
+                phase = "prefetch";
                 player.prefetch();
+                prefetched = diagnostic ? System.currentTimeMillis() : 0;
                 Object control = player.getControl("VolumeControl");
                 if (control instanceof VolumeControl) {
                     VolumeControl volume = (VolumeControl) control;
                     volume.setMute(false);
                     volume.setLevel(100);
                 }
+                phase = "start";
                 player.start();
+                long playerStarted = diagnostic ? System.currentTimeMillis() : 0;
                 if (player.getState() != Player.STARTED) {
                     throw new IllegalStateException("MMAPI MIDI player did not start");
                 }
+                if (diagnostic) {
+                    System.out.println(
+                            "W4ME_MIDI_LIFECYCLE bytes="
+                                    + midi.length
+                                    + " create-ms="
+                                    + (created - started)
+                                    + " realize-ms="
+                                    + (realized - created)
+                                    + " prefetch-ms="
+                                    + (prefetched - realized)
+                                    + " start-ms="
+                                    + (playerStarted - prefetched)
+                                    + " total-ms="
+                                    + (playerStarted - started));
+                }
                 return new MmapiMidiPlayback(player);
             } catch (Exception failure) {
+                reportMidiLifecycleFailure(phase, failure);
                 closePlayer(player);
                 throw failure;
             } catch (Error failure) {
+                reportMidiLifecycleFailure(phase, failure);
                 closePlayer(player);
                 throw failure;
             }
+        }
+    }
+
+    private void reportMidiLifecycleFailure(String phase, Throwable failure) {
+        if (diagnostic) {
+            System.out.println(
+                    "W4ME_MIDI_LIFECYCLE_FAILURE phase="
+                            + phase
+                            + " error="
+                            + failure.toString());
         }
     }
 

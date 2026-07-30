@@ -5,12 +5,18 @@ import javax.microedition.rms.RecordStore;
 
 /** Versioned, fail-open RMS preferences for audio mode and user volume. */
 final class AudioPreferences {
+    static final int PROFILE_WAV = 0;
+    static final int PROFILE_MIDI = 1;
+    static final int PROFILE_TONE = 2;
+
     private static final String STORE_NAME = "w4audio1";
     private static final int MAGIC_W = 0x57;
     private static final int MAGIC_4 = 0x34;
-    private static final int VERSION = 2;
-    private static final int FLAG_COMPATIBILITY = 1;
-    private static final int FLAG_MUTED = 2;
+    private static final int VERSION = 3;
+    private static final int VERSION_BOOLEAN_MODE = 2;
+    private static final int FLAG_V2_COMPATIBILITY = 1;
+    private static final int FLAG_V2_MUTED = 2;
+    private static final int FLAG_MUTED = 1;
 
     private AudioPreferences() {}
 
@@ -54,17 +60,12 @@ final class AudioPreferences {
     }
 
     static byte[] encode(Settings settings) {
-        int flags = 0;
-        if (settings.compatibilityMode) {
-            flags |= FLAG_COMPATIBILITY;
-        }
-        if (settings.muted) {
-            flags |= FLAG_MUTED;
-        }
+        int flags = settings.muted ? FLAG_MUTED : 0;
         return new byte[] {
             (byte) MAGIC_W,
             (byte) MAGIC_4,
             (byte) VERSION,
+            (byte) settings.profile,
             (byte) flags,
             (byte) clampGain(settings.gain)
         };
@@ -75,23 +76,49 @@ final class AudioPreferences {
             return Settings.defaults();
         }
         if (value.length == 1) {
-            return new Settings(value[0] == 1, false, 100);
+            return new Settings(
+                    value[0] == 1 ? PROFILE_MIDI : PROFILE_WAV,
+                    false,
+                    100);
         }
-        if (value.length != 5
-                || (value[0] & 0xff) != MAGIC_W
-                || (value[1] & 0xff) != MAGIC_4
-                || (value[2] & 0xff) != VERSION) {
+        if (value.length < 3) {
             return Settings.defaults();
         }
-        int flags = value[3] & 0xff;
-        int gain = value[4] & 0xff;
-        if (gain > 100) {
+        if ((value[0] & 0xff) != MAGIC_W
+                || (value[1] & 0xff) != MAGIC_4) {
+            return Settings.defaults();
+        }
+        int version = value[2] & 0xff;
+        if (version == VERSION_BOOLEAN_MODE && value.length == 5) {
+            int legacyFlags = value[3] & 0xff;
+            int legacyGain = value[4] & 0xff;
+            if (legacyGain > 100) {
+                return Settings.defaults();
+            }
+            return new Settings(
+                    (legacyFlags & FLAG_V2_COMPATIBILITY) != 0
+                            ? PROFILE_MIDI
+                            : PROFILE_WAV,
+                    (legacyFlags & FLAG_V2_MUTED) != 0,
+                    legacyGain);
+        }
+        if (version != VERSION || value.length != 6) {
+            return Settings.defaults();
+        }
+        int profile = value[3] & 0xff;
+        int flags = value[4] & 0xff;
+        int gain = value[5] & 0xff;
+        if (!isProfile(profile) || gain > 100) {
             return Settings.defaults();
         }
         return new Settings(
-                (flags & FLAG_COMPATIBILITY) != 0,
+                profile,
                 (flags & FLAG_MUTED) != 0,
                 gain);
+    }
+
+    static boolean isProfile(int profile) {
+        return profile >= PROFILE_WAV && profile <= PROFILE_TONE;
     }
 
     private static int clampGain(int gain) {
@@ -124,18 +151,27 @@ final class AudioPreferences {
     }
 
     static final class Settings {
+        final int profile;
         final boolean compatibilityMode;
         final boolean muted;
         final int gain;
 
         Settings(boolean compatibilityMode, boolean muted, int gain) {
-            this.compatibilityMode = compatibilityMode;
+            this(
+                    compatibilityMode ? PROFILE_MIDI : PROFILE_WAV,
+                    muted,
+                    gain);
+        }
+
+        Settings(int profile, boolean muted, int gain) {
+            this.profile = isProfile(profile) ? profile : PROFILE_WAV;
+            this.compatibilityMode = this.profile == PROFILE_MIDI;
             this.muted = muted;
             this.gain = clampGain(gain);
         }
 
         static Settings defaults() {
-            return new Settings(false, false, 100);
+            return new Settings(PROFILE_WAV, false, 100);
         }
     }
 }

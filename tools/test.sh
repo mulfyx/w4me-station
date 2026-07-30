@@ -214,7 +214,8 @@ javac \
     -Xlint:-options \
     -classpath "${CLASSES_DIR}" \
     -d "${CLASSES_DIR}" \
-    "${ROOT_DIR}/src/test/java/w4me/NyanCatSmoke.java"
+    "${ROOT_DIR}/src/test/java/w4me/NyanCatSmoke.java" \
+    "${ROOT_DIR}/src/test/java/w4me/AudioTraceAnalysis.java"
 
 javac \
     -source "${J2ME_SOURCE}" \
@@ -451,6 +452,28 @@ java -classpath "${CLASSES_DIR}" w4me.SoundDemoSmoke \
 java -classpath "${CLASSES_DIR}" w4me.NyanCatSmoke \
     "${ROOT_DIR}/src/main/resources/w4font.bin" \
     "${ROOT_DIR}/cartridges/nyancat.wasm"
+
+audio_report_dir="${ROOT_DIR}/build/reports/audio"
+mkdir -p -- "${audio_report_dir}"
+java -classpath "${CLASSES_DIR}" w4me.AudioTraceAnalysis \
+    "${ROOT_DIR}/src/main/resources/w4font.bin" \
+    "${ROOT_DIR}/cartridges/nyancat.wasm" \
+    180 \
+    >"${audio_report_dir}/nyancat-tone-trace.csv"
+grep -Fqx \
+    'SUMMARY frames=180 events=48 zero-release=48 overlapping-replacements=0 web-phase-continuity=0 non-silent-starts=0 non-silent-ends=0 max-adjacent-step=254 framebuffer-fnv1a=69daa7ed' \
+    "${audio_report_dir}/nyancat-tone-trace.csv"
+java -classpath "${CLASSES_DIR}" w4me.AudioTraceAnalysis \
+    "${ROOT_DIR}/src/main/resources/w4font.bin" \
+    "${ROOT_DIR}/cartridges/watris.wasm" \
+    1800 \
+    "${ROOT_DIR}/testdata/audio/watris-start.csv" \
+    >"${audio_report_dir}/watris-tone-trace.csv"
+grep -Fqx \
+    'SUMMARY frames=1800 events=3 zero-release=1 overlapping-replacements=0 web-phase-continuity=0 non-silent-starts=0 non-silent-ends=0 max-adjacent-step=254 framebuffer-fnv1a=578ebee9' \
+    "${audio_report_dir}/watris-tone-trace.csv"
+printf '%s\n' \
+    'PASS audio-tone-traces nyancat=48 watris=3 PCM-edges=silent reports=build/reports/audio'
 
 java -classpath "${CLASSES_DIR}" w4me.Wasm4PcmSmoke
 java -classpath "${CLASSES_DIR}" w4me.runtime.audio.Wasm4PcmDifferentialSmoke

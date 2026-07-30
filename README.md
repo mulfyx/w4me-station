@@ -131,9 +131,10 @@ The controls stay outside the 160×160 framebuffer whenever the screen is large
 enough.
 
 `Sound settings` is available from the cartridge library and the in-game
-command menu. It contains Automatic/Compatible audio mode, a hard global
-Sound On/Off mute, and master volume when the backend supports it. Confirmed
-settings persist across MIDlet restarts.
+command menu. It offers explicit WAV synthesis, MIDI synthesis, and Simple
+tones profiles, a hard global Sound On/Off mute, and master volume when the
+backend supports it. The form reports the active fallback when the selected
+technology is unavailable. Confirmed settings persist across MIDlet restarts.
 
 The in-game menu also provides one temporary `Save State`/`Load State` slot.
 It is replaced by the next save and is cleared when the cartridge is restarted,
@@ -142,7 +143,8 @@ storage and does not survive a MIDlet restart.
 
 On the tested Nokia E71, short sound effects work, but continuous music
 stutters. Audio timing and fidelity remain device-dependent; see
-[Compatibility](docs/compatibility.md).
+[Compatibility](docs/compatibility.md) and
+[Audio architecture and diagnostics](docs/audio.md).
 
 ## Loading cartridges
 

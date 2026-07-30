@@ -1,5 +1,7 @@
 package w4me.runtime.audio;
 
+import w4me.runtime.Wasm4Runtime;
+
 public final class AudioSettingsSmoke {
     public static void main(String[] arguments) {
         RecordingBackend backend = new RecordingBackend();
@@ -25,7 +27,12 @@ public final class AudioSettingsSmoke {
         apu.setMuted(true);
         apu.tone(262, 10, 100, 0);
         assertEquals("mute suppresses backend submission", submittedBeforeMute, backend.submitCount);
-        assertEquals("mute preserves logical APU events", logicalBeforeMute + 1, apu.toneEventCount());
+        assertEquals("mute suppresses logical APU work", logicalBeforeMute, apu.toneEventCount());
+        assertEquals("mute clears active frequency", 0, apu.channelFrequency(3));
+        assertEquals("mute clears active volume", 0, apu.channelVolume(3));
+        int ticksBeforeMute = backend.tickCount;
+        apu.tick();
+        assertEquals("mute suppresses backend ticks", ticksBeforeMute, backend.tickCount);
 
         apu.setMuted(false);
         apu.tone(262, 10, 100, 0);
@@ -58,10 +65,27 @@ public final class AudioSettingsSmoke {
                 AudioControl.VOLUME_CONTINUOUS,
                 apu.volumeCapability());
 
+        RecordingBackend runtimeBackend = new RecordingBackend();
+        Wasm4Apu runtimeApu = new Wasm4Apu(runtimeBackend);
+        Wasm4Runtime runtime = new Wasm4Runtime(new byte[1792], runtimeApu);
+        long[] toneArguments = {440, 30, 100, 0};
+        runtime.setAudioMuted(true);
+        runtime.invoke("env", "tone", toneArguments, 0, toneArguments.length, null);
+        runtime.endFrame();
+        assertEquals("runtime mute skips APU tone", 0, runtimeApu.toneEventCount());
+        assertEquals("runtime mute skips backend tone", 0, runtimeBackend.submitCount);
+        assertEquals("runtime mute skips backend tick", 0, runtimeBackend.tickCount);
+        runtime.setAudioMuted(false);
+        runtime.invoke("env", "tone", toneArguments, 0, toneArguments.length, null);
+        runtime.endFrame();
+        assertEquals("runtime unmute restores APU tone", 1, runtimeApu.toneEventCount());
+        assertEquals("runtime unmute restores backend tone", 1, runtimeBackend.submitCount);
+        assertEquals("runtime unmute restores backend tick", 1, runtimeBackend.tickCount);
+
         requireInvalidGain(apu, -1);
         requireInvalidGain(apu, 101);
         System.out.println(
-                "PASS audio-settings gain-boundaries rounding mute resume unchanged-fields");
+                "PASS audio-settings gain-boundaries rounding hard-mute resume unchanged-fields");
     }
 
     private static void requireInvalidGain(Wasm4Apu apu, int gain) {
@@ -83,6 +107,7 @@ public final class AudioSettingsSmoke {
     private static final class RecordingBackend implements AudioBackend, AudioControl {
         private int submitCount;
         private int silenceCount;
+        private int tickCount;
         private int lastFrequency;
         private int lastDuration;
         private int lastVolume;
@@ -96,7 +121,9 @@ public final class AudioSettingsSmoke {
             lastFlags = flags;
         }
 
-        public void tick() {}
+        public void tick() {
+            tickCount++;
+        }
 
         public void close() {}
 

@@ -40,13 +40,14 @@ original file or network connection.
   JAR again, without modifying either file.
 - **Missing FileConnection class:** install the base variant.
 - **No sound:** open `Sound settings`, keep `Sound` enabled, and try
-  `Compatible` audio mode.
+  `MIDI synthesis`, then `Simple tones`.
 - **Music stutters while sound effects work:** this is a confirmed limitation on
-  the tested Nokia E71. `Compatible` mode may change which MMAPI path is used,
-  but the current release does not guarantee gapless music on physical phones.
-- **Nyan Cat clicks in Automatic mode:** this has been reported on J2ME Loader.
-  Switch to `Compatible` mode; exact MMAPI behavior remains implementation-
-  dependent.
+  the tested Nokia E71. `MIDI synthesis` changes which MMAPI path is used, but
+  the current release does not guarantee gapless music on physical phones.
+- **Nyan Cat clicks in WAV synthesis:** generated WAV boundaries now return to
+  PCM silence. Player-close behavior remains MMAPI-specific; try `MIDI
+  synthesis` and preserve the lifecycle diagnostics described in
+  [Audio architecture and diagnostics](audio.md).
 - **Very slow cartridge:** return to the library and try Sokoban, Wasm Wars,
   Duck Maze, or another turn-based cartridge. Performance depends on the
   handset VM.

@@ -25,15 +25,23 @@ public final class AudioSettingsProbeMidlet extends W4MeMidlet {
         try {
             resetStore();
             AudioPreferences.Settings stored =
-                    new AudioPreferences.Settings(true, true, 50);
+                    new AudioPreferences.Settings(
+                            AudioPreferences.PROFILE_MIDI,
+                            true,
+                            50);
             if (!AudioPreferences.save(stored)) {
                 throw new AssertionError("RMS save failed");
             }
 
             AudioPreferences.Settings loaded = AudioPreferences.load();
-            assertSettings(loaded, true, true, 50);
-            assertFormState(false, 100, 0, "100%");
-            assertFormState(true, 50, 1, "50%");
+            assertSettings(
+                    loaded,
+                    AudioPreferences.PROFILE_MIDI,
+                    true,
+                    50);
+            assertFormState(AudioPreferences.PROFILE_WAV, 100, 0, "100%");
+            assertFormState(AudioPreferences.PROFILE_MIDI, 50, 1, "50%");
+            assertFormState(AudioPreferences.PROFILE_TONE, 75, 2, "75%");
 
             RecordingBackend backend = new RecordingBackend();
             Wasm4Apu apu = new Wasm4Apu(backend);
@@ -90,10 +98,10 @@ public final class AudioSettingsProbeMidlet extends W4MeMidlet {
 
     private void assertSettings(
             AudioPreferences.Settings settings,
-            boolean compatibility,
+            int profile,
             boolean muted,
             int gain) {
-        if (settings.compatibilityMode != compatibility
+        if (settings.profile != profile
                 || settings.muted != muted
                 || settings.gain != gain) {
             throw new AssertionError("RMS settings did not round-trip");
@@ -101,7 +109,7 @@ public final class AudioSettingsProbeMidlet extends W4MeMidlet {
     }
 
     private void assertFormState(
-            boolean compatibility,
+            int profile,
             int gain,
             int expectedMode,
             String expectedText) {
@@ -110,12 +118,12 @@ public final class AudioSettingsProbeMidlet extends W4MeMidlet {
                         null,
                         null,
                         AudioControl.VOLUME_CONTINUOUS,
-                        compatibility,
+                        profile,
                         false,
                         gain);
         ChoiceGroup mode = (ChoiceGroup) form.get(0);
-        Gauge volume = (Gauge) form.get(2);
-        StringItem value = (StringItem) form.get(3);
+        Gauge volume = (Gauge) form.get(3);
+        StringItem value = (StringItem) form.get(4);
         if (mode.getSelectedIndex() != expectedMode
                 || volume.getValue() != gain
                 || !expectedText.equals(value.getText())) {
