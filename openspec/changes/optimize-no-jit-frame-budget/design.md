@@ -140,59 +140,59 @@ unjustified memory or complexity is documented, removed, and not committed.
 The research queue is ordered by expected target relevance, dynamic coverage,
 implementation risk, and the ability to get an authoritative verdict:
 
-| ID | Candidate | Source | State |
-| --- | --- | --- | --- |
-| `NJIT-001` | Local mandatory instruction counter inside compact execution | phoneME C-interpreter bytecode cost and current `javap` | rejected |
-| `NJIT-002` | Skip W4IR operand and auxiliary loads for operand-free numeric opcodes | current dense executor and corpus profile | rejected |
-| `NJIT-003` | Implement unsigned i32 comparisons with sign-bit XOR instead of `long` conversion | WebAssembly integer ordering and phoneME ILP32 cost | rejected |
-| `NJIT-004` | Reorder `execute` parameters so hot references use `_n` local-load bytecodes | phoneME generic versus short local-load handlers | rejected |
-| `NJIT-005` | Fold memory base, offset, overflow, and end checks into one effective-address guard | local algebraic analysis of `checkedAddress` | rejected |
-| `NJIT-006` | Lower direct imported calls to a dedicated W4IR host-call opcode | current intrinsic lowering and import metadata | rejected |
-| `NJIT-007` | Replace the explicit `push` capacity check with the mandatory JVM array bounds check | target-47 bytecode, phoneME `lastore`, and exact stack-write counts | accepted |
-| `NJIT-008` | Expand packed framebuffer bytes and reuse repeated scaled rows | renderer audit | queued, needs renderer microbench and device gate |
-| `NJIT-009` | Add an unrotated, unflipped `blitSub` inner loop | host-render audit | accepted |
-| `NJIT-010` | Reduce exact PCM envelope and pitch arithmetic per sample | audio synthesis audit | accepted |
-| `NJIT-011` | Avoid a third clock read on non-presented logical frames | Canvas timing audit | queued, physical/KEmulator judge only |
-| `NJIT-012` | Reorder `executeCompactFused` parameters for short local-load bytecodes | phoneME local-load handlers | rejected |
-| `NJIT-013` | Revisit split i32/long value storage with the corrected phoneME cost model | phoneME stack representation research | queued, separate high-risk design |
-| `NJIT-014` | Inline packed framebuffer read-modify-write in the transform-free blit loop | `drawPoint` target-47 cost and NJIT-009 coverage | accepted |
-| `NJIT-015` | Carry the packed destination byte and bit shift across a plain-blit row | NJIT-014 target-47 bytecode and opaque-pixel profile | accepted |
-| `NJIT-016` | Reuse adjacent upscaled ARGB rows through native `System.arraycopy` | framebuffer scaler audit and phoneME native-arraycopy cost | accepted |
-| `NJIT-017` | Cache the last packed framebuffer byte while scaling a row | independent renderer target-bytecode review | accepted |
-| `NJIT-018` | Hoist `argbLookup` into the ARGB conversion loop's local frame | independent renderer target-bytecode review | accepted |
-| `NJIT-019` | Cache the packed framebuffer byte in native/downscale conversion | NJIT-017 result and deferred canonical-loop follow-up | accepted |
-| `NJIT-020` | Replace the defined-function argument-copy loop with a scalar/native bulk-copy split | Game of Life call profile and native phoneME arraycopy cost | accepted |
-| `NJIT-021` | Fuse signed i32 comparisons with `br_if` and use the pc-indexed direct branch path | Game of Life control-flow profile plus the accepted direct branch descriptors | rejected |
-| `NJIT-022` | Fuse `i32.load8_u + local.set` into one exact two-instruction W4IR handler | corrected Game of Life production-stream profile and accepted load/tee precedent | rejected |
-| `NJIT-023` | Fuse `i32.add_const + i32.load8_u + local.set` into one exact four-logical-instruction handler | NJIT-022 rejection plus stable compact-stream profile | rejected |
-| `NJIT-024` | Inline the compact `i32.load8_u` stack and scalar-address path | Game of Life compact coverage plus phoneME Java-call cost | inconclusive |
-| `NJIT-025` | Inline generic i32 comparisons directly over `values[]` | phoneME call-frame cost and integer-heavy route profiles | accepted |
-| `NJIT-026` | Inline the generic `i32.load` stack, address guard, and byte assembly | Rubido load profile and NJIT-025 stable baseline | rejected |
-| `NJIT-027` | Inline generic `local.set` and `local.tee` stack access | phoneME call-frame cost and exact corpus opcode counts | rejected |
-| `NJIT-028` | Inline generic `local.get` with the exact `push()` capacity trap | phoneME call-frame cost and exact corpus opcode counts | rejected |
-| `NJIT-029` | Write horizontal 2-bpp spans a packed byte at a time | native phoneME statistical method profile | accepted |
-| `NJIT-030` | Inline generic control-frame entry into `execute` | post-NJIT-029 phoneME method profile and exact control-opcode counts | accepted |
-| `NJIT-031` | Specialize zero- and one-value control transfers before the generic copy loops | post-NJIT-030 phoneME method profile and exact control-flow counts | accepted |
-| `NJIT-032` | Inline the compact `i32.load8_u` stack and width-one address path | corrected NJIT-024 exact fixture plus post-NJIT-031 phoneME method profile | rejected |
-| `NJIT-033` | Overwrite the compact `i32.eqz` input slot with its result | E15 TOS-overwrite design plus exact corpus opcode counts | rejected |
-| `NJIT-034` | Inline a folded effective-address guard in compact `i32.load` | NJIT-005 caller-inline reconsideration plus post-NJIT-031 Rubido profile | rejected |
-| `NJIT-035` | Inline generic control-frame exit at its three dispatch sites | post-NJIT-031 phoneME method profile and current exact control-opcode counts | accepted |
-| `NJIT-036` | Pop generic `if` and `br_if` conditions directly from `values[]` | post-NJIT-035 phoneME method profile and current exact branch counts | rejected |
-| `NJIT-037` | Execute compact `w4ir.local_local` directly in the compact loop | post-NJIT-035 phoneME method profile and exact fused-opcode counts | rejected |
-| `NJIT-038` | Execute compact `w4ir.local_set_get` as an in-place top-of-stack replacement | post-NJIT-035 phoneME method profile and exact fused-opcode counts | rejected |
-| `NJIT-039` | Execute compact `w4ir.local_i32_const_add` directly with one guarded stack write | post-NJIT-035 phoneME method profile and exact fused-opcode counts | rejected |
-| `NJIT-040` | Execute generic `i32.add` as an in-place `values[]` update | accepted generic comparison precedent and exact Game of Life opcode count | rejected |
-| `NJIT-041` | Absorb a terminal descriptor-backed `br_if` into an existing compact region without enlarging the compact executor frame | prior exact branch-region prototype plus the accepted pc-indexed direct branch path | rejected |
-| `NJIT-042` | Execute the six hot helper-backed generic i32 ALU opcodes directly over `values[]` | NJIT-040 reconsideration condition plus whole-corpus ALU coverage | rejected |
-| `NJIT-043` | Compile distributable JARs with the accepted counterless production config | generic-tiering clean A/B plus current release-path audit and revalidation | accepted |
-| `NJIT-044` | Remove the cartridge-fingerprinted Plasma Java replacement from the universal interpreter | product contract and contract-clean baseline audit | accepted |
-| `NJIT-045` | Recover the original logical stream sparsely at fused instruction-budget boundaries | rejected full-copy exactness prototype plus fusion-root audit | rejected |
-| `NJIT-046` | Compile opcode profiling support out of the counterless production artifact | instrumented phoneME bytecode-type profile plus method/BCI sampling | accepted |
-| `NJIT-047` | Cache the immutable value-stack array in the compact executor's local frame | NJIT-046 method/BCI profile plus target-47 field-access audit | rejected |
-| `NJIT-048` | Elide compact per-instruction budget comparisons behind one block-admission boolean | post-NJIT-046 method/BCI profile and compact-region accounting | rejected |
-| `NJIT-049` | Route admitted compact blocks to a separate unchecked executor with a local published counter | NJIT-001 and NJIT-048 results plus phoneME branch cost | rejected |
-| `NJIT-050` | Pass the defined function result arity into the outer executor as a scalar | target-47 result-arity load audit plus Game of Life call density | rejected |
-| `NJIT-051` | Inline ordinary direct-defined-call frame setup into the outer executor | Game of Life call density plus phoneME Java-frame cost | inconclusive |
+| ID         | Candidate                                                                                                                | Source                                                                              | State                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------- |
+| `NJIT-001` | Local mandatory instruction counter inside compact execution                                                             | phoneME C-interpreter bytecode cost and current `javap`                             | rejected                                          |
+| `NJIT-002` | Skip W4IR operand and auxiliary loads for operand-free numeric opcodes                                                   | current dense executor and corpus profile                                           | rejected                                          |
+| `NJIT-003` | Implement unsigned i32 comparisons with sign-bit XOR instead of `long` conversion                                        | WebAssembly integer ordering and phoneME ILP32 cost                                 | rejected                                          |
+| `NJIT-004` | Reorder `execute` parameters so hot references use `_n` local-load bytecodes                                             | phoneME generic versus short local-load handlers                                    | rejected                                          |
+| `NJIT-005` | Fold memory base, offset, overflow, and end checks into one effective-address guard                                      | local algebraic analysis of `checkedAddress`                                        | rejected                                          |
+| `NJIT-006` | Lower direct imported calls to a dedicated W4IR host-call opcode                                                         | current intrinsic lowering and import metadata                                      | rejected                                          |
+| `NJIT-007` | Replace the explicit `push` capacity check with the mandatory JVM array bounds check                                     | target-47 bytecode, phoneME `lastore`, and exact stack-write counts                 | accepted                                          |
+| `NJIT-008` | Expand packed framebuffer bytes and reuse repeated scaled rows                                                           | renderer audit                                                                      | queued, needs renderer microbench and device gate |
+| `NJIT-009` | Add an unrotated, unflipped `blitSub` inner loop                                                                         | host-render audit                                                                   | accepted                                          |
+| `NJIT-010` | Reduce exact PCM envelope and pitch arithmetic per sample                                                                | audio synthesis audit                                                               | accepted                                          |
+| `NJIT-011` | Avoid a third clock read on non-presented logical frames                                                                 | Canvas timing audit                                                                 | queued, physical/KEmulator judge only             |
+| `NJIT-012` | Reorder `executeCompactFused` parameters for short local-load bytecodes                                                  | phoneME local-load handlers                                                         | rejected                                          |
+| `NJIT-013` | Revisit split i32/long value storage with the corrected phoneME cost model                                               | phoneME stack representation research                                               | queued, separate high-risk design                 |
+| `NJIT-014` | Inline packed framebuffer read-modify-write in the transform-free blit loop                                              | `drawPoint` target-47 cost and NJIT-009 coverage                                    | accepted                                          |
+| `NJIT-015` | Carry the packed destination byte and bit shift across a plain-blit row                                                  | NJIT-014 target-47 bytecode and opaque-pixel profile                                | accepted                                          |
+| `NJIT-016` | Reuse adjacent upscaled ARGB rows through native `System.arraycopy`                                                      | framebuffer scaler audit and phoneME native-arraycopy cost                          | accepted                                          |
+| `NJIT-017` | Cache the last packed framebuffer byte while scaling a row                                                               | independent renderer target-bytecode review                                         | accepted                                          |
+| `NJIT-018` | Hoist `argbLookup` into the ARGB conversion loop's local frame                                                           | independent renderer target-bytecode review                                         | accepted                                          |
+| `NJIT-019` | Cache the packed framebuffer byte in native/downscale conversion                                                         | NJIT-017 result and deferred canonical-loop follow-up                               | accepted                                          |
+| `NJIT-020` | Replace the defined-function argument-copy loop with a scalar/native bulk-copy split                                     | Game of Life call profile and native phoneME arraycopy cost                         | accepted                                          |
+| `NJIT-021` | Fuse signed i32 comparisons with `br_if` and use the pc-indexed direct branch path                                       | Game of Life control-flow profile plus the accepted direct branch descriptors       | rejected                                          |
+| `NJIT-022` | Fuse `i32.load8_u + local.set` into one exact two-instruction W4IR handler                                               | corrected Game of Life production-stream profile and accepted load/tee precedent    | rejected                                          |
+| `NJIT-023` | Fuse `i32.add_const + i32.load8_u + local.set` into one exact four-logical-instruction handler                           | NJIT-022 rejection plus stable compact-stream profile                               | rejected                                          |
+| `NJIT-024` | Inline the compact `i32.load8_u` stack and scalar-address path                                                           | Game of Life compact coverage plus phoneME Java-call cost                           | inconclusive                                      |
+| `NJIT-025` | Inline generic i32 comparisons directly over `values[]`                                                                  | phoneME call-frame cost and integer-heavy route profiles                            | accepted                                          |
+| `NJIT-026` | Inline the generic `i32.load` stack, address guard, and byte assembly                                                    | Rubido load profile and NJIT-025 stable baseline                                    | rejected                                          |
+| `NJIT-027` | Inline generic `local.set` and `local.tee` stack access                                                                  | phoneME call-frame cost and exact corpus opcode counts                              | rejected                                          |
+| `NJIT-028` | Inline generic `local.get` with the exact `push()` capacity trap                                                         | phoneME call-frame cost and exact corpus opcode counts                              | rejected                                          |
+| `NJIT-029` | Write horizontal 2-bpp spans a packed byte at a time                                                                     | native phoneME statistical method profile                                           | accepted                                          |
+| `NJIT-030` | Inline generic control-frame entry into `execute`                                                                        | post-NJIT-029 phoneME method profile and exact control-opcode counts                | accepted                                          |
+| `NJIT-031` | Specialize zero- and one-value control transfers before the generic copy loops                                           | post-NJIT-030 phoneME method profile and exact control-flow counts                  | accepted                                          |
+| `NJIT-032` | Inline the compact `i32.load8_u` stack and width-one address path                                                        | corrected NJIT-024 exact fixture plus post-NJIT-031 phoneME method profile          | rejected                                          |
+| `NJIT-033` | Overwrite the compact `i32.eqz` input slot with its result                                                               | E15 TOS-overwrite design plus exact corpus opcode counts                            | rejected                                          |
+| `NJIT-034` | Inline a folded effective-address guard in compact `i32.load`                                                            | NJIT-005 caller-inline reconsideration plus post-NJIT-031 Rubido profile            | rejected                                          |
+| `NJIT-035` | Inline generic control-frame exit at its three dispatch sites                                                            | post-NJIT-031 phoneME method profile and current exact control-opcode counts        | accepted                                          |
+| `NJIT-036` | Pop generic `if` and `br_if` conditions directly from `values[]`                                                         | post-NJIT-035 phoneME method profile and current exact branch counts                | rejected                                          |
+| `NJIT-037` | Execute compact `w4ir.local_local` directly in the compact loop                                                          | post-NJIT-035 phoneME method profile and exact fused-opcode counts                  | rejected                                          |
+| `NJIT-038` | Execute compact `w4ir.local_set_get` as an in-place top-of-stack replacement                                             | post-NJIT-035 phoneME method profile and exact fused-opcode counts                  | rejected                                          |
+| `NJIT-039` | Execute compact `w4ir.local_i32_const_add` directly with one guarded stack write                                         | post-NJIT-035 phoneME method profile and exact fused-opcode counts                  | rejected                                          |
+| `NJIT-040` | Execute generic `i32.add` as an in-place `values[]` update                                                               | accepted generic comparison precedent and exact Game of Life opcode count           | rejected                                          |
+| `NJIT-041` | Absorb a terminal descriptor-backed `br_if` into an existing compact region without enlarging the compact executor frame | prior exact branch-region prototype plus the accepted pc-indexed direct branch path | rejected                                          |
+| `NJIT-042` | Execute the six hot helper-backed generic i32 ALU opcodes directly over `values[]`                                       | NJIT-040 reconsideration condition plus whole-corpus ALU coverage                   | rejected                                          |
+| `NJIT-043` | Compile distributable JARs with the accepted counterless production config                                               | generic-tiering clean A/B plus current release-path audit and revalidation          | accepted                                          |
+| `NJIT-044` | Remove the cartridge-fingerprinted Plasma Java replacement from the universal interpreter                                | product contract and contract-clean baseline audit                                  | accepted                                          |
+| `NJIT-045` | Recover the original logical stream sparsely at fused instruction-budget boundaries                                      | rejected full-copy exactness prototype plus fusion-root audit                       | rejected                                          |
+| `NJIT-046` | Compile opcode profiling support out of the counterless production artifact                                              | instrumented phoneME bytecode-type profile plus method/BCI sampling                 | accepted                                          |
+| `NJIT-047` | Cache the immutable value-stack array in the compact executor's local frame                                              | NJIT-046 method/BCI profile plus target-47 field-access audit                       | rejected                                          |
+| `NJIT-048` | Elide compact per-instruction budget comparisons behind one block-admission boolean                                      | post-NJIT-046 method/BCI profile and compact-region accounting                      | rejected                                          |
+| `NJIT-049` | Route admitted compact blocks to a separate unchecked executor with a local published counter                            | NJIT-001 and NJIT-048 results plus phoneME branch cost                              | rejected                                          |
+| `NJIT-050` | Pass the defined function result arity into the outer executor as a scalar                                               | target-47 result-arity load audit plus Game of Life call density                    | rejected                                          |
+| `NJIT-051` | Inline ordinary direct-defined-call frame setup into the outer executor                                                  | Game of Life call density plus phoneME Java-frame cost                              | inconclusive                                      |
 
 The earlier `popFirst`/`popSecond` wrapper-only experiment is not in this
 queue: a 16-pair native phoneME repeat measured only +0.060% on Waternet and
@@ -249,14 +249,14 @@ on a non-budget trap, target-47 `finally`/StackMap behavior, and code growth in
 - focused and complete correctness: `just test`, followed by `just verify`;
 - clean artifact and checkpoint sanity:
   `tools/phoneme/run.sh bench waternet rubido untangle plasma-cube --mode
-  optimized --candidate counterless --reps 1`;
+optimized --candidate counterless --reps 1`;
 - target inspection: `javap -c -p` on both clean target-47
   `WasmInterpreter.class` files, plus the existing release method-size,
   dense-switch, class-version, and StackMap gates;
 - timing: alternate clean baseline and candidate preverified trees with
   `.local/phoneme/cldc_vm_r -EnableTicks =HeapCapacity64M -classpath
-  .local/phoneme/classes.zip:<tree> w4me.PhoneMeRouteBench <cart> optimized 60
-  1 counterless <sample>` and calculate paired effects with
+.local/phoneme/classes.zip:<tree> w4me.PhoneMeRouteBench <cart> optimized 60
+1 counterless <sample>` and calculate paired effects with
   `tools/phoneme/paired-stats.awk`;
 - at least eight balanced pairs on Rubido and generic Plasma, with Waternet and
   Untangle controls. Increase repetitions if pair signs or timer resolution
@@ -300,16 +300,16 @@ frames per invocation. Timer resolution was 7.752 us/frame, source snapshots
 were clean, all 30 checkpoints passed per invocation, and all invocations
 reported exactly 43,301,827 logical instructions:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 103,511 | 104,093 |
-| 1 | candidate first | 104,279 | 103,767 |
-| 2 | baseline first | 103,697 | 104,209 |
-| 3 | candidate first | 105,108 | 103,573 |
-| 4 | baseline first | 104,317 | 103,837 |
-| 5 | candidate first | 103,922 | 103,984 |
-| 6 | baseline first | 104,689 | 103,581 |
-| 7 | candidate first | 104,426 | 104,255 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |           103,511 |            104,093 |
+|    1 | candidate first |           104,279 |            103,767 |
+|    2 | baseline first  |           103,697 |            104,209 |
+|    3 | candidate first |           105,108 |            103,573 |
+|    4 | baseline first  |           104,317 |            103,837 |
+|    5 | candidate first |           103,922 |            103,984 |
+|    6 | baseline first  |           104,689 |            103,581 |
+|    7 | candidate first |           104,426 |            104,255 |
 
 The median paired delta was 325.5 us/frame, or **+0.312%**, with five wins and
 three losses. This is below the predeclared +0.8% acceptance floor. Additional
@@ -462,25 +462,25 @@ balanced order, exact route checkpoints, and the VM and CLDC hashes recorded
 above. Raw outputs and CSV files are under
 `/tmp/w4me-njit002.1KywKl/evidence/` for the lifetime of this host session.
 
-| Workload | Routed frames | Median delta us/frame | Median speedup | Wins/losses | Timer resolution |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Waternet | 153 | +219.0 | **+1.074%** | 7/1 | 6.536 us/frame |
-| Untangle | 460 | +26.0 | **+0.544%** | 7/1 | 2.174 us/frame |
-| Rubido | 129 | +1,778.5 | **+1.711%** | 8/0 | 7.752 us/frame |
-| generic Plasma | 10 | -43,200.0 | **-3.751%** | 0/8 | 100.000 us/frame |
+| Workload       | Routed frames | Median delta us/frame | Median speedup | Wins/losses | Timer resolution |
+| -------------- | ------------: | --------------------: | -------------: | ----------: | ---------------: |
+| Waternet       |           153 |                +219.0 |    **+1.074%** |         7/1 |   6.536 us/frame |
+| Untangle       |           460 |                 +26.0 |    **+0.544%** |         7/1 |   2.174 us/frame |
+| Rubido         |           129 |              +1,778.5 |    **+1.711%** |         8/0 |   7.752 us/frame |
+| generic Plasma |            10 |             -43,200.0 |    **-3.751%** |         0/8 | 100.000 us/frame |
 
 The raw pairs were:
 
-| Pair | Waternet B/C | Untangle B/C | Rubido B/C | Plasma B/C |
-| ---: | ---: | ---: | ---: | ---: |
-| 0 | 20,483 / 20,176 | 4,723 / 4,765 | 103,844 / 102,062 | 1,172,700 / 1,186,000 |
-| 1 | 20,647 / 20,117 | 4,760 / 4,726 | 104,162 / 102,240 | 1,158,400 / 1,177,400 |
-| 2 | 20,673 / 20,202 | 4,758 / 4,721 | 104,271 / 101,891 | 1,144,100 / 1,198,700 |
-| 3 | 20,607 / 20,542 | 4,758 / 4,750 | 104,186 / 102,635 | 1,151,700 / 1,196,600 |
-| 4 | 20,496 / 20,339 | 4,839 / 4,756 | 104,085 / 102,310 | 1,163,500 / 1,187,100 |
-| 5 | 20,313 / 20,496 | 4,758 / 4,743 | 104,379 / 102,697 | 1,144,000 / 1,203,300 |
-| 6 | 20,483 / 20,366 | 4,789 / 4,745 | 107,527 / 102,155 | 1,151,400 / 1,192,900 |
-| 7 | 20,346 / 20,065 | 4,815 / 4,797 | 104,186 / 102,581 | 1,150,500 / 1,218,200 |
+| Pair |    Waternet B/C |  Untangle B/C |        Rubido B/C |            Plasma B/C |
+| ---: | --------------: | ------------: | ----------------: | --------------------: |
+|    0 | 20,483 / 20,176 | 4,723 / 4,765 | 103,844 / 102,062 | 1,172,700 / 1,186,000 |
+|    1 | 20,647 / 20,117 | 4,760 / 4,726 | 104,162 / 102,240 | 1,158,400 / 1,177,400 |
+|    2 | 20,673 / 20,202 | 4,758 / 4,721 | 104,271 / 101,891 | 1,144,100 / 1,198,700 |
+|    3 | 20,607 / 20,542 | 4,758 / 4,750 | 104,186 / 102,635 | 1,151,700 / 1,196,600 |
+|    4 | 20,496 / 20,339 | 4,839 / 4,756 | 104,085 / 102,310 | 1,163,500 / 1,187,100 |
+|    5 | 20,313 / 20,496 | 4,758 / 4,743 | 104,379 / 102,697 | 1,144,000 / 1,203,300 |
+|    6 | 20,483 / 20,366 | 4,789 / 4,745 | 107,527 / 102,155 | 1,151,400 / 1,192,900 |
+|    7 | 20,346 / 20,065 | 4,815 / 4,797 | 104,186 / 102,581 | 1,150,500 / 1,218,200 |
 
 **Decision.** Reject and remove the candidate. It exceeded the primary
 Waternet floor and improved both game controls, but generic Plasma regressed
@@ -633,16 +633,16 @@ compute frames per invocation. Timer resolution was 100 us/frame, source
 snapshots were clean, and every invocation reported exactly 50,492,866 logical
 instructions, 110,662 trace calls, and 331,986 trace iterations:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 1,168,200 | 1,183,200 |
-| 1 | candidate first | 1,155,800 | 1,167,600 |
-| 2 | baseline first | 1,169,800 | 1,194,400 |
-| 3 | candidate first | 1,160,100 | 1,178,100 |
-| 4 | baseline first | 1,150,800 | 1,171,100 |
-| 5 | candidate first | 1,151,200 | 1,184,700 |
-| 6 | baseline first | 1,155,600 | 1,165,600 |
-| 7 | candidate first | 1,170,400 | 1,164,300 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |         1,168,200 |          1,183,200 |
+|    1 | candidate first |         1,155,800 |          1,167,600 |
+|    2 | baseline first  |         1,169,800 |          1,194,400 |
+|    3 | candidate first |         1,160,100 |          1,178,100 |
+|    4 | baseline first  |         1,150,800 |          1,171,100 |
+|    5 | candidate first |         1,151,200 |          1,184,700 |
+|    6 | baseline first  |         1,155,600 |          1,165,600 |
+|    7 | candidate first |         1,170,400 |          1,164,300 |
 
 The median paired delta was -16,500 us/frame, or **-1.418%**, with one win and
 seven losses. This decisively failed the predeclared +0.8% primary gate.
@@ -688,14 +688,14 @@ and save/restore a native register.
 
 The current private `execute` signature assigns slots as follows:
 
-| Slot | Parameter | Static target-47 loads |
-| ---: | --- | ---: |
-| 1 | `functionIndex` | 2 |
-| 2 | `body` | 21 |
-| 3 | `functionType` | 10 |
-| 4 | `locals` | 64 |
-| 5 | `functionStackBase` | 12 |
-| 6 | `functionControlBase` | 10 |
+| Slot | Parameter             | Static target-47 loads |
+| ---: | --------------------- | ---------------------: |
+|    1 | `functionIndex`       |                      2 |
+|    2 | `body`                |                     21 |
+|    3 | `functionType`        |                     10 |
+|    4 | `locals`              |                     64 |
+|    5 | `functionStackBase`   |                     12 |
+|    6 | `functionControlBase` |                     10 |
 
 The same counts occur in diagnostic and counterless target-47 artifacts.
 Consequently the current three short parameter slots cover 33 static loads,
@@ -821,16 +821,16 @@ matched every deterministic field.
 source snapshots were clean, and every invocation reported exactly 1,650,956
 logical instructions and the same branch-fast payload:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 20,483 | 20,320 |
-| 1 | candidate first | 20,326 | 20,594 |
-| 2 | baseline first | 20,542 | 20,477 |
-| 3 | candidate first | 20,535 | 20,483 |
-| 4 | baseline first | 20,594 | 20,457 |
-| 5 | candidate first | 20,431 | 20,326 |
-| 6 | baseline first | 20,339 | 20,248 |
-| 7 | candidate first | 20,562 | 20,359 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |            20,483 |             20,320 |
+|    1 | candidate first |            20,326 |             20,594 |
+|    2 | baseline first  |            20,542 |             20,477 |
+|    3 | candidate first |            20,535 |             20,483 |
+|    4 | baseline first  |            20,594 |             20,457 |
+|    5 | candidate first |            20,431 |             20,326 |
+|    6 | baseline first  |            20,339 |             20,248 |
+|    7 | candidate first |            20,562 |             20,359 |
 
 The median paired delta was 98 us/frame, or **+0.481%**, with seven wins and
 one loss. The sign is credible, but the magnitude is below the predeclared
@@ -1041,16 +1041,16 @@ i686 no-JIT VM. Timer resolution was 14.286 us/frame. Every invocation passed
 30 checkpoints and reported identical logical instructions and direct-branch
 payload:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 72,628 | 71,757 |
-| 1 | candidate first | 71,857 | 71,800 |
-| 2 | baseline first | 72,400 | 71,100 |
-| 3 | candidate first | 71,800 | 71,671 |
-| 4 | baseline first | 71,671 | 71,485 |
-| 5 | candidate first | 71,571 | 71,800 |
-| 6 | baseline first | 71,371 | 70,871 |
-| 7 | candidate first | 72,157 | 71,757 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |            72,628 |             71,757 |
+|    1 | candidate first |            71,857 |             71,800 |
+|    2 | baseline first  |            72,400 |             71,100 |
+|    3 | candidate first |            71,800 |             71,671 |
+|    4 | baseline first  |            71,671 |             71,485 |
+|    5 | candidate first |            71,571 |             71,800 |
+|    6 | baseline first  |            71,371 |             70,871 |
+|    7 | candidate first |            72,157 |             71,757 |
 
 The median paired delta is 293 us/frame, or **+0.407%**, with seven wins and
 one loss. The positive sign is credible and the result is timer-resolved, but
@@ -1262,16 +1262,16 @@ invocation passed 17 checkpoints and reported exactly 3,521,339 logical
 instructions, zero optional diagnostic dispatch counters, and identical
 branch-fast metadata.
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 20,281 | 20,398 |
-| 1 | candidate first | 20,588 | 20,418 |
-| 2 | baseline first | 20,464 | 20,444 |
-| 3 | candidate first | 20,215 | 20,274 |
-| 4 | baseline first | 20,450 | 20,692 |
-| 5 | candidate first | 20,313 | 20,529 |
-| 6 | baseline first | 20,509 | 20,588 |
-| 7 | candidate first | 20,300 | 20,254 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |            20,281 |             20,398 |
+|    1 | candidate first |            20,588 |             20,418 |
+|    2 | baseline first  |            20,464 |             20,444 |
+|    3 | candidate first |            20,215 |             20,274 |
+|    4 | baseline first  |            20,450 |             20,692 |
+|    5 | candidate first |            20,313 |             20,529 |
+|    6 | baseline first  |            20,509 |             20,588 |
+|    7 | candidate first |            20,300 |             20,254 |
 
 The median paired delta was -69.0 us/frame, or **-0.339%**, with three wins
 and five losses. Timer resolution was 6.536 us/frame, order was balanced, and
@@ -1328,10 +1328,10 @@ with Java 1.3 and run under HotSpot only to count deterministic route
 coverage; none of its wall times are evidence:
 
 | Workload | Routed frames | `push` calls | Calls/frame | `pop` calls | `peek` calls |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Waternet | 153 | 2,132,141 | 13,935 | 1,742,746 | 80,839 |
-| Rubido | 129 | 16,421,546 | 127,299 | 14,727,036 | 337,538 |
-| Untangle | 460 | 827,269 | 1,798 | 586,450 | 27,225 |
+| -------- | ------------: | -----------: | ----------: | ----------: | -----------: |
+| Waternet |           153 |    2,132,141 |      13,935 |   1,742,746 |       80,839 |
+| Rubido   |           129 |   16,421,546 |     127,299 |  14,727,036 |      337,538 |
+| Untangle |           460 |      827,269 |       1,798 |     586,450 |       27,225 |
 
 All route checkpoints and deterministic counters passed. The unmodified source
 hashes used for selection were
@@ -1511,48 +1511,48 @@ statistics.
 
 Waternet raw pairs:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 20,248 | 20,084 |
-| 1 | candidate first | 20,522 | 20,281 |
-| 2 | baseline first | 20,418 | 20,307 |
-| 3 | candidate first | 20,490 | 20,300 |
-| 4 | baseline first | 20,424 | 20,333 |
-| 5 | candidate first | 20,588 | 20,209 |
-| 6 | baseline first | 20,522 | 20,222 |
-| 7 | candidate first | 20,405 | 20,274 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |            20,248 |             20,084 |
+|    1 | candidate first |            20,522 |             20,281 |
+|    2 | baseline first  |            20,418 |             20,307 |
+|    3 | candidate first |            20,490 |             20,300 |
+|    4 | baseline first  |            20,424 |             20,333 |
+|    5 | candidate first |            20,588 |             20,209 |
+|    6 | baseline first  |            20,522 |             20,222 |
+|    7 | candidate first |            20,405 |             20,274 |
 
 Result: median delta 177.0 us/frame, **+0.869%**, 8 wins, 0 losses,
 6.536 us/frame timer resolution.
 
 Rubido raw pairs:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 103,573 | 101,914 |
-| 1 | candidate first | 103,511 | 102,519 |
-| 2 | baseline first | 103,930 | 102,031 |
-| 3 | candidate first | 103,829 | 102,217 |
-| 4 | baseline first | 102,899 | 102,069 |
-| 5 | candidate first | 103,441 | 102,333 |
-| 6 | baseline first | 103,426 | 101,852 |
-| 7 | candidate first | 103,457 | 102,310 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |           103,573 |            101,914 |
+|    1 | candidate first |           103,511 |            102,519 |
+|    2 | baseline first  |           103,930 |            102,031 |
+|    3 | candidate first |           103,829 |            102,217 |
+|    4 | baseline first  |           102,899 |            102,069 |
+|    5 | candidate first |           103,441 |            102,333 |
+|    6 | baseline first  |           103,426 |            101,852 |
+|    7 | candidate first |           103,457 |            102,310 |
 
 Result: median delta 1,360.5 us/frame, **+1.315%**, 8 wins, 0 losses,
 7.752 us/frame timer resolution.
 
 Untangle raw pairs:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 4,773 | 4,723 |
-| 1 | candidate first | 4,750 | 4,700 |
-| 2 | baseline first | 4,763 | 4,767 |
-| 3 | candidate first | 4,745 | 4,760 |
-| 4 | baseline first | 4,752 | 4,734 |
-| 5 | candidate first | 4,786 | 4,721 |
-| 6 | baseline first | 4,771 | 4,765 |
-| 7 | candidate first | 4,797 | 4,765 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |             4,773 |              4,723 |
+|    1 | candidate first |             4,750 |              4,700 |
+|    2 | baseline first  |             4,763 |              4,767 |
+|    3 | candidate first |             4,745 |              4,760 |
+|    4 | baseline first  |             4,752 |              4,734 |
+|    5 | candidate first |             4,786 |              4,721 |
+|    6 | baseline first  |             4,771 |              4,765 |
+|    7 | candidate first |             4,797 |              4,765 |
 
 Result: median delta 25.0 us/frame, **+0.523%**, 6 wins, 2 losses,
 2.174 us/frame timer resolution.
@@ -1606,13 +1606,13 @@ acceptance floor.
 private caller, category-1 arguments, no recursion or reflective entry, zero
 format or heap effect, and the following target-47 load counts:
 
-| Parameter | Current slot | Static loads |
-| --- | ---: | ---: |
-| `opcode` | 1 | 3 |
-| `instruction` | 2 | 13 |
-| `operand` | 3 | 49 |
-| `auxiliary` | 4 | 33 |
-| `locals` | 5 | 54 |
+| Parameter     | Current slot | Static loads |
+| ------------- | -----------: | -----------: |
+| `opcode`      |            1 |            3 |
+| `instruction` |            2 |           13 |
+| `operand`     |            3 |           49 |
+| `auxiliary`   |            4 |           33 |
+| `locals`      |            5 |           54 |
 
 Deterministic route instrumentation measured 1,236,449 compact-fused calls on
 Rubido over 70 frames. The selected swap removes 1,843,402 generic parameter
@@ -1735,16 +1735,16 @@ and matched all deterministic fields between artifacts.
 route plus 60 frames, 129 total frames per invocation. Every deterministic
 receipt prefix was identical:
 
-| Pair | Order | Baseline us/frame | Candidate us/frame |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 101,992 | 102,147 |
-| 1 | candidate first | 102,651 | 102,527 |
-| 2 | baseline first | 102,829 | 102,558 |
-| 3 | candidate first | 102,488 | 102,302 |
-| 4 | baseline first | 102,170 | 102,046 |
-| 5 | candidate first | 102,751 | 102,511 |
-| 6 | baseline first | 102,434 | 102,581 |
-| 7 | candidate first | 102,286 | 102,232 |
+| Pair | Order           | Baseline us/frame | Candidate us/frame |
+| ---: | --------------- | ----------------: | -----------------: |
+|    0 | baseline first  |           101,992 |            102,147 |
+|    1 | candidate first |           102,651 |            102,527 |
+|    2 | baseline first  |           102,829 |            102,558 |
+|    3 | candidate first |           102,488 |            102,302 |
+|    4 | baseline first  |           102,170 |            102,046 |
+|    5 | candidate first |           102,751 |            102,511 |
+|    6 | baseline first  |           102,434 |            102,581 |
+|    7 | candidate first |           102,286 |            102,232 |
 
 The median paired delta was 124.0 us/frame, or **+0.121%**, with six wins and
 two losses. Timer resolution was 7.752 us/frame, order was balanced, and the
@@ -1802,12 +1802,12 @@ and the extracted summary hash is
 `c0f50c80a43b792970c6fedf0067e7979761c259c41bc693f493c671a485fe17`.
 No instrumentation is added to production.
 
-| Workload and route | Plain calls | Plain clipped pixels | Per route frame |
-| --- | ---: | ---: | ---: |
-| Waternet browser, 94 frames | 14,368 | 1,899,520 | 20,207.66 pixels |
-| Rubido browser, 70 frames | 1,631 | 715,347 | 10,219.24 pixels |
-| Duck Maze, 155 frames | 157 | 40,192 | 259.30 pixels |
-| Untangle browser, 401 frames | 368 | 7,248 | 18.08 pixels |
+| Workload and route           | Plain calls | Plain clipped pixels |  Per route frame |
+| ---------------------------- | ----------: | -------------------: | ---------------: |
+| Waternet browser, 94 frames  |      14,368 |            1,899,520 | 20,207.66 pixels |
+| Rubido browser, 70 frames    |       1,631 |              715,347 | 10,219.24 pixels |
+| Duck Maze, 155 frames        |         157 |               40,192 |    259.30 pixels |
+| Untangle browser, 401 frames |         368 |                7,248 |     18.08 pixels |
 
 Waternet and Rubido use only transform-free flags in the recorded routes.
 Untangle is the fallback control: 25,964 of its 26,332 total calls use
@@ -1834,7 +1834,7 @@ their current order. After clipping and `DRAW_COLORS` load, branch once on
 - `targetY = destinationY + yIndex` once per row;
 - `targetX = destinationX + clipXMinimum` once per row;
 - `bitIndex = (sourceY + yIndex) * sourceStride + sourceX +
-  clipXMinimum` once per row;
+clipXMinimum` once per row;
 - the unchanged packed source color, draw-color lookup, transparency check,
   and `drawPoint`, followed by linear increments.
 
@@ -1941,24 +1941,24 @@ The paired runner invoked `PhoneMeRouteBench <cart> optimized 60 1 counterless
 <sample>` directly on the native i686 VM, alternating baseline-first and
 candidate-first. Raw results in microseconds per frame were:
 
-| Pair | Waternet B/C | Rubido B/C | Untangle B/C |
-| ---: | ---: | ---: | ---: |
-| 0 | 20,294 / 18,954 | 102,131 / 101,496 | 4,734 / 4,700 |
-| 1 | 20,202 / 19,300 | 102,534 / 101,689 | 4,710 / 4,741 |
-| 2 | 20,032 / 19,352 | 102,798 / 102,263 | 4,747 / 4,743 |
-| 3 | 20,209 / 19,287 | 102,302 / 101,829 | 4,745 / 4,726 |
-| 4 | 20,267 / 19,176 | 102,286 / 101,620 | 4,821 / 4,773 |
-| 5 | 20,411 / 19,209 | 102,232 / 102,240 | 4,802 / 4,878 |
-| 6 | 20,254 / 19,372 | 102,364 / 101,806 | 4,706 / 4,754 |
-| 7 | 20,294 / 19,333 | 102,248 / 102,054 | 4,752 / 4,773 |
-| 8 | — | — | 4,721 / 4,797 |
-| 9 | — | — | 4,723 / 4,756 |
-| 10 | — | — | 4,756 / 4,771 |
-| 11 | — | — | 4,802 / 4,728 |
-| 12 | — | — | 4,710 / 4,804 |
-| 13 | — | — | 4,754 / 4,782 |
-| 14 | — | — | 4,765 / 4,763 |
-| 15 | — | — | 4,782 / 4,804 |
+| Pair |    Waternet B/C |        Rubido B/C |  Untangle B/C |
+| ---: | --------------: | ----------------: | ------------: |
+|    0 | 20,294 / 18,954 | 102,131 / 101,496 | 4,734 / 4,700 |
+|    1 | 20,202 / 19,300 | 102,534 / 101,689 | 4,710 / 4,741 |
+|    2 | 20,032 / 19,352 | 102,798 / 102,263 | 4,747 / 4,743 |
+|    3 | 20,209 / 19,287 | 102,302 / 101,829 | 4,745 / 4,726 |
+|    4 | 20,267 / 19,176 | 102,286 / 101,620 | 4,821 / 4,773 |
+|    5 | 20,411 / 19,209 | 102,232 / 102,240 | 4,802 / 4,878 |
+|    6 | 20,254 / 19,372 | 102,364 / 101,806 | 4,706 / 4,754 |
+|    7 | 20,294 / 19,333 | 102,248 / 102,054 | 4,752 / 4,773 |
+|    8 |               — |                 — | 4,721 / 4,797 |
+|    9 |               — |                 — | 4,723 / 4,756 |
+|   10 |               — |                 — | 4,756 / 4,771 |
+|   11 |               — |                 — | 4,802 / 4,728 |
+|   12 |               — |                 — | 4,710 / 4,804 |
+|   13 |               — |                 — | 4,754 / 4,782 |
+|   14 |               — |                 — | 4,765 / 4,763 |
+|   15 |               — |                 — | 4,782 / 4,804 |
 
 Waternet measured +4.649% median (941.5 us/frame, 8/8 wins; timer resolution
 6.536 us/frame), comfortably above the predeclared +0.8% and 6/8 gate. Rubido
@@ -2009,12 +2009,12 @@ and the extracted summary hash is
 `015ef128df36581e62ea0d84515d9eacc9f285302da1e56034d9dc56f497e4b1`.
 No counters or getters are added to production.
 
-| Workload and route | Plain pixels | Opaque draws | Opaque draws/frame |
-| --- | ---: | ---: | ---: |
-| Waternet browser, 94 frames | 1,899,520 | 1,795,296 | 19,098.89 |
-| Rubido browser, 70 frames | 715,347 | 583,629 | 8,337.56 |
-| Duck Maze, 155 frames | 40,192 | 40,192 | 259.30 |
-| Untangle browser, 401 frames | 7,248 | 4,727 | 11.79 |
+| Workload and route           | Plain pixels | Opaque draws | Opaque draws/frame |
+| ---------------------------- | -----------: | -----------: | -----------------: |
+| Waternet browser, 94 frames  |    1,899,520 |    1,795,296 |          19,098.89 |
+| Rubido browser, 70 frames    |      715,347 |      583,629 |           8,337.56 |
+| Duck Maze, 155 frames        |       40,192 |       40,192 |             259.30 |
+| Untangle browser, 401 frames |        7,248 |        4,727 |              11.79 |
 
 Waternet writes 94.51% of its plain pixels and Rubido writes 81.59%, so this
 candidate removes about 19,099 and 8,338 Java calls per frame respectively.
@@ -2164,16 +2164,16 @@ pair matched frames, checkpoints, logical instructions, disabled diagnostic
 counters, branch metadata, W4IR format, and every other deterministic receipt
 field. Raw microseconds per frame were:
 
-| Pair | Waternet B/C | Rubido B/C | Untangle B/C |
-| ---: | ---: | ---: | ---: |
-| 0 | 19,150 / 18,379 | 101,906 / 101,565 | 4,786 / 4,739 |
-| 1 | 19,274 / 18,261 | 102,178 / 101,263 | 4,713 / 4,730 |
-| 2 | 19,117 / 18,601 | 101,434 / 102,023 | 4,732 / 4,708 |
-| 3 | 19,209 / 18,562 | 101,984 / 101,682 | 4,736 / 4,756 |
-| 4 | 19,137 / 18,522 | 101,883 / 101,682 | 4,771 / 4,821 |
-| 5 | 19,202 / 18,601 | 101,449 / 102,085 | 4,754 / 4,723 |
-| 6 | 18,928 / 18,352 | 101,224 / 101,472 | 4,750 / 4,704 |
-| 7 | 19,183 / 18,620 | 101,713 / 101,403 | 4,800 / 4,780 |
+| Pair |    Waternet B/C |        Rubido B/C |  Untangle B/C |
+| ---: | --------------: | ----------------: | ------------: |
+|    0 | 19,150 / 18,379 | 101,906 / 101,565 | 4,786 / 4,739 |
+|    1 | 19,274 / 18,261 | 102,178 / 101,263 | 4,713 / 4,730 |
+|    2 | 19,117 / 18,601 | 101,434 / 102,023 | 4,732 / 4,708 |
+|    3 | 19,209 / 18,562 | 101,984 / 101,682 | 4,736 / 4,756 |
+|    4 | 19,137 / 18,522 | 101,883 / 101,682 | 4,771 / 4,821 |
+|    5 | 19,202 / 18,601 | 101,449 / 102,085 | 4,754 / 4,723 |
+|    6 | 18,928 / 18,352 | 101,224 / 101,472 | 4,750 / 4,704 |
+|    7 | 19,183 / 18,620 | 101,713 / 101,403 | 4,800 / 4,780 |
 
 Waternet measures +3.172% median, 608.0 us/frame, and 8/8 wins, comfortably
 above the predeclared +0.8% and 6/8 acceptance gate. Rubido measures +0.247%,
@@ -2352,15 +2352,15 @@ and
 All deterministic receipt fields match in every pair.
 
 | Sample | Waternet baseline/candidate µs/frame | Rubido baseline/candidate µs/frame | Untangle baseline/candidate µs/frame |
-|---:|---:|---:|---:|
-| 0 | 18,431 / 17,052 | 101,542 / 100,317 | 4,721 / 4,695 |
-| 1 | 18,535 / 17,032 | 101,736 / 100,116 | 4,739 / 4,721 |
-| 2 | 18,496 / 17,019 | 101,674 / 101,147 | 4,795 / 4,767 |
-| 3 | 18,601 / 17,091 | 101,945 / 100,666 | 4,710 / 4,726 |
-| 4 | 18,542 / 16,862 | 101,627 / 100,914 | 4,743 / 4,721 |
-| 5 | 18,535 / 16,888 | 101,666 / 101,023 | 4,717 / 4,758 |
-| 6 | 18,483 / 16,869 | 101,984 / 101,255 | 4,726 / 4,756 |
-| 7 | 18,490 / 17,052 | 101,658 / 100,697 | 4,728 / 4,710 |
+| -----: | -----------------------------------: | ---------------------------------: | -----------------------------------: |
+|      0 |                      18,431 / 17,052 |                  101,542 / 100,317 |                        4,721 / 4,695 |
+|      1 |                      18,535 / 17,032 |                  101,736 / 100,116 |                        4,739 / 4,721 |
+|      2 |                      18,496 / 17,019 |                  101,674 / 101,147 |                        4,795 / 4,767 |
+|      3 |                      18,601 / 17,091 |                  101,945 / 100,666 |                        4,710 / 4,726 |
+|      4 |                      18,542 / 16,862 |                  101,627 / 100,914 |                        4,743 / 4,721 |
+|      5 |                      18,535 / 16,888 |                  101,666 / 101,023 |                        4,717 / 4,758 |
+|      6 |                      18,483 / 16,869 |                  101,984 / 101,255 |                        4,726 / 4,756 |
+|      7 |                      18,490 / 17,052 |                  101,658 / 100,697 |                        4,728 / 4,710 |
 
 Waternet measures a median +1,506.5 µs/frame, **+8.113%**, with 8/8
 wins. Rubido measures +845.0 µs/frame, **+0.830%**, with 8/8 wins. Untangle,
@@ -2475,16 +2475,16 @@ tools/phoneme/run.sh bench waternet --reps 1
 The latter reproduces `output-fnv1a=91a5116c`. Raw baseline/candidate
 µs/frame pairs follow; order alternated on every row:
 
-| Shape | Frames | Raw baseline/candidate pairs | Paired result |
-|---|---:|---|---|
-| 240/full | 200 | 6095/3900, 5945/3965, 5935/3985, 5935/4005, 5870/4010, 6055/4075, 5935/4030, 6080/4045, 5990/3960, 5915/3980, 5960/3995, 5940/4020 | **+32.785%**, +1957.5 µs, 12/12 |
-| 240/band-16 | 200 | 6170/4165, 5860/4215, 5880/4120, 6025/4140, 5985/4195, 5855/4160, 6085/4175, 6080/4235, 5985/4215, 5860/4045, 5980/4070, 5990/4125 | **+30.659%**, +1830.0 µs, 12/12 |
-| 176/full | 300 | 3193/2946, 3173/2960, 3133/2910, 3310/2916, 3196/2913, 3260/2916, 3146/2926, 3150/2940, 3190/2990, 3186/2903, 3173/2946, 3186/2943 | **+7.391%**, +235.0 µs, 12/12 |
-| 176/band-16 | 300 | 3176/2956, 3103/2950, 3193/2960, 3183/2926, 3190/2926, 3193/2953, 3206/2950, 3286/2963, 3223/2953, 3233/2993, 3243/2876, 3173/2940 | **+7.751%**, +248.0 µs, 12/12 |
-| 320/full | 100 | 11370/5330, 10810/5330, 10810/5330, 10480/5300, 11030/5300, 10540/5380, 10690/5320, 10470/5270 | **+50.464%**, +5425.0 µs, 8/8 |
-| 161/full | 600 | 2663/2680, 2675/2716, 2671/2693, 2660/2681, 2695/2688, 2698/2698, 2690/2668, 2658/2693, 2681/2651, 2700/2693, 2680/2686, 2673/2678 | -0.205%, -5.5 µs, 4/7/1 |
-| 160/full | 600 | 2621/2630, 2645/2646, 2696/2650, 2623/2643, 2591/2621, 2685/2633, 2673/2681, 2660/2633, 2600/2663, 2646/2650, 2666/2600, 2775/2640 | -0.094%, -2.5 µs, 5/7 |
-| 128/full | 800 | 1716/1708, 1691/1678, 1685/1681, 1701/1701, 1702/1677, 1815/1696, 1711/1686, 1688/1693, 1683/1703, 1652/1772, 1767/1686, 1688/1695 | +0.352%, +6.0 µs, 7/4/1 |
+| Shape       | Frames | Raw baseline/candidate pairs                                                                                                       | Paired result                   |
+| ----------- | -----: | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| 240/full    |    200 | 6095/3900, 5945/3965, 5935/3985, 5935/4005, 5870/4010, 6055/4075, 5935/4030, 6080/4045, 5990/3960, 5915/3980, 5960/3995, 5940/4020 | **+32.785%**, +1957.5 µs, 12/12 |
+| 240/band-16 |    200 | 6170/4165, 5860/4215, 5880/4120, 6025/4140, 5985/4195, 5855/4160, 6085/4175, 6080/4235, 5985/4215, 5860/4045, 5980/4070, 5990/4125 | **+30.659%**, +1830.0 µs, 12/12 |
+| 176/full    |    300 | 3193/2946, 3173/2960, 3133/2910, 3310/2916, 3196/2913, 3260/2916, 3146/2926, 3150/2940, 3190/2990, 3186/2903, 3173/2946, 3186/2943 | **+7.391%**, +235.0 µs, 12/12   |
+| 176/band-16 |    300 | 3176/2956, 3103/2950, 3193/2960, 3183/2926, 3190/2926, 3193/2953, 3206/2950, 3286/2963, 3223/2953, 3233/2993, 3243/2876, 3173/2940 | **+7.751%**, +248.0 µs, 12/12   |
+| 320/full    |    100 | 11370/5330, 10810/5330, 10810/5330, 10480/5300, 11030/5300, 10540/5380, 10690/5320, 10470/5270                                     | **+50.464%**, +5425.0 µs, 8/8   |
+| 161/full    |    600 | 2663/2680, 2675/2716, 2671/2693, 2660/2681, 2695/2688, 2698/2698, 2690/2668, 2658/2693, 2681/2651, 2700/2693, 2680/2686, 2673/2678 | -0.205%, -5.5 µs, 4/7/1         |
+| 160/full    |    600 | 2621/2630, 2645/2646, 2696/2650, 2623/2643, 2591/2621, 2685/2633, 2673/2681, 2660/2633, 2600/2663, 2646/2650, 2666/2600, 2775/2640 | -0.094%, -2.5 µs, 5/7           |
+| 128/full    |    800 | 1716/1708, 1691/1678, 1685/1681, 1701/1701, 1702/1677, 1815/1696, 1711/1686, 1688/1693, 1683/1703, 1652/1772, 1767/1686, 1688/1695 | +0.352%, +6.0 µs, 7/4/1         |
 
 Timer resolutions were 5.000, 3.333, 10.000, 1.667, and 1.250
 µs/frame according to sample length. The temporary runner printed
@@ -2611,13 +2611,13 @@ and main:
 from main. All paired samples verified the full-output FNV. Raw
 baseline/candidate µs/frame pairs are:
 
-| Shape | Frames | Raw baseline/candidate pairs | Paired result |
-|---|---:|---|---|
-| 240/full | 200 | 3955/3370, 3970/3380, 3960/3425, 3995/3375, 3885/3325, 4010/3370, 4030/3465, 4010/3360, 4150/3320, 4025/3365, 4000/3395, 4010/3365 | **+15.322%**, +612.5 µs, 12/12 |
-| 240/band-16 | 200 | 4235/3470, 4045/3470, 4165/3455, 4170/3540, 4165/3525, 4120/3500, 4125/3495, 4140/3490, 4110/3505, 4115/3460, 4160/3485, 4120/3480 | **+15.450%**, +640.0 µs, 12/12 |
-| 176/full | 300 | 2936/2530, 2943/2543, 2920/2523, 2893/2513, 2913/2533, 2913/2540, 2903/2553, 2986/2523, 2973/2570, 2920/2566, 2920/2526, 2940/2530 | **+13.524%**, +395.5 µs, 12/12 |
-| 176/band-16 | 300 | 3046/2790, 2946/2550, 2950/2560, 3043/2550, 2923/2550, 3046/2576, 2960/2543, 2940/2566, 2936/2566, 3016/2536, 2963/2550, 3090/2556 | **+13.690%**, +404.5 µs, 12/12 |
-| 161/full | 600 | 2650/2348, 2626/2340, 2670/2365, 2710/2351, 2645/2345, 2655/2368, 2650/2356, 2680/2370, 2701/2358, 2670/2366, 2666/2360, 2660/2335 | **+11.410%**, +304.5 µs, 12/12 |
+| Shape       | Frames | Raw baseline/candidate pairs                                                                                                       | Paired result                  |
+| ----------- | -----: | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 240/full    |    200 | 3955/3370, 3970/3380, 3960/3425, 3995/3375, 3885/3325, 4010/3370, 4030/3465, 4010/3360, 4150/3320, 4025/3365, 4000/3395, 4010/3365 | **+15.322%**, +612.5 µs, 12/12 |
+| 240/band-16 |    200 | 4235/3470, 4045/3470, 4165/3455, 4170/3540, 4165/3525, 4120/3500, 4125/3495, 4140/3490, 4110/3505, 4115/3460, 4160/3485, 4120/3480 | **+15.450%**, +640.0 µs, 12/12 |
+| 176/full    |    300 | 2936/2530, 2943/2543, 2920/2523, 2893/2513, 2913/2533, 2913/2540, 2903/2553, 2986/2523, 2973/2570, 2920/2566, 2920/2526, 2940/2530 | **+13.524%**, +395.5 µs, 12/12 |
+| 176/band-16 |    300 | 3046/2790, 2946/2550, 2950/2560, 3043/2550, 2923/2550, 3046/2576, 2960/2543, 2940/2566, 2936/2566, 3016/2536, 2963/2550, 3090/2556 | **+13.690%**, +404.5 µs, 12/12 |
+| 161/full    |    600 | 2650/2348, 2626/2340, 2670/2365, 2710/2351, 2645/2345, 2655/2368, 2650/2356, 2680/2370, 2701/2358, 2670/2366, 2666/2360, 2660/2335 | **+11.410%**, +304.5 µs, 12/12 |
 
 Timer resolutions were 5.000, 3.333, and 1.667 µs/frame, orders were
 balanced, and every effect was unanimous and larger than 300 µs/frame. The
@@ -2710,13 +2710,13 @@ byte-for-byte. No field, allocation, or heap state was added.
 
 Raw baseline/candidate µs/frame pairs:
 
-| Shape | Frames | Raw baseline/candidate pairs | Paired result |
-|---|---:|---|---|
-| 240/full | 300 | 3350/3386, 3363/3340, 3430/3286, 3350/3323, 3363/3286, 3390/3363, 3373/3390, 3370/3366, 3393/3336, 3366/3260, 3383/3263, 3393/3253 | **+1.243%**, +42.0 µs, 10/2 |
-| 176/full | 400 | 2522/2470, 2512/2467, 2527/2557, 2530/2457, 2542/2532, 2552/2495, 2492/2562, 2537/2512, 2545/2545, 2532/2562, 2525/2457, 2540/2482 | **+1.388%**, +35.0 µs, 8/3/1 |
-| 240/band-16 | 300 | 3500/3366, 3470/3353, 3523/3440, 3493/3453, 3480/3480, 3470/3453, 3480/3493, 3470/3470, 3490/3453, 3510/3483, 3473/3406, 3476/3473 | **+0.915%**, +32.0 µs, 9/1/2 |
-| 176/band-16 first | 400 | 2550/2572, 2552/2565, 2547/2582, 2560/2450, 2567/2477, 2560/2545, 2520/2565, 2555/2495, 2572/2465, 2557/2482, 2530/2562, 2547/2852 | +0.038%, +1.0 µs, 6/6, unresolved |
-| 176/band-16 repeat | 600 | 2531/2516, 2556/2565, 2576/2566, 2571/2500, 2521/2581, 2556/2531, 2568/2560, 2518/2515, 2560/2553, 2551/2531, 2546/2508, 2560/2508, 2560/2545, 2555/2548, 2576/2490, 2546/2573 | +0.487%, +12.5 µs, 13/3 |
+| Shape              | Frames | Raw baseline/candidate pairs                                                                                                                                                   | Paired result                     |
+| ------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| 240/full           |    300 | 3350/3386, 3363/3340, 3430/3286, 3350/3323, 3363/3286, 3390/3363, 3373/3390, 3370/3366, 3393/3336, 3366/3260, 3383/3263, 3393/3253                                             | **+1.243%**, +42.0 µs, 10/2       |
+| 176/full           |    400 | 2522/2470, 2512/2467, 2527/2557, 2530/2457, 2542/2532, 2552/2495, 2492/2562, 2537/2512, 2545/2545, 2532/2562, 2525/2457, 2540/2482                                             | **+1.388%**, +35.0 µs, 8/3/1      |
+| 240/band-16        |    300 | 3500/3366, 3470/3353, 3523/3440, 3493/3453, 3480/3480, 3470/3453, 3480/3493, 3470/3470, 3490/3453, 3510/3483, 3473/3406, 3476/3473                                             | **+0.915%**, +32.0 µs, 9/1/2      |
+| 176/band-16 first  |    400 | 2550/2572, 2552/2565, 2547/2582, 2560/2450, 2567/2477, 2560/2545, 2520/2565, 2555/2495, 2572/2465, 2557/2482, 2530/2562, 2547/2852                                             | +0.038%, +1.0 µs, 6/6, unresolved |
+| 176/band-16 repeat |    600 | 2531/2516, 2556/2565, 2576/2566, 2571/2500, 2521/2581, 2556/2531, 2568/2560, 2518/2515, 2560/2553, 2551/2531, 2546/2508, 2560/2508, 2560/2545, 2555/2548, 2576/2490, 2546/2573 | +0.487%, +12.5 µs, 13/3           |
 
 The primary full-buffer modes clear the predeclared +0.8% threshold, and
 240/band-16 also clears it. The longer 176/band-16 repeat is directionally
@@ -2828,15 +2828,14 @@ through the public production method, checked the complete output FNV, and
 alternated baseline-first and candidate-first order. Raw baseline/candidate
 µs/frame pairs are:
 
-| Shape | Frames | Raw baseline/candidate pairs | Paired result |
-|---|---:|---|---|
-| 160/full | 600 | 2623/2338, 2641/2348, 2645/2326, 2651/2348, 2643/2340, 2736/2345, 2620/2330, 2758/2333, 2665/2343, 2758/2340, 2583/2345, 2606/2340 | **+11.447%**, +303.0 µs, 12/12 |
-| 160/band-16 | 600 | 2741/2345, 2648/2335, 2638/2321, 2655/2326, 2605/2340, 2660/2338, 2673/2333, 2655/2358, 2611/2358, 2651/2323, 2705/2335, 2645/2333 | **+12.061%**, +319.5 µs, 12/12 |
-| 128/full | 800 | 1683/1543, 1672/1533, 1716/1502, 1713/1542, 1673/1528, 1662/1531, 1681/1538, 1697/1538, 1670/1537, 1686/1533, 1683/1537, 1690/1555 | **+8.587%**, +144.0 µs, 12/12 |
-| 128/band-16 | 800 | 1707/1533, 1683/1537, 1721/1551, 1705/1535, 1701/1530, 1721/1547, 1681/1540, 1693/1556, 1772/1541, 1725/1523, 1715/1537, 1818/1545 | **+10.082%**, +172.5 µs, 12/12 |
+| Shape       | Frames | Raw baseline/candidate pairs                                                                                                       | Paired result                  |
+| ----------- | -----: | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 160/full    |    600 | 2623/2338, 2641/2348, 2645/2326, 2651/2348, 2643/2340, 2736/2345, 2620/2330, 2758/2333, 2665/2343, 2758/2340, 2583/2345, 2606/2340 | **+11.447%**, +303.0 µs, 12/12 |
+| 160/band-16 |    600 | 2741/2345, 2648/2335, 2638/2321, 2655/2326, 2605/2340, 2660/2338, 2673/2333, 2655/2358, 2611/2358, 2651/2323, 2705/2335, 2645/2333 | **+12.061%**, +319.5 µs, 12/12 |
+| 128/full    |    800 | 1683/1543, 1672/1533, 1716/1502, 1713/1542, 1673/1528, 1662/1531, 1681/1538, 1697/1538, 1670/1537, 1686/1533, 1683/1537, 1690/1555 | **+8.587%**, +144.0 µs, 12/12  |
+| 128/band-16 |    800 | 1707/1533, 1683/1537, 1721/1551, 1705/1535, 1701/1530, 1721/1547, 1681/1540, 1693/1556, 1772/1541, 1725/1523, 1715/1537, 1818/1545 | **+10.082%**, +172.5 µs, 12/12 |
 
-Timer resolutions are 1.667 µs/frame at side 160 and 1.250 µs/frame at side
-128. Every one of the 48 pairs favors the candidate and all deterministic
+Timer resolutions are 1.667 µs/frame at side 160 and 1.250 µs/frame at side 128. Every one of the 48 pairs favors the candidate and all deterministic
 output fields match. The isolated candidate checkout was intentionally
 uncommitted, so the statistics label it `exploratory`; the artifacts remained
 fixed throughout timing and the promoted main classes match them
@@ -2949,14 +2948,14 @@ maximum-duration tones, deterministic random ADSR, slides, note mode, pan,
 and every waveform, and found all 52,525,193 returned bytes equal. Seven
 immutable fixtures additionally retain exact output lengths and SHA-256:
 
-| Fixture | Bytes | SHA-256 |
-| --- | ---: | --- |
-| Waternet 262 Hz | 6,711 | `f844e1b3d5ea49578821154e55e241bca7dcef93e0f37cbe527324c4cfec23f1` |
-| Rubido 900 Hz | 1,111 | `b35dcb15e954cac510abd22f2c6f82fc0ad1d9177c89071e3ee9ec571a4a0814` |
-| upward slide | 8,044 | `22e25f167915097da1053114496e36d236ca1999fa060452b262d1c50f26d579` |
-| downward slide | 8,044 | `f4c91b123fbc1ac0408d31197a4452310f14c9fd8d61a8c2e8753c2f4be111c1` |
-| ADSR | 1,111 | `ca59388dd6a48d7a5de7e49dfb46a95d0a3435e6d1b20b55d1b07ea28eefacc7` |
-| note-bend slide | 2,444 | `14e39141f9d6f65a3f4c94c590152ac42fc8db2d8e3dc691a7084c9b702c4f37` |
+| Fixture          |   Bytes | SHA-256                                                            |
+| ---------------- | ------: | ------------------------------------------------------------------ |
+| Waternet 262 Hz  |   6,711 | `f844e1b3d5ea49578821154e55e241bca7dcef93e0f37cbe527324c4cfec23f1` |
+| Rubido 900 Hz    |   1,111 | `b35dcb15e954cac510abd22f2c6f82fc0ad1d9177c89071e3ee9ec571a4a0814` |
+| upward slide     |   8,044 | `22e25f167915097da1053114496e36d236ca1999fa060452b262d1c50f26d579` |
+| downward slide   |   8,044 | `f4c91b123fbc1ac0408d31197a4452310f14c9fd8d61a8c2e8753c2f4be111c1` |
+| ADSR             |   1,111 | `ca59388dd6a48d7a5de7e49dfb46a95d0a3435e6d1b20b55d1b07ea28eefacc7` |
+| note-bend slide  |   2,444 | `14e39141f9d6f65a3f4c94c590152ac42fc8db2d8e3dc691a7084c9b702c4f37` |
 | maximum duration | 272,044 | `eebdb0b1dd1ad9f674ce644e023e04f9b92ca3a6ce2062b6526e4bb4380378cc` |
 
 `just test` and `just verify` pass, including Java source/target 1.3, the CLDC
@@ -3023,20 +3022,20 @@ Every timed invocation matched calls, output byte count, aggregate FNV, and
 allocation shape before its wall clock was accepted. Raw baseline/candidate
 microseconds per complete tone sequence were:
 
-| Pair | Waternet B/C | Rubido B/C | slide B/C | ADSR B/C |
-| ---: | ---: | ---: | ---: | ---: |
-| 0 | 23,440 / 17,820 | 4,290 / 3,350 | 18,060 / 17,920 | 4,560 / 4,565 |
-| 1 | 23,280 / 17,660 | 4,310 / 3,310 | 18,080 / 18,020 | 4,515 / 4,585 |
-| 2 | 23,140 / 17,720 | 4,450 / 3,350 | 18,000 / 17,980 | 4,545 / 4,520 |
-| 3 | 23,000 / 17,640 | 4,365 / 3,455 | 18,000 / 18,040 | 4,555 / 4,545 |
-| 4 | 23,320 / 17,520 | 4,280 / 3,225 | 18,020 / 18,200 | 4,560 / 4,535 |
-| 5 | 23,120 / 17,660 | 4,275 / 3,255 | 18,020 / 18,060 | 4,540 / 4,475 |
-| 6 | 23,340 / 17,700 | 4,245 / 3,250 | 18,060 / 18,020 | 4,525 / 4,560 |
-| 7 | 23,160 / 17,680 | 4,235 / 3,280 | 17,980 / 18,320 | 4,560 / 4,545 |
-| 8 | 23,240 / 17,640 | 4,285 / 3,245 | 17,980 / 17,980 | 4,580 / 4,570 |
-| 9 | 23,240 / 17,740 | 4,205 / 3,290 | 18,120 / 17,960 | 4,660 / 4,560 |
-| 10 | 23,440 / 17,760 | 4,260 / 3,295 | 18,140 / 18,280 | 4,730 / 4,615 |
-| 11 | 23,920 / 17,840 | 4,295 / 3,245 | 17,940 / 18,300 | 4,630 / 4,660 |
+| Pair |    Waternet B/C |    Rubido B/C |       slide B/C |      ADSR B/C |
+| ---: | --------------: | ------------: | --------------: | ------------: |
+|    0 | 23,440 / 17,820 | 4,290 / 3,350 | 18,060 / 17,920 | 4,560 / 4,565 |
+|    1 | 23,280 / 17,660 | 4,310 / 3,310 | 18,080 / 18,020 | 4,515 / 4,585 |
+|    2 | 23,140 / 17,720 | 4,450 / 3,350 | 18,000 / 17,980 | 4,545 / 4,520 |
+|    3 | 23,000 / 17,640 | 4,365 / 3,455 | 18,000 / 18,040 | 4,555 / 4,545 |
+|    4 | 23,320 / 17,520 | 4,280 / 3,225 | 18,020 / 18,200 | 4,560 / 4,535 |
+|    5 | 23,120 / 17,660 | 4,275 / 3,255 | 18,020 / 18,060 | 4,540 / 4,475 |
+|    6 | 23,340 / 17,700 | 4,245 / 3,250 | 18,060 / 18,020 | 4,525 / 4,560 |
+|    7 | 23,160 / 17,680 | 4,235 / 3,280 | 17,980 / 18,320 | 4,560 / 4,545 |
+|    8 | 23,240 / 17,640 | 4,285 / 3,245 | 17,980 / 17,980 | 4,580 / 4,570 |
+|    9 | 23,240 / 17,740 | 4,205 / 3,290 | 18,120 / 17,960 | 4,660 / 4,560 |
+|   10 | 23,440 / 17,760 | 4,260 / 3,295 | 18,140 / 18,280 | 4,730 / 4,615 |
+|   11 | 23,920 / 17,840 | 4,295 / 3,245 | 17,940 / 18,300 | 4,630 / 4,660 |
 
 Waternet measures **+24.036%**, +5,610 us/sequence, and 12/12 wins at
 20 us resolution. Rubido measures **+23.321%**, +997.5 us/sequence, and
@@ -3184,10 +3183,10 @@ measured 12.8-million-instruction guest update.
 281,600 defined-function calls in one frame:
 
 | Function | Entries | Parameters | Declared locals | Raw dispatches |
-| ---: | ---: | ---: | ---: | ---: |
-| 7 | 25,600 | 2 | 1 | 870,400 |
-| 8 | 204,800 | 2 | 1 | 5,096,038 |
-| 9 | 51,200 | 3 | 0 | 1,536,000 |
+| -------: | ------: | ---------: | --------------: | -------------: |
+|        7 |  25,600 |          2 |               1 |        870,400 |
+|        8 | 204,800 |          2 |               1 |      5,096,038 |
+|        9 |  51,200 |          3 |               0 |      1,536,000 |
 
 The current `callFunction` clears its reused local frame and then copies every
 argument from the value stack with an interpreted Java loop. These calls copy
@@ -3211,10 +3210,10 @@ An isolated source/target-1.3, preverified native i686 phoneME microbenchmark
 used non-overlapping `long[]` arrays and the same dynamic length/source-offset
 shape. One five-million-iteration selection run measured:
 
-| Length | Manual loop | `System.arraycopy` | Relative copy time |
-| ---: | ---: | ---: | ---: |
-| 2 | 64.8 ns/copy | 48.2 ns/copy | -25.6% |
-| 3 | 86.8 ns/copy | 49.0 ns/copy | -43.5% |
+| Length |  Manual loop | `System.arraycopy` | Relative copy time |
+| -----: | -----------: | -----------------: | -----------------: |
+|      2 | 64.8 ns/copy |       48.2 ns/copy |             -25.6% |
+|      3 | 86.8 ns/copy |       49.0 ns/copy |             -43.5% |
 
 These component figures justify a production A/B but are not a game-speed
 claim. The exact full-call context includes frame clearing, type lookup, Java
@@ -3327,20 +3326,20 @@ Every invocation matched checkpoints, logical instructions, outer dispatches,
 compact calls/instructions, branch-fast metadata, W4IR format, and all other
 deterministic receipt fields. Raw microseconds per frame follow:
 
-| Pair | Order | Game of Life B/C | Waternet B/C | Rubido B/C | Untangle B/C |
-| ---: | --- | ---: | ---: | ---: | ---: |
-| 0 | baseline first | 3,491,000 / 3,532,000 | 17,313 / 17,163 | 105,310 / 105,457 | 4,778 / 4,802 |
-| 1 | candidate first | 3,499,000 / 3,486,000 | 17,339 / 17,156 | 106,116 / 105,116 | 4,739 / 4,743 |
-| 2 | baseline first | 3,540,000 / 3,445,000 | 17,156 / 17,222 | 105,844 / 105,480 | 4,789 / 4,765 |
-| 3 | candidate first | 3,444,000 / 3,502,000 | 17,366 / 17,156 | 105,542 / 105,651 | 4,804 / 4,817 |
-| 4 | baseline first | 3,439,000 / 3,498,000 | 17,294 / 17,307 | 105,705 / 105,348 | 4,841 / 4,773 |
-| 5 | candidate first | 3,506,000 / 3,460,000 | 17,228 / 17,235 | 110,069 / 105,232 | 4,736 / 4,813 |
-| 6 | baseline first | 3,455,000 / 3,445,000 | 17,156 / 17,078 | 105,736 / 104,790 | 4,806 / 4,758 |
-| 7 | candidate first | 3,487,000 / 3,422,000 | 17,431 / 17,300 | 105,186 / 105,496 | 4,802 / 4,802 |
-| 8 | baseline first | 3,449,000 / 3,355,000 | — | — | — |
-| 9 | candidate first | 3,430,000 / 3,402,000 | — | — | — |
-| 10 | baseline first | 3,461,000 / 3,479,000 | — | — | — |
-| 11 | candidate first | 3,460,000 / 3,420,000 | — | — | — |
+| Pair | Order           |      Game of Life B/C |    Waternet B/C |        Rubido B/C |  Untangle B/C |
+| ---: | --------------- | --------------------: | --------------: | ----------------: | ------------: |
+|    0 | baseline first  | 3,491,000 / 3,532,000 | 17,313 / 17,163 | 105,310 / 105,457 | 4,778 / 4,802 |
+|    1 | candidate first | 3,499,000 / 3,486,000 | 17,339 / 17,156 | 106,116 / 105,116 | 4,739 / 4,743 |
+|    2 | baseline first  | 3,540,000 / 3,445,000 | 17,156 / 17,222 | 105,844 / 105,480 | 4,789 / 4,765 |
+|    3 | candidate first | 3,444,000 / 3,502,000 | 17,366 / 17,156 | 105,542 / 105,651 | 4,804 / 4,817 |
+|    4 | baseline first  | 3,439,000 / 3,498,000 | 17,294 / 17,307 | 105,705 / 105,348 | 4,841 / 4,773 |
+|    5 | candidate first | 3,506,000 / 3,460,000 | 17,228 / 17,235 | 110,069 / 105,232 | 4,736 / 4,813 |
+|    6 | baseline first  | 3,455,000 / 3,445,000 | 17,156 / 17,078 | 105,736 / 104,790 | 4,806 / 4,758 |
+|    7 | candidate first | 3,487,000 / 3,422,000 | 17,431 / 17,300 | 105,186 / 105,496 | 4,802 / 4,802 |
+|    8 | baseline first  | 3,449,000 / 3,355,000 |               — |                 — |             — |
+|    9 | candidate first | 3,430,000 / 3,402,000 |               — |                 — |             — |
+|   10 | baseline first  | 3,461,000 / 3,479,000 |               — |                 — |             — |
+|   11 | candidate first | 3,460,000 / 3,420,000 |               — |                 — |             — |
 
 Game of Life measures a median +20,500 us/frame, **+0.594%**, with 8 wins
 and 4 losses. The 1,000 us/frame timer resolution is much smaller than the
@@ -3371,12 +3370,12 @@ call-lowering design removes the argument copy entirely.
 Life profile contains the following adjacent pairs after the retained
 production fusion pass:
 
-| Pair | Game of Life count | Other routed-corpus count |
-| --- | ---: | ---: |
-| `i32.lt_s + br_if` | 204,800 | 915 |
-| `i32.gt_s + br_if` | 408,161 | 6,430 |
-| `i32.le_s + br_if` | 203,362 | 207 |
-| **Total** | **816,323** | **7,552** |
+| Pair               | Game of Life count | Other routed-corpus count |
+| ------------------ | -----------------: | ------------------------: |
+| `i32.lt_s + br_if` |            204,800 |                       915 |
+| `i32.gt_s + br_if` |            408,161 |                     6,430 |
+| `i32.le_s + br_if` |            203,362 |                       207 |
+| **Total**          |        **816,323** |                 **7,552** |
 
 The three pairs account for 8.26% of Game of Life's 9,888,650 profiled
 production-stream dispatches and can remove at most 14.67% of its 5,565,951
@@ -3558,20 +3557,20 @@ Two timing layers distinguish the intended fusion from whole-class layout:
 
 The same-class raw baseline/candidate microseconds per frame were:
 
-| Pair | Game of Life B/C | Waternet B/C | Rubido B/C | Untangle B/C |
-| ---: | ---: | ---: | ---: | ---: |
-| 0 | 3,308,000 / 3,081,000 | 17,026 / 17,045 | 102,255 / 102,325 | 4,773 / 4,750 |
-| 1 | 3,312,000 / 3,117,000 | 17,124 / 17,052 | 101,759 / 102,124 | 4,765 / 4,786 |
-| 2 | 3,296,000 / 3,136,000 | 17,078 / 16,993 | 101,976 / 102,472 | 4,771 / 4,810 |
-| 3 | 3,322,000 / 3,117,000 | 17,039 / 17,104 | 101,759 / 102,379 | 4,765 / 4,782 |
-| 4 | 3,756,000 / 3,077,000 | 17,326 / 17,026 | 101,899 / 102,472 | 4,765 / 4,734 |
-| 5 | 3,284,000 / 3,014,000 | 17,045 / 16,954 | 102,348 / 102,395 | 4,793 / 4,797 |
-| 6 | 3,332,000 / 3,073,000 | 16,921 / 16,771 | 102,186 / 101,992 | 4,821 / 4,765 |
-| 7 | 3,289,000 / 3,152,000 | 16,921 / 16,954 | 101,891 / 102,124 | 4,800 / 4,717 |
-| 8 | 3,284,000 / 3,106,000 | — | — | — |
-| 9 | 3,314,000 / 3,138,000 | — | — | — |
-| 10 | 3,282,000 / 3,121,000 | — | — | — |
-| 11 | 3,276,000 / 3,149,000 | — | — | — |
+| Pair |      Game of Life B/C |    Waternet B/C |        Rubido B/C |  Untangle B/C |
+| ---: | --------------------: | --------------: | ----------------: | ------------: |
+|    0 | 3,308,000 / 3,081,000 | 17,026 / 17,045 | 102,255 / 102,325 | 4,773 / 4,750 |
+|    1 | 3,312,000 / 3,117,000 | 17,124 / 17,052 | 101,759 / 102,124 | 4,765 / 4,786 |
+|    2 | 3,296,000 / 3,136,000 | 17,078 / 16,993 | 101,976 / 102,472 | 4,771 / 4,810 |
+|    3 | 3,322,000 / 3,117,000 | 17,039 / 17,104 | 101,759 / 102,379 | 4,765 / 4,782 |
+|    4 | 3,756,000 / 3,077,000 | 17,326 / 17,026 | 101,899 / 102,472 | 4,765 / 4,734 |
+|    5 | 3,284,000 / 3,014,000 | 17,045 / 16,954 | 102,348 / 102,395 | 4,793 / 4,797 |
+|    6 | 3,332,000 / 3,073,000 | 16,921 / 16,771 | 102,186 / 101,992 | 4,821 / 4,765 |
+|    7 | 3,289,000 / 3,152,000 | 16,921 / 16,954 | 101,891 / 102,124 | 4,800 / 4,717 |
+|    8 | 3,284,000 / 3,106,000 |               — |                 — |             — |
+|    9 | 3,314,000 / 3,138,000 |               — |                 — |             — |
+|   10 | 3,282,000 / 3,121,000 |               — |                 — |             — |
+|   11 | 3,276,000 / 3,149,000 |               — |                 — |             — |
 
 Same-class paired results are +5.654% Game of Life, 12/12 wins;
 +0.459% Waternet, 5/3; -0.294% Rubido, 1/7; and +0.199% Untangle,
@@ -3582,20 +3581,20 @@ removes the candidate's class-layout cost from both sides.
 
 The production raw baseline/candidate microseconds per frame were:
 
-| Pair | Game of Life B/C | Waternet B/C | Rubido B/C, first | Rubido B/C, repeat | Untangle B/C |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 0 | 3,236,000 / 3,092,000 | 16,986 / 16,751 | 100,697 / 101,736 | 100,155 / 101,899 | 4,750 / 4,743 |
-| 1 | 3,293,000 / 3,095,000 | 16,862 / 17,071 | 101,480 / 102,542 | 100,860 / 101,736 | 4,800 / 4,780 |
-| 2 | 3,229,000 / 3,105,000 | 17,098 / 16,986 | 101,279 / 102,038 | 100,837 / 101,713 | 4,826 / 4,769 |
-| 3 | 3,291,000 / 3,126,000 | 16,973 / 17,013 | 100,348 / 101,844 | 100,519 / 101,829 | 4,808 / 4,754 |
-| 4 | 3,299,000 / 3,090,000 | 17,000 / 17,117 | 101,325 / 102,240 | 100,806 / 102,263 | 4,767 / 4,754 |
-| 5 | 3,248,000 / 3,141,000 | 16,830 / 16,758 | 100,643 / 102,054 | 101,488 / 101,821 | 4,795 / 4,780 |
-| 6 | 3,285,000 / 3,134,000 | 16,973 / 16,967 | 100,759 / 102,286 | 100,697 / 102,255 | 4,791 / 4,734 |
-| 7 | 3,275,000 / 3,117,000 | 16,928 / 16,973 | 101,085 / 102,465 | 100,457 / 101,922 | 4,793 / 4,706 |
-| 8 | 3,245,000 / 3,101,000 | — | — | — | — |
-| 9 | 3,321,000 / 3,178,000 | — | — | — | — |
-| 10 | 3,318,000 / 3,059,000 | — | — | — | — |
-| 11 | 3,308,000 / 3,105,000 | — | — | — | — |
+| Pair |      Game of Life B/C |    Waternet B/C | Rubido B/C, first | Rubido B/C, repeat |  Untangle B/C |
+| ---: | --------------------: | --------------: | ----------------: | -----------------: | ------------: |
+|    0 | 3,236,000 / 3,092,000 | 16,986 / 16,751 | 100,697 / 101,736 |  100,155 / 101,899 | 4,750 / 4,743 |
+|    1 | 3,293,000 / 3,095,000 | 16,862 / 17,071 | 101,480 / 102,542 |  100,860 / 101,736 | 4,800 / 4,780 |
+|    2 | 3,229,000 / 3,105,000 | 17,098 / 16,986 | 101,279 / 102,038 |  100,837 / 101,713 | 4,826 / 4,769 |
+|    3 | 3,291,000 / 3,126,000 | 16,973 / 17,013 | 100,348 / 101,844 |  100,519 / 101,829 | 4,808 / 4,754 |
+|    4 | 3,299,000 / 3,090,000 | 17,000 / 17,117 | 101,325 / 102,240 |  100,806 / 102,263 | 4,767 / 4,754 |
+|    5 | 3,248,000 / 3,141,000 | 16,830 / 16,758 | 100,643 / 102,054 |  101,488 / 101,821 | 4,795 / 4,780 |
+|    6 | 3,285,000 / 3,134,000 | 16,973 / 16,967 | 100,759 / 102,286 |  100,697 / 102,255 | 4,791 / 4,734 |
+|    7 | 3,275,000 / 3,117,000 | 16,928 / 16,973 | 101,085 / 102,465 |  100,457 / 101,922 | 4,793 / 4,706 |
+|    8 | 3,245,000 / 3,101,000 |               — |                 — |                  — |             — |
+|    9 | 3,321,000 / 3,178,000 |               — |                 — |                  — |             — |
+|   10 | 3,318,000 / 3,059,000 |               — |                 — |                  — |             — |
+|   11 | 3,308,000 / 3,105,000 |               — |                 — |                  — |             — |
 
 Production Game of Life measures **+4.711%**, +154,500 us/frame, and
 12/12 wins at 1,000 us/frame resolution. Waternet measures -0.100%,
@@ -3882,20 +3881,20 @@ Game of Life route. Every invocation passed its checkpoint and reported
 instructions, and identical branch-fast metadata. The candidate removed
 exactly 1,113 outer dispatches in every pair. Raw microseconds per frame were:
 
-| Pair | Order | Baseline | Candidate |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 3,419,000 | 3,468,000 |
-| 1 | candidate first | 3,502,000 | 3,466,000 |
-| 2 | baseline first | 3,482,000 | 3,460,000 |
-| 3 | candidate first | 3,407,000 | 3,389,000 |
-| 4 | baseline first | 3,475,000 | 3,525,000 |
-| 5 | candidate first | 5,192,000 | 3,465,000 |
-| 6 | baseline first | 3,445,000 | 3,456,000 |
-| 7 | candidate first | 3,462,000 | 3,509,000 |
-| 8 | baseline first | 3,431,000 | 3,468,000 |
-| 9 | candidate first | 3,434,000 | 3,455,000 |
-| 10 | baseline first | 3,472,000 | 3,387,000 |
-| 11 | candidate first | 3,480,000 | 3,456,000 |
+| Pair | Order           |  Baseline | Candidate |
+| ---: | --------------- | --------: | --------: |
+|    0 | baseline first  | 3,419,000 | 3,468,000 |
+|    1 | candidate first | 3,502,000 | 3,466,000 |
+|    2 | baseline first  | 3,482,000 | 3,460,000 |
+|    3 | candidate first | 3,407,000 | 3,389,000 |
+|    4 | baseline first  | 3,475,000 | 3,525,000 |
+|    5 | candidate first | 5,192,000 | 3,465,000 |
+|    6 | baseline first  | 3,445,000 | 3,456,000 |
+|    7 | candidate first | 3,462,000 | 3,509,000 |
+|    8 | baseline first  | 3,431,000 | 3,468,000 |
+|    9 | candidate first | 3,434,000 | 3,455,000 |
+|   10 | baseline first  | 3,472,000 | 3,387,000 |
+|   11 | candidate first | 3,480,000 | 3,456,000 |
 
 The paired median is +3,500 us/frame, or only **+0.105%**, with six wins and
 six losses. The 1,000 us/frame timer resolution is below the median effect,
@@ -4133,20 +4132,20 @@ and identical branch-fast metadata. The candidate reduced outer dispatches
 from 5,565,951 to 5,563,725, exactly 2,226 per frame. Raw microseconds per
 frame were:
 
-| Pair | Order | Baseline | Candidate |
-| ---: | --- | ---: | ---: |
-| 0 | baseline first | 3,438,000 | 3,512,000 |
-| 1 | candidate first | 3,447,000 | 3,415,000 |
-| 2 | baseline first | 3,426,000 | 3,520,000 |
-| 3 | candidate first | 3,459,000 | 3,400,000 |
-| 4 | baseline first | 3,452,000 | 3,496,000 |
-| 5 | candidate first | 3,429,000 | 3,470,000 |
-| 6 | baseline first | 3,420,000 | 3,480,000 |
-| 7 | candidate first | 3,454,000 | 3,511,000 |
-| 8 | baseline first | 3,462,000 | 3,498,000 |
-| 9 | candidate first | 3,399,000 | 3,439,000 |
-| 10 | baseline first | 3,400,000 | 3,450,000 |
-| 11 | candidate first | 3,465,000 | 3,416,000 |
+| Pair | Order           |  Baseline | Candidate |
+| ---: | --------------- | --------: | --------: |
+|    0 | baseline first  | 3,438,000 | 3,512,000 |
+|    1 | candidate first | 3,447,000 | 3,415,000 |
+|    2 | baseline first  | 3,426,000 | 3,520,000 |
+|    3 | candidate first | 3,459,000 | 3,400,000 |
+|    4 | baseline first  | 3,452,000 | 3,496,000 |
+|    5 | candidate first | 3,429,000 | 3,470,000 |
+|    6 | baseline first  | 3,420,000 | 3,480,000 |
+|    7 | candidate first | 3,454,000 | 3,511,000 |
+|    8 | baseline first  | 3,462,000 | 3,498,000 |
+|    9 | candidate first | 3,399,000 | 3,439,000 |
+|   10 | baseline first  | 3,400,000 | 3,450,000 |
+|   11 | candidate first | 3,465,000 | 3,416,000 |
 
 The paired median is -42,500 us/frame, or **-1.235%**, with three wins and
 nine losses. Timer resolution is 1,000 us/frame, order is balanced, source is
@@ -4327,12 +4326,12 @@ Diagnostic/counterless `execute` sizes are 7,577/7,545 bytes.
 Twelve balanced native i686 phoneME pairs against stable
 `8e850656f2b19256c2559cdd07f165c7788b16d4` produced:
 
-| Workload | Median effect | Wins/losses/ties | Resolution |
-| --- | ---: | ---: | --- |
-| Rubido | +1.274% | 11/1/0 | measured |
-| Waternet | +0.462% | 9/3/0 | measured |
-| Untangle | +0.176% | 7/4/1 | below timer resolution |
-| Game of Life | +1.718% | 11/1/0 | measured |
+| Workload     | Median effect | Wins/losses/ties | Resolution             |
+| ------------ | ------------: | ---------------: | ---------------------- |
+| Rubido       |       +1.274% |           11/1/0 | measured               |
+| Waternet     |       +0.462% |            9/3/0 | measured               |
+| Untangle     |       +0.176% |            7/4/1 | below timer resolution |
+| Game of Life |       +1.718% |           11/1/0 | measured               |
 
 Raw results are under
 `/tmp/w4me-interpreter-research/raw/njit024/runs/inline-i32-compare-vs-8e85065-20260727/`.
@@ -4376,11 +4375,11 @@ full-state workloads exact. Its diagnostic/counterless `execute` sizes were
 
 Twelve balanced native i686 phoneME pairs against NJIT-025 produced:
 
-| Workload | Median effect | Wins/losses | Decision evidence |
-| --- | ---: | ---: | --- |
-| Rubido | +0.178% | 9/3 | measured |
-| Waternet | -0.270% | 4/8 | measured |
-| Game of Life | -0.141% | 5/7 | measured |
+| Workload     | Median effect | Wins/losses | Decision evidence |
+| ------------ | ------------: | ----------: | ----------------- |
+| Rubido       |       +0.178% |         9/3 | measured          |
+| Waternet     |       -0.270% |         4/8 | measured          |
+| Game of Life |       -0.141% |         5/7 | measured          |
 
 Rubido raw results are under
 `generic-i32-load-vs-inline-compare-clean2-20260727/rubido`, with pairs and
@@ -4461,10 +4460,10 @@ Diagnostic/counterless `execute` sizes were 7,629/7,597 bytes, compared with
 
 Twelve balanced native i686 phoneME pairs against NJIT-025 produced:
 
-| Workload | Median effect | Wins/losses | Decision evidence |
-| --- | ---: | ---: | --- |
-| Rubido | -0.249% | 4/8 | measured regression |
-| Game of Life | +0.173% | 8/4 | resolved but immaterial |
+| Workload     | Median effect | Wins/losses | Decision evidence       |
+| ------------ | ------------: | ----------: | ----------------------- |
+| Rubido       |       -0.249% |         4/8 | measured regression     |
+| Game of Life |       +0.173% |         8/4 | resolved but immaterial |
 
 Raw results are under
 `/tmp/w4me-interpreter-research/raw/njit024/runs/njit027-local-set-tee-vs-njit025-20260727/`.
@@ -4523,10 +4522,10 @@ Diagnostic/counterless `execute` sizes were 7,641/7,609 bytes.
 
 Twelve balanced native i686 phoneME pairs against NJIT-025 produced:
 
-| Workload | Median effect | Wins/losses | Decision evidence |
-| --- | ---: | ---: | --- |
-| Rubido | -0.635% | 3/9 | measured regression |
-| Game of Life | +0.356% | 7/5 | measured but insufficient |
+| Workload     | Median effect | Wins/losses | Decision evidence         |
+| ------------ | ------------: | ----------: | ------------------------- |
+| Rubido       |       -0.635% |         3/9 | measured regression       |
+| Game of Life |       +0.356% |         7/5 | measured but insufficient |
 
 Raw results are under
 `/tmp/w4me-interpreter-research/raw/njit024/runs/njit028-local-get-vs-njit025-20260727/`.
@@ -4558,12 +4557,12 @@ wall times are acceptance evidence. The profiled VM SHA-256 is
 Its method samples attribute the following shares to
 `Wasm4Runtime.drawHorizontal`:
 
-| Workload | Samples | Share |
-| --- | ---: | ---: |
-| Waternet | 78 | 34.7% |
-| Rubido | 89 | 9.5% |
-| Untangle | 184 | 74.5% |
-| Game of Life | 0 | 0% |
+| Workload     | Samples | Share |
+| ------------ | ------: | ----: |
+| Waternet     |      78 | 34.7% |
+| Rubido       |      89 |  9.5% |
+| Untangle     |     184 | 74.5% |
+| Game of Life |       0 |    0% |
 
 The raw `flat.prf` SHA-256 values are
 `80dfdcc0a261941f60e3416cd4bce3b1dc94c50f6fc5c6ca30f2c6bd4bd1dc`
@@ -4632,12 +4631,12 @@ interpreter sanity limit.
 
 The completed primary native pairs are:
 
-| Route | Baseline/candidate median effect | Wins | Timer-resolved |
-| --- | ---: | ---: | --- |
-| Waternet | **+32.070%**, +5,412.0 us/frame | 12/12 | yes |
-| Untangle | **+63.839%**, +3,058.5 us/frame | 12/12 | yes |
-| Rubido | **+8.307%**, +8,174.5 us/frame | 12/12 | yes |
-| Game of Life | +0.617%, +19,500.0 us/frame | 9/12 | yes |
+| Route        | Baseline/candidate median effect |  Wins | Timer-resolved |
+| ------------ | -------------------------------: | ----: | -------------- |
+| Waternet     |  **+32.070%**, +5,412.0 us/frame | 12/12 | yes            |
+| Untangle     |  **+63.839%**, +3,058.5 us/frame | 12/12 | yes            |
+| Rubido       |   **+8.307%**, +8,174.5 us/frame | 12/12 | yes            |
+| Game of Life |      +0.617%, +19,500.0 us/frame |  9/12 | yes            |
 
 All route signatures are exact. Waternet raw `pairs.csv` / `receipt.txt`
 SHA-256 values are
@@ -4703,12 +4702,12 @@ The retained exact opcode profile, report SHA-256
 `c1d45035a5114b75e2e376feca193d93b5271fe218fa891a5e4986d93e8d92c5`,
 records the following `block + loop + if` executions:
 
-| Workload and route | Control entries | Entries/frame |
-| --- | ---: | ---: |
-| Rubido browser, 70 frames | 2,210,927 | 31,584.67 |
-| Waternet browser, 94 frames | 173,315 | 1,843.78 |
-| Untangle browser, 401 frames | 114,271 | 284.97 |
-| Game of Life idle, 1 frame | 333,456 | 333,456.00 |
+| Workload and route           | Control entries | Entries/frame |
+| ---------------------------- | --------------: | ------------: |
+| Rubido browser, 70 frames    |       2,210,927 |     31,584.67 |
+| Waternet browser, 94 frames  |         173,315 |      1,843.78 |
+| Untangle browser, 401 frames |         114,271 |        284.97 |
+| Game of Life idle, 1 frame   |         333,456 |    333,456.00 |
 
 The profile predates NJIT-029, but NJIT-025 through NJIT-029 do not rewrite
 `block`, `loop`, or `if`; their exact logical streams and route state remain
@@ -4769,11 +4768,11 @@ array, allocation, persistent heap, W4IR, RMS, or runtime-class bytes.
 
 The final balanced native i686 phoneME result is:
 
-| Route | Median paired effect | Wins | Timer resolution |
-| --- | ---: | ---: | ---: |
-| Rubido | **+0.930%**, +829.5 us/frame | 12/12 | 16.667 us/frame |
-| Waternet | **+1.017%**, +114.5 us/frame | 10/12 | 16.667 us/frame |
-| Game of Life | **+0.768%**, +24,500.0 us/frame | 8/12 | 1,000 us/frame |
+| Route        |            Median paired effect |  Wins | Timer resolution |
+| ------------ | ------------------------------: | ----: | ---------------: |
+| Rubido       |    **+0.930%**, +829.5 us/frame | 12/12 |  16.667 us/frame |
+| Waternet     |    **+1.017%**, +114.5 us/frame | 10/12 |  16.667 us/frame |
+| Game of Life | **+0.768%**, +24,500.0 us/frame |  8/12 |   1,000 us/frame |
 
 All deterministic route signatures match exactly. Raw evidence lives under
 `/tmp/w4me-interpreter-research/raw/njit024/runs/`
@@ -4893,12 +4892,12 @@ its build receipt SHA-256 is
 
 The authoritative native i686 phoneME results against NJIT-030 are:
 
-| Route | Median paired effect | Wins | Timer resolution |
-| --- | ---: | ---: | ---: |
-| Rubido | **+0.695%**, +612.5 us/frame | 11/12 | 16.667 us/frame |
-| Game of Life | **+1.009%**, +32,000 us/frame | 11/12 | 1,000 us/frame |
-| Waternet, initial | -0.181%, -20.0 us/frame | 4/12 | 16.667 us/frame |
-| Waternet, expanded decision series | **+0.324%**, +36.0 us/frame | 14/24 | 16.667 us/frame |
+| Route                              |          Median paired effect |  Wins | Timer resolution |
+| ---------------------------------- | ----------------------------: | ----: | ---------------: |
+| Rubido                             |  **+0.695%**, +612.5 us/frame | 11/12 |  16.667 us/frame |
+| Game of Life                       | **+1.009%**, +32,000 us/frame | 11/12 |   1,000 us/frame |
+| Waternet, initial                  |       -0.181%, -20.0 us/frame |  4/12 |  16.667 us/frame |
+| Waternet, expanded decision series |   **+0.324%**, +36.0 us/frame | 14/24 |  16.667 us/frame |
 
 Every invocation matched checkpoints and all deterministic counters. The
 Rubido series contains one isolated candidate scheduling spike
@@ -5374,12 +5373,12 @@ and
 
 The completed native i686 phoneME pairs against NJIT-031 are:
 
-| Route | Median paired effect | Wins/losses/ties | Evidence |
-| --- | ---: | ---: | --- |
-| Rubido | **+0.697%**, +612.5 us/frame | 12/0/0 | measured |
-| Game of Life | **+0.914%**, +28,500 us/frame | 8/4/0 | measured |
-| Waternet | -0.236%, -26.0 us/frame | 5/7/0 | measured, above -0.5% floor |
-| Untangle | -0.179%, -3.0 us/frame | 5/6/1 | exploratory, below timer resolution |
+| Route        |          Median paired effect | Wins/losses/ties | Evidence                            |
+| ------------ | ----------------------------: | ---------------: | ----------------------------------- |
+| Rubido       |  **+0.697%**, +612.5 us/frame |           12/0/0 | measured                            |
+| Game of Life | **+0.914%**, +28,500 us/frame |            8/4/0 | measured                            |
+| Waternet     |       -0.236%, -26.0 us/frame |            5/7/0 | measured, above -0.5% floor         |
+| Untangle     |        -0.179%, -3.0 us/frame |            5/6/1 | exploratory, below timer resolution |
 
 Every route matched checkpoints and deterministic signatures. Raw evidence
 is under `/tmp/w4me-interpreter-research/raw/njit024/runs/`
@@ -6359,13 +6358,13 @@ full-state gates passed. The counterless artifact was
 
 The retained primitive payload was material rather than negligible:
 
-| Workload | Recovery bytes | Primary W4IR bytes | Recovery / W4IR | RMS growth |
-|---|---:|---:|---:|---:|
-| Waternet | 16672 | 106680 | 15.63% | 16888 |
-| Rubido | 16976 | 92028 | 18.45% | 17100 |
-| Untangle | 34544 | 181476 | 19.04% | 34952 |
-| Game of Life | 2352 | 15528 | 15.15% | 2404 |
-| Plasma Cube | 6640 | 27096 | 24.51% | 6680 |
+| Workload     | Recovery bytes | Primary W4IR bytes | Recovery / W4IR | RMS growth |
+| ------------ | -------------: | -----------------: | --------------: | ---------: |
+| Waternet     |          16672 |             106680 |          15.63% |      16888 |
+| Rubido       |          16976 |              92028 |          18.45% |      17100 |
+| Untangle     |          34544 |             181476 |          19.04% |      34952 |
+| Game of Life |           2352 |              15528 |          15.15% |       2404 |
+| Plasma Cube  |           6640 |              27096 |          24.51% |       6680 |
 
 The first mandatory native route rejected the candidate before the larger
 matrix was justified. Twelve balanced native i686 phoneME pairs on Game of
@@ -7147,12 +7146,12 @@ and
 
 Sixteen balanced native pairs per route produced:
 
-| Route | Main median | NJIT-046 median | Median frame-time reduction | Throughput | Wins |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Waternet | 17,202.5 us/frame | 11,064.5 us/frame | **35.753%** | **1.555x** | 16/16 |
-| Rubido | 104,573.5 us/frame | 86,767.0 us/frame | **17.057%** | **1.205x** | 16/16 |
-| Untangle | 4,835.5 us/frame | 1,682.0 us/frame | **65.151%** | **2.875x** | 16/16 |
-| Game of Life | 3,463,000 us/frame | 3,090,000 us/frame | **10.826%** | **1.121x** | 16/16 |
+| Route        |        Main median |    NJIT-046 median | Median frame-time reduction | Throughput |  Wins |
+| ------------ | -----------------: | -----------------: | --------------------------: | ---------: | ----: |
+| Waternet     |  17,202.5 us/frame |  11,064.5 us/frame |                 **35.753%** | **1.555x** | 16/16 |
+| Rubido       | 104,573.5 us/frame |  86,767.0 us/frame |                 **17.057%** | **1.205x** | 16/16 |
+| Untangle     |   4,835.5 us/frame |   1,682.0 us/frame |                 **65.151%** | **2.875x** | 16/16 |
+| Game of Life | 3,463,000 us/frame | 3,090,000 us/frame |                 **10.826%** | **1.121x** | 16/16 |
 
 Every route was timer-resolved and all 64 pairs favored the retained
 candidate. Every invocation matched the browser-oracle checkpoints, logical

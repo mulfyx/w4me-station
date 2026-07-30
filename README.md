@@ -22,9 +22,9 @@ stay below 300 KiB.
 
 ## Download
 
-| Variant | Application | Descriptor |
-| --- | --- | --- |
-| Full, with optional JSR-75 file browsing | [w4me-station.jar](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station.jar) | [w4me-station.jad](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station.jad) |
+| Variant                                     | Application                                                                                                    | Descriptor                                                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Full, with optional JSR-75 file browsing    | [w4me-station.jar](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station.jar)           | [w4me-station.jad](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station.jad)           |
 | Base, without JSR-75 classes or permissions | [w4me-station-base.jar](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station-base.jar) | [w4me-station-base.jad](https://github.com/mulfyx/w4me-station/releases/download/v1.1.0/w4me-station-base.jad) |
 
 [Release notes](https://github.com/mulfyx/w4me-station/releases/tag/v1.1.0)
@@ -36,21 +36,21 @@ endorsed by the WASM-4 maintainers.
 
 ## Cartridge library
 
-| # | Cartridge |
-| ---: | --- |
-| 1 | [Sokoban](https://wasm4.org/play/sokoban/) |
-| 2 | [Wasm Wars](https://wasm4.org/play/wasm-wars/) |
-| 3 | [Annoying Robots](https://wasm4.org/play/annoyingrobots/) |
-| 4 | [Waternet](https://wasm4.org/play/waternet/) |
-| 5 | [Dragon Poker Draw](https://wasm4.org/play/dragon-poker-draw/) |
-| 6 | [Tic Tac Toe](https://wasm4.org/play/tictactoe/) |
-| 7 | [Watris](https://wasm4.org/play/watris/) |
-| 8 | [Glowfish Chess](https://wasm4.org/play/glowfish-chess/) |
-| 9 | [Duck Maze](https://wasm4.org/play/duck-maze/) |
-| 10 | [Untangle](https://wasm4.org/play/untangle/) |
-| 11 | [Nyan Cat](https://wasm4.org/play/nyancat/) |
-| 12 | [Sound Demo](https://wasm4.org/play/sound-demo/) |
-| 13 | [Plasma Cube](https://wasm4.org/play/plasma-cube/) |
+|   # | Cartridge                                                      |
+| --: | -------------------------------------------------------------- |
+|   1 | [Sokoban](https://wasm4.org/play/sokoban/)                     |
+|   2 | [Wasm Wars](https://wasm4.org/play/wasm-wars/)                 |
+|   3 | [Annoying Robots](https://wasm4.org/play/annoyingrobots/)      |
+|   4 | [Waternet](https://wasm4.org/play/waternet/)                   |
+|   5 | [Dragon Poker Draw](https://wasm4.org/play/dragon-poker-draw/) |
+|   6 | [Tic Tac Toe](https://wasm4.org/play/tictactoe/)               |
+|   7 | [Watris](https://wasm4.org/play/watris/)                       |
+|   8 | [Glowfish Chess](https://wasm4.org/play/glowfish-chess/)       |
+|   9 | [Duck Maze](https://wasm4.org/play/duck-maze/)                 |
+|  10 | [Untangle](https://wasm4.org/play/untangle/)                   |
+|  11 | [Nyan Cat](https://wasm4.org/play/nyancat/)                    |
+|  12 | [Sound Demo](https://wasm4.org/play/sound-demo/)               |
+|  13 | [Plasma Cube](https://wasm4.org/play/plasma-cube/)             |
 
 Further `.wasm` files can be installed from the device.
 
@@ -98,10 +98,10 @@ just build
 
 Artifacts are written to `dist/`:
 
-| Artifact | Purpose |
-| --- | --- |
-| `w4me-station.jar` / `.jad` | full build with optional JSR-75 file browsing |
-| `w4me-station-base.jar` / `.jad` | build without JSR-75 classes or permissions |
+| Artifact                         | Purpose                                       |
+| -------------------------------- | --------------------------------------------- |
+| `w4me-station.jar` / `.jad`      | full build with optional JSR-75 file browsing |
+| `w4me-station-base.jar` / `.jad` | build without JSR-75 classes or permissions   |
 
 Both variants contain the same thirteen cartridges. The base build works on MIDP
 2.0 devices that do not implement the optional FileConnection API.
@@ -120,11 +120,11 @@ directly. Installation details and troubleshooting are covered in
 
 ## Controls
 
-| Input | Player 1 | Player 2 |
-| --- | --- | --- |
+| Input    | Player 1                        | Player 2           |
+| -------- | ------------------------------- | ------------------ |
 | Movement | Arrow or directional phone keys | `E`, `S`, `D`, `F` |
-| Button 1 | `X`, Fire, or `5` | `Tab` |
-| Button 2 | `Z` or `0` | `Q` |
+| Button 1 | `X`, Fire, or `5`               | `Tab`              |
+| Button 2 | `Z` or `0`                      | `Q`                |
 
 Touchscreen devices display an on-screen directional pad and action buttons.
 The controls stay outside the 160×160 framebuffer whenever the screen is large

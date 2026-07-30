@@ -2,10 +2,10 @@
 
 W4ME Station ships as two matching JAD/JAR pairs:
 
-| Pair | Use it when |
-| --- | --- |
-| `w4me-station.jad` / `w4me-station.jar` | The phone implements JSR-75 FileConnection and should browse local `.wasm` files |
-| `w4me-station-base.jad` / `w4me-station-base.jar` | The full build is rejected, or the phone does not implement JSR-75 |
+| Pair                                              | Use it when                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `w4me-station.jad` / `w4me-station.jar`           | The phone implements JSR-75 FileConnection and should browse local `.wasm` files |
+| `w4me-station-base.jad` / `w4me-station-base.jar` | The full build is rejected, or the phone does not implement JSR-75               |
 
 Both variants contain the same runtime and bundled cartridges. The base variant
 removes the optional local-file browser, its JSR-75 classes, and its file-read
@@ -46,7 +46,7 @@ original file or network connection.
   the current release does not guarantee gapless music on physical phones.
 - **Nyan Cat clicks in WAV synthesis:** generated WAV boundaries now return to
   PCM silence. Player-close behavior remains MMAPI-specific; try `MIDI
-  synthesis` and preserve the lifecycle diagnostics described in
+synthesis` and preserve the lifecycle diagnostics described in
   [Audio architecture and diagnostics](audio.md).
 - **Very slow cartridge:** return to the library and try Sokoban, Wasm Wars,
   Duck Maze, or another turn-based cartridge. Performance depends on the

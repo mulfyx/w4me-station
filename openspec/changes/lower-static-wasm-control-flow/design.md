@@ -278,11 +278,11 @@ the compile-time shadow differential are retained. The first three descriptor
 execution candidates remain rejected because their per-edge binary search was
 slower on native i686 phoneME.
 
-| Candidate | Waternet | Rubido | Untangle | Decision |
-|---|---:|---:|---:|---|
-| descriptor `br` | -0.890% | -1.807% | -0.174% | rejected |
-| descriptor `br_if` | -1.207% | -0.504% | +0.388% | rejected |
-| descriptor `br_table` | -0.217% | -0.323% | -0.225% | rejected |
+| Candidate             | Waternet |  Rubido | Untangle | Decision |
+| --------------------- | -------: | ------: | -------: | -------- |
+| descriptor `br`       |  -0.890% | -1.807% |  -0.174% | rejected |
+| descriptor `br_if`    |  -1.207% | -0.504% |  +0.388% | rejected |
+| descriptor `br_table` |  -0.217% | -0.323% |  -0.225% | rejected |
 
 Each result is the median paired effect from eight balanced pairs. All browser
 route checkpoints remained exact. The receipts are classified as exploratory
@@ -301,13 +301,13 @@ parallel metadata tables at bind time. The common arity-zero and arity-one path
 is authoritative; function returns, higher arities, `br_table`, and fused
 branches still fall back to the dynamic control stack.
 
-| Constant-time retry | Paired result | Wins/losses | Decision |
-|---|---:|---:|---|
-| Rubido, direct versus legacy | +2.011% | 12/0 | retain |
-| Waternet, direct versus legacy | +0.640% | 7/1 | no regression |
-| Untangle, direct versus legacy | +0.501% | 12/3/1 | no regression |
-| generic Plasma, direct versus legacy | +0.587% | 6/2 | no regression |
-| Rubido, direct versus inline-only | +1.132% | 8/0 | direct layout confirmed |
+| Constant-time retry                  | Paired result | Wins/losses | Decision                |
+| ------------------------------------ | ------------: | ----------: | ----------------------- |
+| Rubido, direct versus legacy         |       +2.011% |        12/0 | retain                  |
+| Waternet, direct versus legacy       |       +0.640% |         7/1 | no regression           |
+| Untangle, direct versus legacy       |       +0.501% |      12/3/1 | no regression           |
+| generic Plasma, direct versus legacy |       +0.587% |         6/2 | no regression           |
+| Rubido, direct versus inline-only    |       +1.132% |         8/0 | direct layout confirmed |
 
 All Waternet, Rubido, and Untangle browser checkpoints and deterministic
 counters remained exact. The full host state matrix, native i686 route gate,

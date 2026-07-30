@@ -6,27 +6,27 @@ framebuffer, input, disk, and audio oracles where available.
 
 ## Compatibility matrix
 
-| Area | Status | Scope and differences |
-| --- | --- | --- |
-| Java ME platform | Required | CLDC 1.1, MIDP 2.0, and Java 1.3-compatible bytecode |
-| Release variants | Supported | The full JAR can use optional JSR-75 FileConnection; the base JAR contains no JSR-75 classes or permissions |
-| Graphics | Supported | 160×160 2bpp framebuffer, palettes, drawing primitives, text, `blit`, `blitSub`, and preserve-framebuffer behavior |
-| Input | Partial | Phone keys, pointer input, and a touch controller are mapped to two gamepads; WASM-4 exposes four gamepad registers |
-| Audio | Device-dependent | The `tone` API, four logical channels, sampled output, streamed MIDI compatibility output, and `playTone` fallback are implemented, but timing and waveform fidelity depend on MMAPI |
-| Disk | Supported | The 1 KiB WASM-4 disk is persisted per cartridge through checksummed RMS generations |
-| Cartridge loading | Supported | Bundled resources, HTTP(S), RMS, URLs, and optional JSR-75 files; cartridge files are limited to 64 KiB |
-| Linear memory | Restricted | One fixed 64 KiB memory; memory growth and multiple memories are not supported |
-| Frame timing | Device-dependent | The interpreter has no JIT and cannot guarantee the reference runtime's 60 Hz update rate on every cartridge |
-| WebAssembly extensions | Partial | Numeric conversions, bulk memory, passive data, `i64`, `f32`, `f64`, and tables are supported; threads, SIMD, and broader reference types are not |
+| Area                   | Status           | Scope and differences                                                                                                                                                                |
+| ---------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Java ME platform       | Required         | CLDC 1.1, MIDP 2.0, and Java 1.3-compatible bytecode                                                                                                                                 |
+| Release variants       | Supported        | The full JAR can use optional JSR-75 FileConnection; the base JAR contains no JSR-75 classes or permissions                                                                          |
+| Graphics               | Supported        | 160×160 2bpp framebuffer, palettes, drawing primitives, text, `blit`, `blitSub`, and preserve-framebuffer behavior                                                                   |
+| Input                  | Partial          | Phone keys, pointer input, and a touch controller are mapped to two gamepads; WASM-4 exposes four gamepad registers                                                                  |
+| Audio                  | Device-dependent | The `tone` API, four logical channels, sampled output, streamed MIDI compatibility output, and `playTone` fallback are implemented, but timing and waveform fidelity depend on MMAPI |
+| Disk                   | Supported        | The 1 KiB WASM-4 disk is persisted per cartridge through checksummed RMS generations                                                                                                 |
+| Cartridge loading      | Supported        | Bundled resources, HTTP(S), RMS, URLs, and optional JSR-75 files; cartridge files are limited to 64 KiB                                                                              |
+| Linear memory          | Restricted       | One fixed 64 KiB memory; memory growth and multiple memories are not supported                                                                                                       |
+| Frame timing           | Device-dependent | The interpreter has no JIT and cannot guarantee the reference runtime's 60 Hz update rate on every cartridge                                                                         |
+| WebAssembly extensions | Partial          | Numeric conversions, bulk memory, passive data, `i64`, `f32`, `f64`, and tables are supported; threads, SIMD, and broader reference types are not                                    |
 
 ## Tested environments
 
-| Environment | Role | Confirmed behavior | Boundary |
-| --- | --- | --- | --- |
-| Nokia E71 | Physical-device usability | Launcher, keypad input, multiple bundled cartridges, and short sound effects | Continuous music stutters in the current release; a complete cartridge-by-cartridge physical-device pass has not been recorded |
-| KEmulator | MIDP integration | LCDUI, Canvas, touch, RMS, JSR-75, installation, settings, and audio lifecycle scenarios | Desktop timing and audio output are not evidence of physical-phone performance or fidelity |
-| Host JVM | Deterministic correctness | Exact framebuffer, input, disk, memory, globals, and tone-event replay where an oracle exists | Not a Java ME performance measurement |
-| Native i686 phoneME | No-JIT interpreter verification | Exact route parity and paired timing for the maintained benchmark corpus when the optional local rig is available | It does not exercise a handset display, keypad, or MMAPI implementation |
+| Environment         | Role                            | Confirmed behavior                                                                                                | Boundary                                                                                                                       |
+| ------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Nokia E71           | Physical-device usability       | Launcher, keypad input, multiple bundled cartridges, and short sound effects                                      | Continuous music stutters in the current release; a complete cartridge-by-cartridge physical-device pass has not been recorded |
+| KEmulator           | MIDP integration                | LCDUI, Canvas, touch, RMS, JSR-75, installation, settings, and audio lifecycle scenarios                          | Desktop timing and audio output are not evidence of physical-phone performance or fidelity                                     |
+| Host JVM            | Deterministic correctness       | Exact framebuffer, input, disk, memory, globals, and tone-event replay where an oracle exists                     | Not a Java ME performance measurement                                                                                          |
+| Native i686 phoneME | No-JIT interpreter verification | Exact route parity and paired timing for the maintained benchmark corpus when the optional local rig is available | It does not exercise a handset display, keypad, or MMAPI implementation                                                        |
 
 ## Runtime
 
@@ -54,21 +54,21 @@ compatibility. Production code must not depend on desktop-only Java APIs.
 Both release JARs contain the same thirteen cartridges, packaged under
 `cartridges/` inside the JAR. The library presents them in this order:
 
-| # | Cartridge | Primary coverage |
-| --- | --- | --- |
-| 1 | Sokoban | turn-based puzzle; the frame changes only on a button press |
-| 2 | Wasm Wars | turn-based strategy and `SYSTEM_PRESERVE_FRAMEBUFFER` |
-| 3 | Annoying Robots | board game against a CPU opponent |
-| 4 | Waternet | input, palette, audio, and disk lifecycle |
-| 5 | Dragon Poker Draw | card game, static frame between actions |
-| 6 | Tic Tac Toe | two players on one gamepad |
-| 7 | Watris | real-time falling-block game |
-| 8 | Glowfish Chess | board game, two players on one gamepad, static frame |
-| 9 | Duck Maze | gamepad input and multi-frame state |
-| 10 | Untangle | pointer dragging, rotated/flipped blits, disk, `f64`, and tables |
-| 11 | Nyan Cat | continuous multi-channel music and animation |
-| 12 | Sound Demo | basic tone playback |
-| 13 | Plasma Cube | floating-point computation and sustained rendering |
+| #   | Cartridge         | Primary coverage                                                 |
+| --- | ----------------- | ---------------------------------------------------------------- |
+| 1   | Sokoban           | turn-based puzzle; the frame changes only on a button press      |
+| 2   | Wasm Wars         | turn-based strategy and `SYSTEM_PRESERVE_FRAMEBUFFER`            |
+| 3   | Annoying Robots   | board game against a CPU opponent                                |
+| 4   | Waternet          | input, palette, audio, and disk lifecycle                        |
+| 5   | Dragon Poker Draw | card game, static frame between actions                          |
+| 6   | Tic Tac Toe       | two players on one gamepad                                       |
+| 7   | Watris            | real-time falling-block game                                     |
+| 8   | Glowfish Chess    | board game, two players on one gamepad, static frame             |
+| 9   | Duck Maze         | gamepad input and multi-frame state                              |
+| 10  | Untangle          | pointer dragging, rotated/flipped blits, disk, `f64`, and tables |
+| 11  | Nyan Cat          | continuous multi-channel music and animation                     |
+| 12  | Sound Demo        | basic tone playback                                              |
+| 13  | Plasma Cube       | floating-point computation and sustained rendering               |
 
 The order is a user-visible contract pinned by the KEmulator launcher scenario.
 The first entries are the cartridges whose per-frame cost is low enough that the
@@ -89,8 +89,8 @@ search after leaving the opening book among them; the turns that completed cost
 83 to 87 percent of the budget, which is minutes of frozen screen on a handset.
 Treat `VS CPU` as unavailable.
 
-`VS Player` never reaches the engine — the search is behind a
-`mode == VsEngine` check — and stays at roughly 15,000 instructions per frame
+`VS Player` never reaches the engine; the search is behind a
+`mode == VsEngine` check and stays at roughly 15,000 instructions per frame
 for a whole game, so hot-seat chess for two players on one handset works
 normally. That is why the cartridge is still bundled.
 
@@ -106,14 +106,14 @@ files. Their sources, licenses, and SHA-256 hashes are listed in
 
 The automated suite currently provides these cartridge-level checks:
 
-| Cartridge | Automated evidence | Physical-device evidence |
-| --- | --- | --- |
-| Duck Maze | Scripted level-one framebuffer oracle | Observed playable on Nokia E71 |
-| Waternet | 94-frame replay with exact framebuffer, input, tone-event, and disk checks | Gameplay and short effects work on Nokia E71; continuous music stutters |
-| Rubido | 70-frame replay with exact framebuffer, input, tone-event, and disk checks | Not recorded |
-| Untangle | 401-frame replay with exact framebuffer, input, tone-event, and disk checks | Not recorded |
-| Plasma Cube | 60-frame exact differential run | Launch observed on Nokia E71, but it is a stress workload rather than a performance target |
-| Game of Life: Zig Edition | One full exact differential frame | Test-only workload; not suitable for interactive use on the tested handset |
+| Cartridge                 | Automated evidence                                                          | Physical-device evidence                                                                   |
+| ------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Duck Maze                 | Scripted level-one framebuffer oracle                                       | Observed playable on Nokia E71                                                             |
+| Waternet                  | 94-frame replay with exact framebuffer, input, tone-event, and disk checks  | Gameplay and short effects work on Nokia E71; continuous music stutters                    |
+| Rubido                    | 70-frame replay with exact framebuffer, input, tone-event, and disk checks  | Not recorded                                                                               |
+| Untangle                  | 401-frame replay with exact framebuffer, input, tone-event, and disk checks | Not recorded                                                                               |
+| Plasma Cube               | 60-frame exact differential run                                             | Launch observed on Nokia E71, but it is a stress workload rather than a performance target |
+| Game of Life: Zig Edition | One full exact differential frame                                           | Test-only workload; not suitable for interactive use on the tested handset                 |
 
 Known negative cases are retained rather than hidden: Glowfish Chess `VS CPU`
 can exceed the per-frame instruction budget, while its `VS Player` mode avoids
@@ -153,11 +153,11 @@ without FileConnection.
 
 ## Controls
 
-| Input | Player 1 | Player 2 |
-| --- | --- | --- |
+| Input    | Player 1                        | Player 2           |
+| -------- | ------------------------------- | ------------------ |
 | Movement | Arrow or directional phone keys | `E`, `S`, `D`, `F` |
-| Button 1 | `X`, Fire, or `5` | `Tab` |
-| Button 2 | `Z` or `0` | `Q` |
+| Button 1 | `X`, Fire, or `5`               | `Tab`              |
+| Button 2 | `Z` or `0`                      | `Q`                |
 
 Touchscreen devices display an on-screen gamepad outside the 160×160
 framebuffer whenever the screen provides enough space.

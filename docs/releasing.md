@@ -39,11 +39,11 @@ The release gate checks:
 
 Release artifacts:
 
-| File | Purpose |
-| --- | --- |
-| `w4me-station.jar` / `.jad` | full build with optional JSR-75 browsing |
+| File                             | Purpose                                     |
+| -------------------------------- | ------------------------------------------- |
+| `w4me-station.jar` / `.jad`      | full build with optional JSR-75 browsing    |
 | `w4me-station-base.jar` / `.jad` | build without JSR-75 classes or permissions |
-| `SHA256SUMS` | hashes for all four release files |
+| `SHA256SUMS`                     | hashes for all four release files           |
 
 The base JAR and JAD must not contain JSR-75 classes or declare the
 `javax.microedition.io.Connector.file.read` permission. The full variant must

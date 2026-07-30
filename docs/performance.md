@@ -5,13 +5,13 @@ emulator represents every physical Java ME phone.
 
 ## Environment roles
 
-| Environment | Authoritative use |
-| --- | --- |
-| Native i686 phoneME C interpreter | interpreter performance A/B |
-| AArch64 phoneME under QEMU | cross-ISA deterministic correctness only |
-| KEmulator | interactive MIDP, Canvas, touch, RMS, JSR-75, installation, and audio checks |
-| Host JVM | fast deterministic state, parser, and framebuffer regression tests |
-| Physical devices | final usability, audio latency, heap, controls, and frame rate |
+| Environment                       | Authoritative use                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------- |
+| Native i686 phoneME C interpreter | interpreter performance A/B                                                  |
+| AArch64 phoneME under QEMU        | cross-ISA deterministic correctness only                                     |
+| KEmulator                         | interactive MIDP, Canvas, touch, RMS, JSR-75, installation, and audio checks |
+| Host JVM                          | fast deterministic state, parser, and framebuffer regression tests           |
+| Physical devices                  | final usability, audio latency, heap, controls, and frame rate               |
 
 KEmulator executes MIDlet bytecode on a desktop JVM. Limiting its CPU share is
 a useful pressure test, but it does not turn HotSpot into a feature-phone VM.
@@ -116,17 +116,17 @@ position, not by the frame rate. Replaying a scripted game through the counting
 interpreter gives, per engine turn:
 
 | Engine turn | Logical instructions |
-| --- | --- |
-| 1 | 163,079,705 |
-| 2 | 36,288,242 |
-| 3 | 199,347,994 |
-| 4 | 554,929,307 |
-| 5 | 165,811,127 |
-| 6 | 258,506,628 |
-| 7 | 199,097,656 |
-| 8 | 128,237,895 |
-| 9 | 129,881,756 |
-| 10 | 124,653,796 |
+| ----------- | -------------------- |
+| 1           | 163,079,705          |
+| 2           | 36,288,242           |
+| 3           | 199,347,994          |
+| 4           | 554,929,307          |
+| 5           | 165,811,127          |
+| 6           | 258,506,628          |
+| 7           | 199,097,656          |
+| 8           | 128,237,895          |
+| 9           | 129,881,756          |
+| 10          | 124,653,796          |
 
 Six of ten turns exceed the 150,000,000 per-frame budget and abort the
 cartridge; the first search after leaving the opening book already does. The
@@ -164,16 +164,16 @@ KEmulator output is written below `build/reports/kemu/`.
 
 ### What the diagnostic benchmarks prove
 
-| Command family | Valid conclusion | Invalid conclusion |
-| --- | --- | --- |
-| `tools/bench/run.sh corpus` | full-state equivalence and dynamic opcode/tier coverage | handset speed |
-| `tools/bench/run.sh untangle` / `fusions` | deterministic route behavior, dispatch counts, and profiling | no-JIT speedup |
-| KEmulator `generic-corpus` | the recorded route reaches the exact final framebuffer | phone performance |
-| KEmulator `generic-w4ir` | the requested fusion, compact, trace, and intrinsic tiers actually execute | phone performance |
-| KEmulator `untangle` | the long route stays exact and reports phase counters | phone performance |
-| KEmulator `w4ir` | RMS build, cached load, paging, and promotion execute | steady-state phone speed |
-| KEmulator `phone` / `plasma` | constrained MIDP presentation and pacing smoke | interpreter A/B evidence |
-| KEmulator `*-matrix` | repeated aggregation of the corresponding child scenario | stronger correctness than the child scenario |
+| Command family                            | Valid conclusion                                                           | Invalid conclusion                           |
+| ----------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------- |
+| `tools/bench/run.sh corpus`               | full-state equivalence and dynamic opcode/tier coverage                    | handset speed                                |
+| `tools/bench/run.sh untangle` / `fusions` | deterministic route behavior, dispatch counts, and profiling               | no-JIT speedup                               |
+| KEmulator `generic-corpus`                | the recorded route reaches the exact final framebuffer                     | phone performance                            |
+| KEmulator `generic-w4ir`                  | the requested fusion, compact, trace, and intrinsic tiers actually execute | phone performance                            |
+| KEmulator `untangle`                      | the long route stays exact and reports phase counters                      | phone performance                            |
+| KEmulator `w4ir`                          | RMS build, cached load, paging, and promotion execute                      | steady-state phone speed                     |
+| KEmulator `phone` / `plasma`              | constrained MIDP presentation and pacing smoke                             | interpreter A/B evidence                     |
+| KEmulator `*-matrix`                      | repeated aggregation of the corresponding child scenario                   | stronger correctness than the child scenario |
 
 Only `tools/phoneme/run.sh bench` produces interpreter timing evidence. The
 PCM and ARGB commands isolate their named runtime components; they do not

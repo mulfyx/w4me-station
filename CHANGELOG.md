@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0 — 2026-07-30
+## 1.1.0 (2026-07-30)
 
 This release adds a native paused system menu, one temporary save-state slot,
 more predictable audio controls, and another round of universal runtime
@@ -86,7 +86,7 @@ device latency.
   relaunch, and the Waternet, Rubido, Untangle, and Duck Maze routes;
 - keeps both preverified release variants below 300 KiB.
 
-## 1.0.4 — 2026-07-29
+## 1.0.4 (2026-07-29)
 
 This release accelerates universal WASM-4 drawing paths and 240-pixel
 presentation without changing the cartridge format, controls, storage, or
@@ -142,7 +142,7 @@ physical-device FPS figures.
 The canonical container now includes `diffutils`. Its counterless KEmulator
 probes no longer require production-disabled dispatch or compact counters.
 
-## 1.0.3 — 2026-07-29
+## 1.0.3 (2026-07-29)
 
 This release improves the universal interpreter, corrects unsigned `i64`
 conversion rounding, and strengthens performance verification without changing
@@ -181,7 +181,7 @@ MIDP presentation and audio latency and are not physical-device FPS figures.
 W4Bench timings are diagnostic interpreter measurements, not a replacement for
 paired real-cartridge A/B evidence.
 
-## 1.0.2 — 2026-07-28
+## 1.0.2 (2026-07-28)
 
 This release further reduces universal interpreter overhead without changing
 the cartridge format, controls, storage, or installation requirements.
@@ -206,7 +206,7 @@ oracle checkpoints remained unchanged.
 These measurements use a CLDC 1.1 C interpreter without a JIT. They exclude
 MIDP presentation and audio latency and are not physical-device FPS figures.
 
-## 1.0.1 — 2026-07-27
+## 1.0.1 (2026-07-27)
 
 This release improves the universal Java ME runtime without changing the
 cartridge format, controls, storage, or installation requirements.
@@ -239,7 +239,7 @@ Plasma Cube may run slower than in 1.0.0 because it now exercises the actual
 universal interpreter instead of a cartridge-specific replacement. It remains
 a technical stress workload rather than a representative game.
 
-## 1.0.0 — 2026-07-26
+## 1.0.0 (2026-07-26)
 
 The first public W4ME Station release targets CLDC 1.1 / MIDP 2.0 phones with
 Java 1.3-compatible bytecode.

@@ -2,7 +2,7 @@
 
 - [x] 0.1 Replace the hand-drawn library Canvas with an implicit LCDUI List while preserving bundled and installed launch mapping
 - [x] 0.2 Verify native selection, focus preservation, commands, and representative cartridge launches in KEmulator
-  - KEmulator's LCDUI model verifies the List, commands, selected index, Run, return, and Sound settings flow. Its raw key injector cannot move a high-level List, so cartridge oracle scenarios use test-only direct-launch MIDlets; native rendering and keypad/touch navigation still require a real-device smoke test.
+    - KEmulator's LCDUI model verifies the List, commands, selected index, Run, return, and Sound settings flow. Its raw key injector cannot move a high-level List, so cartridge oracle scenarios use test-only direct-launch MIDlets; native rendering and keypad/touch navigation still require a real-device smoke test.
 
 ## 1. Metadata and view model
 
