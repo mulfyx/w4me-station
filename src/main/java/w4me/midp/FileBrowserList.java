@@ -2,20 +2,17 @@ package w4me.midp;
 
 import java.io.IOException;
 import java.util.Vector;
-
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.List;
 
 /**
- * Native LCDUI file picker. The platform owns navigation, scrolling, and the
- * selection highlight, so this class only maps a {@link FilePage} onto list
- * items and turns a selection back into a directory descent or a file install.
+ * Native LCDUI file picker. The platform owns navigation, scrolling, and the selection highlight, so this class only
+ * maps a {@link FilePage} onto list items and turns a selection back into a directory descent or a file install.
  */
 final class FileBrowserList extends List implements CommandListener {
     private static final int PAGE_SIZE = 48;
@@ -29,11 +26,9 @@ final class FileBrowserList extends List implements CommandListener {
     private final Vector pageKeys = new Vector();
     private final Command openCommand = new Command("Open", Command.ITEM, 1);
     private final Command backCommand = new Command("Back", Command.BACK, 1);
-    private final Command manualCommand =
-            new Command("Enter manually", Command.SCREEN, 2);
+    private final Command manualCommand = new Command("Enter manually", Command.SCREEN, 2);
     private final Command nextCommand = new Command("Next", Command.SCREEN, 3);
-    private final Command previousCommand =
-            new Command("Previous", Command.SCREEN, 4);
+    private final Command previousCommand = new Command("Previous", Command.SCREEN, 4);
     private FilePage page;
     private boolean showingNext;
     private boolean showingPrevious;
@@ -58,7 +53,7 @@ final class FileBrowserList extends List implements CommandListener {
         } else if (command == nextCommand && page != null && page.hasMore) {
             pageKeys.addElement(page.nextKey);
             loadPage();
-        } else if (command == previousCommand && pageKeys.size() != 0) {
+        } else if (command == previousCommand && !pageKeys.isEmpty()) {
             pageKeys.removeElementAt(pageKeys.size() - 1);
             loadPage();
         } else if (command == manualCommand) {
@@ -70,19 +65,12 @@ final class FileBrowserList extends List implements CommandListener {
 
     private void loadPage() {
         try {
-            String key =
-                    pageKeys.size() == 0
-                            ? null
-                            : (String) pageKeys.elementAt(pageKeys.size() - 1);
-            if (directories.size() == 0) {
+            String key = pageKeys.isEmpty() ? null : (String) pageKeys.elementAt(pageKeys.size() - 1);
+            if (directories.isEmpty()) {
                 page = access.listRoots(key, PAGE_SIZE);
                 setTitle("Choose .wasm file");
             } else {
-                page =
-                        access.list(
-                                (String) directories.elementAt(directories.size() - 1),
-                                key,
-                                PAGE_SIZE);
+                page = access.list((String) directories.elementAt(directories.size() - 1), key, PAGE_SIZE);
                 setTitle((String) directoryNames.elementAt(directoryNames.size() - 1));
             }
             rebuildRows();
@@ -92,7 +80,7 @@ final class FileBrowserList extends List implements CommandListener {
             showFailure("File access denied", denied);
         } catch (IOException failure) {
             showFailure("Cannot open files", failure);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             showFailure("Cannot open files", failure);
         }
     }
@@ -124,7 +112,7 @@ final class FileBrowserList extends List implements CommandListener {
             removeCommand(nextCommand);
             showingNext = false;
         }
-        boolean hasPrevious = pageKeys.size() != 0;
+        boolean hasPrevious = !pageKeys.isEmpty();
         if (hasPrevious && !showingPrevious) {
             addCommand(previousCommand);
             showingPrevious = true;
@@ -169,16 +157,16 @@ final class FileBrowserList extends List implements CommandListener {
             showFailure("File access denied", denied);
         } catch (IOException failure) {
             showFailure("Cannot read file", failure);
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             showFailure("Cannot read file", failure);
         }
     }
 
     private void goBack() {
-        if (pageKeys.size() != 0) {
+        if (!pageKeys.isEmpty()) {
             pageKeys.removeAllElements();
             loadPage();
-        } else if (directories.size() != 0) {
+        } else if (!directories.isEmpty()) {
             goParent();
         } else {
             midlet.showLibrary();
@@ -186,7 +174,7 @@ final class FileBrowserList extends List implements CommandListener {
     }
 
     private void goParent() {
-        if (directories.size() != 0) {
+        if (!directories.isEmpty()) {
             directories.removeElementAt(directories.size() - 1);
             directoryNames.removeElementAt(directoryNames.size() - 1);
         }
@@ -195,7 +183,7 @@ final class FileBrowserList extends List implements CommandListener {
     }
 
     private boolean hasParentRow() {
-        return directories.size() != 0 && pageKeys.size() == 0;
+        return !directories.isEmpty() && pageKeys.isEmpty();
     }
 
     private void showFailure(String alertTitle, Throwable failure) {
@@ -209,51 +197,5 @@ final class FileBrowserList extends List implements CommandListener {
         alert.addCommand(manualCommand);
         alert.setCommandListener(this);
         Display.getDisplay(midlet).setCurrent(alert, this);
-    }
-}
-
-final class FileSelectionForm extends Form implements CommandListener {
-    private final W4MeMidlet midlet;
-    private final FileBrowserList browser;
-    private final FileSelection selection;
-    private final Command installCommand = new Command("Install", Command.OK, 1);
-    private final Command backCommand = new Command("Back", Command.BACK, 2);
-    private final Command manualCommand =
-            new Command("Enter manually", Command.SCREEN, 3);
-
-    FileSelectionForm(
-            W4MeMidlet midlet, FileBrowserList browser, FileSelection selection) {
-        super("Install .wasm");
-        this.midlet = midlet;
-        this.browser = browser;
-        this.selection = selection;
-        append("File: " + selection.name);
-        append("\nSize: " + sizeText(selection.size));
-        append("\n\nReady to read, validate, and install.");
-        addCommand(installCommand);
-        addCommand(backCommand);
-        addCommand(manualCommand);
-        setCommandListener(this);
-    }
-
-    public void commandAction(Command command, Displayable displayable) {
-        if (command == installCommand) {
-            midlet.openCartridge(selection.url, title(selection.name));
-        } else if (command == manualCommand) {
-            midlet.showLocationEntry();
-        } else {
-            Display.getDisplay(midlet).setCurrent(browser);
-        }
-    }
-
-    private static String sizeText(long size) {
-        return size < 0 ? "unknown" : Long.toString(size) + " bytes";
-    }
-
-    private static String title(String name) {
-        if (FilePageBuilder.endsWithIgnoreCase(name, ".wasm")) {
-            name = name.substring(0, name.length() - 5);
-        }
-        return name.length() == 0 ? "External cartridge" : name;
     }
 }

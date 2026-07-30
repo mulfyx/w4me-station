@@ -3,7 +3,6 @@ package w4me.midp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
-
 import javax.microedition.io.Connection;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
@@ -14,12 +13,10 @@ final class Jsr75FileSystem implements FileSystemAccess {
         return FilePageBuilder.roots(FileSystemRegistry.listRoots(), afterKey, limit);
     }
 
-    public FilePage list(String directoryUrl, String afterKey, int limit)
-            throws IOException {
+    public FilePage list(String directoryUrl, String afterKey, int limit) throws IOException {
         FileConnection connection = null;
         try {
-            connection =
-                    (FileConnection) Connector.open(directoryUrl, Connector.READ);
+            connection = (FileConnection) Connector.open(directoryUrl, Connector.READ);
             if (!connection.exists() || !connection.isDirectory()) {
                 throw new IOException("directory is no longer available");
             }
@@ -55,8 +52,7 @@ final class Jsr75FileSystem implements FileSystemAccess {
     }
 
     public InputStream openInputStream(String fileUrl) throws IOException {
-        FileConnection connection =
-                (FileConnection) Connector.open(fileUrl, Connector.READ);
+        FileConnection connection = (FileConnection) Connector.open(fileUrl, Connector.READ);
         try {
             if (!connection.exists() || connection.isDirectory()) {
                 throw new IOException("selected .wasm file is no longer available");
@@ -66,10 +62,12 @@ final class Jsr75FileSystem implements FileSystemAccess {
         } catch (IOException failure) {
             close(connection);
             throw failure;
-        } catch (RuntimeException failure) {
+        } catch (RuntimeException failure) { // NOPMD -- Java 1.3 lacks multi-catch.
             close(connection);
             throw failure;
-        } catch (Error failure) {
+        } catch (Error failure) { // NOPMD -- Java 1.3 has no multi-catch syntax for the equivalent recovery branches.
+            // Optional Java ME APIs and device implementations can fail with linkage or VM
+            // errors.
             close(connection);
             throw failure;
         }

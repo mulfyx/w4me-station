@@ -46,15 +46,9 @@ final class LibraryList extends List implements CommandListener {
 
     private final W4MeMidlet midlet;
     private final Command runCommand = new Command("Run", Command.ITEM, 1);
-    private final Command installCommand =
-            new Command(
-                    FileSystemAccessFactory.isAvailable()
-                            ? "Choose .wasm file"
-                            : "Install .wasm",
-                    Command.SCREEN,
-                    1);
-    private final Command settingsCommand =
-            new Command("Settings", Command.SCREEN, 2);
+    private final Command installCommand = new Command(
+            FileSystemAccessFactory.isAvailable() ? "Choose .wasm file" : "Install .wasm", Command.SCREEN, 1);
+    private final Command settingsCommand = new Command("Settings", Command.SCREEN, 2);
     private final Command exitCommand = new Command("Exit", Command.EXIT, 1);
     private CartridgeStore.CartridgeInfo[] installed = new CartridgeStore.CartridgeInfo[0];
 
@@ -70,13 +64,13 @@ final class LibraryList extends List implements CommandListener {
     }
 
     void reloadInstalled() {
-        int previous = size() == 0 ? 0 : getSelectedIndex();
+        final int previous = size() == 0 ? 0 : getSelectedIndex();
         CartridgeStore store = null;
         try {
             store = CartridgeStore.open();
             installed = store.list();
             setTicker(null);
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             installed = new CartridgeStore.CartridgeInfo[0];
             setTicker(new Ticker("RMS library unavailable"));
         } finally {
@@ -95,10 +89,8 @@ final class LibraryList extends List implements CommandListener {
         }
         int count = size();
         if (count != 0) {
-            if (previous >= count) {
-                previous = count - 1;
-            }
-            setSelectedIndex(previous, true);
+            int selectedIndex = previous >= count ? count - 1 : previous;
+            setSelectedIndex(selectedIndex, true);
         }
     }
 

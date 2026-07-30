@@ -3,17 +3,17 @@ package w4me.midp;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Form;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.rms.RecordStore;
-
 import w4me.wasm.WasmModule;
 
+/** Provides the file picker probe midlet implementation. */
 public final class FilePickerProbeMidlet extends MIDlet {
     private boolean started;
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (started) {
             return;
@@ -25,8 +25,7 @@ public final class FilePickerProbeMidlet extends MIDlet {
         try {
             FileSystemAccess actual = FileSystemAccessFactory.create();
             FileEntry root = find(actual.listRoots(null, 48), "root", true);
-            FileEntry directory =
-                    find(actual.list(root.url, null, 48), "w4me-picker", true);
+            FileEntry directory = find(actual.list(root.url, null, 48), "w4me-picker", true);
             FilePage files = actual.list(directory.url, null, 48);
             if (findOrNull(files, "ignored.txt", false) != null) {
                 throw new IllegalStateException("unrelated file escaped filtering");
@@ -34,15 +33,12 @@ public final class FilePickerProbeMidlet extends MIDlet {
             FileEntry cartridge = find(files, "sound-demo.wasm", false);
             FileSelection selection = actual.inspect(cartridge.url);
             if (selection.size != 1518) {
-                throw new IllegalStateException(
-                        "unexpected selected size " + selection.size);
+                throw new IllegalStateException("unexpected selected size " + selection.size);
             }
 
             store = CartridgeStore.open();
             int before = store.list().length;
-            int staged =
-                    ResourceLoader.stageFile(
-                            store, "Picked Sound Demo", selection.url, actual);
+            int staged = ResourceLoader.stageFile(store, "Picked Sound Demo", selection.url, actual);
             byte[] bytes = store.readStaged(staged);
             WasmModule module = WasmModule.read(bytes);
             module.close();
@@ -55,13 +51,11 @@ public final class FilePickerProbeMidlet extends MIDlet {
             verifyChangedStreamCleanup(store, bytes);
             verifyOversizedStreamCleanup(store);
 
-            System.out.println(
-                    "W4ME_FILE_PICKER_PROBE roots=PASS filter=PASS select=PASS"
-                            + " size=1518 stage=PASS validate=PASS commit=PASS"
-                            + " denied=PASS changed=PASS oversized=PASS cleanup=PASS");
-            result.append(
-                    "PASS\nJSR-75 file selected\n1518 bytes\nRMS commit\nfailure cleanup");
-        } catch (Throwable failure) {
+            System.out.println("W4ME_FILE_PICKER_PROBE roots=PASS filter=PASS select=PASS"
+                    + " size=1518 stage=PASS validate=PASS commit=PASS"
+                    + " denied=PASS changed=PASS oversized=PASS cleanup=PASS");
+            result.append("PASS\nJSR-75 file selected\n1518 bytes\nRMS commit\nfailure cleanup");
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             System.out.println("W4ME_FILE_PICKER_ERROR " + failure.toString());
             failure.printStackTrace();
             result.append("FAIL\n" + failure.toString());
@@ -72,17 +66,22 @@ public final class FilePickerProbeMidlet extends MIDlet {
         }
     }
 
-    protected void pauseApp() {}
+    /** Performs the pause app operation. */
+    protected void pauseApp() {
+        /* Intentionally no-op. */
+    }
 
-    protected void destroyApp(boolean unconditional) {}
+    /** Performs the destroy app operation. */
+    protected void destroyApp(boolean unconditional) {
+        /* Intentionally no-op. */
+    }
 
     private void verifyPermissionDenial(CartridgeStore store) throws Exception {
         int before = store.list().length;
         int recordsBefore = recordCount();
         FakeAccess denied = FakeAccess.denied();
         try {
-            ResourceLoader.stageFile(
-                    store, "Denied", "file:///root/denied.wasm", denied);
+            ResourceLoader.stageFile(store, "Denied", "file:///root/denied.wasm", denied);
             throw new IllegalStateException("permission denial was ignored");
         } catch (SecurityException expected) {
             // Expected.
@@ -95,23 +94,19 @@ public final class FilePickerProbeMidlet extends MIDlet {
         }
     }
 
-    private void verifyChangedStreamCleanup(CartridgeStore store, byte[] cartridge)
-            throws Exception {
+    private void verifyChangedStreamCleanup(CartridgeStore store, byte[] cartridge) throws Exception {
         byte[] changed = new byte[cartridge.length + 1];
         System.arraycopy(cartridge, 0, changed, 0, cartridge.length);
         int before = store.list().length;
         int recordsBefore = recordCount();
         FakeAccess access = FakeAccess.stream(cartridge.length, changed);
         try {
-            ResourceLoader.stageFile(
-                    store, "Changed", "file:///root/changed.wasm", access);
+            ResourceLoader.stageFile(store, "Changed", "file:///root/changed.wasm", access);
             throw new IllegalStateException("changed stream was accepted");
         } catch (IOException expected) {
             // Expected.
         }
-        if (!access.closed
-                || store.list().length != before
-                || recordCount() != recordsBefore) {
+        if (!access.closed || store.list().length != before || recordCount() != recordsBefore) {
             throw new IllegalStateException("changed stream leaked input or RMS records");
         }
     }
@@ -119,18 +114,14 @@ public final class FilePickerProbeMidlet extends MIDlet {
     private void verifyOversizedStreamCleanup(CartridgeStore store) throws Exception {
         int before = store.list().length;
         int recordsBefore = recordCount();
-        FakeAccess knownOversized =
-                FakeAccess.stream(CartridgeStore.MAX_CARTRIDGE_BYTES + 1L, new byte[0]);
+        FakeAccess knownOversized = FakeAccess.stream(CartridgeStore.MAX_CARTRIDGE_BYTES + 1L, new byte[0]);
         try {
-            ResourceLoader.stageFile(
-                    store, "Known oversized", "file:///root/known-oversized.wasm", knownOversized);
+            ResourceLoader.stageFile(store, "Known oversized", "file:///root/known-oversized.wasm", knownOversized);
             throw new IllegalStateException("known oversized stream was accepted");
         } catch (IOException expected) {
             // Expected.
         }
-        if (knownOversized.openCalls != 0
-                || store.list().length != before
-                || recordCount() != recordsBefore) {
+        if (knownOversized.openCalls != 0 || store.list().length != before || recordCount() != recordsBefore) {
             throw new IllegalStateException("known oversized file was opened or changed RMS");
         }
 
@@ -141,15 +132,12 @@ public final class FilePickerProbeMidlet extends MIDlet {
         oversized[3] = 'm';
         FakeAccess access = FakeAccess.stream(-1, oversized);
         try {
-            ResourceLoader.stageFile(
-                    store, "Oversized", "file:///root/oversized.wasm", access);
+            ResourceLoader.stageFile(store, "Oversized", "file:///root/oversized.wasm", access);
             throw new IllegalStateException("oversized stream was accepted");
         } catch (IOException expected) {
             // Expected.
         }
-        if (!access.closed
-                || store.list().length != before
-                || recordCount() != recordsBefore) {
+        if (!access.closed || store.list().length != before || recordCount() != recordsBefore) {
             throw new IllegalStateException("oversized stream leaked input or RMS records");
         }
     }
@@ -208,8 +196,7 @@ public final class FilePickerProbeMidlet extends MIDlet {
             throw new IOException("not used");
         }
 
-        public FilePage list(String directoryUrl, String afterKey, int limit)
-                throws IOException {
+        public FilePage list(String directoryUrl, String afterKey, int limit) throws IOException {
             throw new IOException("not used");
         }
 

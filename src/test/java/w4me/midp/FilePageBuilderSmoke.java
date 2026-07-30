@@ -3,13 +3,14 @@ package w4me.midp;
 import java.io.IOException;
 import java.util.Vector;
 
+/** Provides the file page builder smoke implementation. */
 public final class FilePageBuilderSmoke {
+    /** Runs this verification entry point. */
     public static void main(String[] arguments) throws Exception {
         verifyLargeDirectory();
         verifyRootsAndFiltering();
         verifyBounds();
-        System.out.println(
-                "PASS file-page-builder bounded=48 entries=200 directories-first=yes");
+        System.out.println("PASS file-page-builder bounded=48 entries=200 directories-first=yes");
     }
 
     private static void verifyLargeDirectory() throws Exception {
@@ -31,9 +32,7 @@ public final class FilePageBuilderSmoke {
         int pages = 0;
         boolean sawFile = false;
         while (true) {
-            FilePage page =
-                    FilePageBuilder.directory(
-                            names.elements(), "file:///root/games/", cursor, 48);
+            FilePage page = FilePageBuilder.directory(names.elements(), "file:///root/games/", cursor, 48);
             if (page.entries.length > 48) {
                 throw new IllegalStateException("page exceeded its memory bound");
             }
@@ -61,8 +60,7 @@ public final class FilePageBuilderSmoke {
             cursor = page.nextKey;
         }
         if (eligible != 200 || pages != 5) {
-            throw new IllegalStateException(
-                    "unexpected filtered listing: entries=" + eligible + " pages=" + pages);
+            throw new IllegalStateException("unexpected filtered listing: entries=" + eligible + " pages=" + pages);
         }
     }
 
@@ -85,9 +83,7 @@ public final class FilePageBuilderSmoke {
         files.addElement("game.wasm.zip");
         files.addElement("folder/");
         files.addElement("../");
-        FilePage filtered =
-                FilePageBuilder.directory(
-                        files.elements(), "file:///root/", null, 48);
+        FilePage filtered = FilePageBuilder.directory(files.elements(), "file:///root/", null, 48);
         if (filtered.entries.length != 3
                 || !filtered.entries[0].directory
                 || filtered.entries[1].directory
@@ -104,8 +100,7 @@ public final class FilePageBuilderSmoke {
 
     private static void requireInvalidLimit(Vector names, int limit) throws Exception {
         try {
-            FilePageBuilder.directory(
-                    names.elements(), "file:///root/", null, limit);
+            FilePageBuilder.directory(names.elements(), "file:///root/", null, limit);
             throw new IllegalStateException("invalid page limit was accepted");
         } catch (IOException expected) {
             // Expected.

@@ -9,11 +9,11 @@ import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
-
-import w4me.runtime.audio.AudioControl;
 import w4me.runtime.audio.AudioBackends;
+import w4me.runtime.audio.AudioControl;
 import w4me.runtime.audio.Wasm4Apu;
 
+/** Provides the w 4 me midlet implementation. */
 public class W4MeMidlet extends MIDlet implements CommandListener {
     private LibraryList library;
     private W4Canvas canvas;
@@ -24,47 +24,41 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     private boolean soundMuted;
     private int audioGain = 100;
     private final SettingsMenuModel settingsModel = new SettingsMenuModel();
-    private final SettingsCategory[] settingsCategories =
-            new SettingsCategory[SettingsMenuModel.CATEGORY_COUNT];
+    private final SettingsCategory[] settingsCategories = new SettingsCategory[SettingsMenuModel.CATEGORY_COUNT];
     private SaveStateMenuActions saveStateMenuActions;
     private final Command runLocationCommand = new Command("Run", Command.OK, 1);
     private final Command cancelLocationCommand = new Command("Cancel", Command.CANCEL, 2);
 
+    /** Creates a new w 4 me midlet. */
     public W4MeMidlet() {
-        registerSettingsCategory(
-                new SettingsCategory() {
-                    public int id() {
-                        return SettingsMenuModel.AUDIO;
-                    }
+        registerSettingsCategory(new SettingsCategory() {
+            public int id() {
+                return SettingsMenuModel.AUDIO;
+            }
 
-                    public void open(
-                            W4MeMidlet midlet,
-                            SettingsList settings,
-                            W4Canvas source) {
-                        midlet.showAudioSettings(source, settings);
-                    }
-                });
-        registerSaveStateMenuActions(
-                new SaveStateMenuActions() {
-                    public void saveState(W4Canvas source) {
-                        returnToCanvasForSaveState(source, true);
-                    }
+            public void open(W4MeMidlet midlet, SettingsList settings, W4Canvas source) {
+                midlet.showAudioSettings(source, settings);
+            }
+        });
+        registerSaveStateMenuActions(new SaveStateMenuActions() {
+            public void saveState(W4Canvas source) {
+                returnToCanvasForSaveState(source, true);
+            }
 
-                    public void loadState(W4Canvas source) {
-                        returnToCanvasForSaveState(source, false);
-                    }
-                });
+            public void loadState(W4Canvas source) {
+                returnToCanvasForSaveState(source, false);
+            }
+        });
     }
 
+    /** Performs the start app operation. */
     protected void startApp() {
         if (!autostartChecked) {
             autostartChecked = true;
             String location = getAppProperty("W4ME-Cartridge-URL");
             if (location != null && location.trim().length() != 0) {
                 location = location.trim();
-                openCartridge(
-                        location,
-                        titleFromLocation(location));
+                openCartridge(location, titleFromLocation(location));
                 return;
             }
         }
@@ -76,12 +70,14 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         }
     }
 
+    /** Performs the pause app operation. */
     protected void pauseApp() {
         if (canvas != null) {
             canvas.stop();
         }
     }
 
+    /** Performs the destroy app operation. */
     protected void destroyApp(boolean unconditional) {
         if (canvas != null) {
             canvas.stop();
@@ -97,17 +93,15 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     }
 
     void finishCanvasExit(final W4Canvas source) {
-        Display.getDisplay(this)
-                .callSerially(
-                        new Runnable() {
-                            public void run() {
-                                if (canvas != source) {
-                                    return;
-                                }
-                                canvas = null;
-                                showLibraryDisplayable();
-                            }
-                        });
+        Display.getDisplay(this).callSerially(new Runnable() {
+            public void run() {
+                if (canvas != source) {
+                    return;
+                }
+                canvas = null;
+                showLibraryDisplayable();
+            }
+        });
     }
 
     void showCartridgeFailure(W4Canvas source, String title, Throwable failure) {
@@ -127,8 +121,8 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     }
 
     /**
-     * Turns a runtime failure into something a phone user can act on. The internal
-     * trap text stays as-is for logs and tests; only what reaches the Alert changes.
+     * Turns a runtime failure into something a phone user can act on. The internal trap text stays as-is for logs and
+     * tests; only what reaches the Alert changes.
      */
     private static String explain(Throwable failure) {
         String raw = failure.toString();
@@ -157,8 +151,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     void showLocationEntry() {
         if (locationEntry == null) {
-            locationEntry =
-                    new TextBox("Enter URL/file location", "", 512, TextField.URL);
+            locationEntry = new TextBox("Enter URL/file location", "", 512, TextField.URL);
             locationEntry.addCommand(runLocationCommand);
             locationEntry.addCommand(cancelLocationCommand);
             locationEntry.setCommandListener(this);
@@ -176,31 +169,23 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     private void showFileBrowser() {
         try {
-            FileBrowserList browser =
-                    new FileBrowserList(this, FileSystemAccessFactory.create());
+            FileBrowserList browser = new FileBrowserList(this, FileSystemAccessFactory.create());
             browser.show();
-        } catch (Throwable failure) {
+        } catch (Throwable failure) { // NOPMD -- Java ME API linkage fallback.
             String message = failure.toString();
-            Alert alert =
-                    new Alert(
-                            "Local files unavailable",
-                            message,
-                            null,
-                            AlertType.ERROR);
+            Alert alert = new Alert("Local files unavailable", message, null, AlertType.ERROR);
             alert.setTimeout(Alert.FOREVER);
             Display.getDisplay(this).setCurrent(alert, locationEntryDisplayable());
         }
     }
 
     void showFileSelection(FileBrowserList browser, FileSelection selection) {
-        Display.getDisplay(this)
-                .setCurrent(new FileSelectionForm(this, browser, selection));
+        Display.getDisplay(this).setCurrent(new FileSelectionForm(this, browser, selection));
     }
 
     private TextBox locationEntryDisplayable() {
         if (locationEntry == null) {
-            locationEntry =
-                    new TextBox("Enter URL/file location", "", 512, TextField.URL);
+            locationEntry = new TextBox("Enter URL/file location", "", 512, TextField.URL);
             locationEntry.addCommand(runLocationCommand);
             locationEntry.addCommand(cancelLocationCommand);
             locationEntry.setCommandListener(this);
@@ -208,6 +193,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         return locationEntry;
     }
 
+    /** Performs the command action operation. */
     public void commandAction(Command command, Displayable displayable) {
         if (command == runLocationCommand) {
             String location = locationEntry.getString().trim();
@@ -220,12 +206,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     }
 
     void openCartridge(String resource, String title) {
-        canvas =
-                new W4Canvas(
-                        this,
-                        resource,
-                        title,
-                        createSessionMonitor(resource, title));
+        canvas = new W4Canvas(this, resource, title, createSessionMonitor(resource, title));
         Display.getDisplay(this).setCurrent(canvas);
         canvas.start();
     }
@@ -270,28 +251,22 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
     void showSystemMenu(final W4Canvas source) {
         final SaveStateMenuActions actions = saveStateMenuActions;
         final int initialAction = initialSystemMenuAction();
-        Display.getDisplay(this)
-                .callSerially(
-                        new Runnable() {
-                            public void run() {
-                                if (canvas == source && source.isSystemMenuOpen()) {
-                                    Display.getDisplay(W4MeMidlet.this)
-                                            .setCurrent(
-                                                    new SystemMenuList(
-                                                            W4MeMidlet.this,
-                                                            source,
-                                                            actions,
-                                                            initialAction));
-                                }
-                            }
-                        });
+        Display.getDisplay(this).callSerially(new Runnable() {
+            public void run() {
+                if (canvas == source && source.isSystemMenuOpen()) {
+                    Display.getDisplay(W4MeMidlet.this)
+                            .setCurrent(new SystemMenuList(W4MeMidlet.this, source, actions, initialAction));
+                }
+            }
+        });
     }
 
+    /** Performs the initial system menu action operation. */
     protected int initialSystemMenuAction() {
         return SystemMenuModel.ACTION_CONTINUE;
     }
 
-    void registerSaveStateMenuActions(SaveStateMenuActions actions) {
+    private void registerSaveStateMenuActions(SaveStateMenuActions actions) {
         if (actions == null) {
             throw new NullPointerException();
         }
@@ -301,13 +276,11 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         saveStateMenuActions = actions;
     }
 
-    private void returnToCanvasForSaveState(
-            W4Canvas source, boolean save) {
+    private void returnToCanvasForSaveState(W4Canvas source, boolean save) {
         if (canvas != source || !source.isSystemMenuOpen()) {
             return;
         }
-        boolean accepted =
-                save ? source.saveFromSystemMenu() : source.loadFromSystemMenu();
+        boolean accepted = save ? source.saveFromSystemMenu() : source.loadFromSystemMenu();
         if (accepted) {
             Display.getDisplay(this).setCurrent(source);
         }
@@ -315,9 +288,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     void continueFromSystemMenu(SystemMenuList menu, W4Canvas source) {
         Display display = Display.getDisplay(this);
-        if (canvas != source
-                || display.getCurrent() != menu
-                || !source.isSystemMenuOpen()) {
+        if (canvas != source || display.getCurrent() != menu || !source.isSystemMenuOpen()) {
             return;
         }
         display.setCurrent(source);
@@ -326,9 +297,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     void restartFromSystemMenu(SystemMenuList menu, W4Canvas source) {
         Display display = Display.getDisplay(this);
-        if (canvas != source
-                || display.getCurrent() != menu
-                || !source.isSystemMenuOpen()) {
+        if (canvas != source || display.getCurrent() != menu || !source.isSystemMenuOpen()) {
             return;
         }
         display.setCurrent(source);
@@ -345,38 +314,23 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
                 return;
             }
         }
-        Display.getDisplay(this)
-                .setCurrent(new SettingsList(this, source, systemMenu, settingsModel));
+        Display.getDisplay(this).setCurrent(new SettingsList(this, source, systemMenu, settingsModel));
     }
 
-    void showSettingsCategory(
-            SettingsList settings, W4Canvas source, int category) {
+    void showSettingsCategory(SettingsList settings, W4Canvas source, int category) {
         SettingsCategory handler =
-                category >= 0 && category < settingsCategories.length
-                        ? settingsCategories[category]
-                        : null;
+                category >= 0 && category < settingsCategories.length ? settingsCategories[category] : null;
         if (handler != null) {
             handler.open(this, settings, source);
             return;
         }
-        Alert alert =
-                new Alert(
-                        "Settings",
-                        "This settings category is unavailable.",
-                        null,
-                        AlertType.WARNING);
+        Alert alert = new Alert("Settings", "This settings category is unavailable.", null, AlertType.WARNING);
         alert.setTimeout(Alert.FOREVER);
         Display.getDisplay(this).setCurrent(alert, settings);
     }
 
-    void finishSettings(
-            SettingsList settings,
-            W4Canvas source,
-            SystemMenuList systemMenu) {
-        if (source != null
-                && canvas == source
-                && source.isSystemMenuOpen()
-                && systemMenu != null) {
+    void finishSettings(SettingsList settings, W4Canvas source, SystemMenuList systemMenu) {
+        if (source != null && canvas == source && source.isSystemMenuOpen() && systemMenu != null) {
             Display.getDisplay(this).setCurrent(systemMenu);
         } else if (source != null) {
             showLibrary();
@@ -385,7 +339,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         }
     }
 
-    void registerSettingsCategory(SettingsCategory category) {
+    private void registerSettingsCategory(SettingsCategory category) {
         if (category == null) {
             throw new NullPointerException();
         }
@@ -404,46 +358,22 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         showAudioSettings(source, null);
     }
 
-    private void showAudioSettings(
-            W4Canvas source, SettingsList settings) {
+    private void showAudioSettings(W4Canvas source, SettingsList settings) {
         loadAudioPreference();
-        int capability =
-                source == null
-                        ? AudioControl.VOLUME_CONTINUOUS
-                        : source.audioVolumeCapability();
+        int capability = source == null ? AudioControl.VOLUME_CONTINUOUS : source.audioVolumeCapability();
         Display.getDisplay(this)
                 .setCurrent(
-                        new AudioSettingsForm(
-                                this,
-                                source,
-                                settings,
-                                capability,
-                                audioProfile,
-                                soundMuted,
-                                audioGain));
+                        new AudioSettingsForm(this, source, settings, capability, audioProfile, soundMuted, audioGain));
     }
 
     void finishAudioSettings(
-            W4Canvas source,
-            SettingsList settings,
-            boolean apply,
-            int profile,
-            boolean muted,
-            int gain) {
+            W4Canvas source, SettingsList settings, boolean apply, int profile, boolean muted, int gain) {
         boolean saved = true;
         if (apply) {
-            audioProfile =
-                    AudioPreferences.isProfile(profile)
-                            ? profile
-                            : AudioPreferences.PROFILE_WAV;
+            audioProfile = AudioPreferences.isProfile(profile) ? profile : AudioPreferences.PROFILE_WAV;
             soundMuted = muted;
             audioGain = gain;
-            saved =
-                    AudioPreferences.save(
-                            new AudioPreferences.Settings(
-                                    audioProfile,
-                                    soundMuted,
-                                    audioGain));
+            saved = AudioPreferences.save(new AudioPreferences.Settings(audioProfile, soundMuted, audioGain));
         }
 
         Displayable target;
@@ -462,12 +392,8 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         }
 
         if (apply && !saved) {
-            Alert alert =
-                    new Alert(
-                            "Audio",
-                            "Settings are active for this session, but could not be saved.",
-                            null,
-                            AlertType.WARNING);
+            Alert alert = new Alert(
+                    "Audio", "Settings are active for this session, but could not be saved.", null, AlertType.WARNING);
             alert.setTimeout(Alert.FOREVER);
             Display.getDisplay(this).setCurrent(alert, target);
         } else {
@@ -475,6 +401,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
         }
     }
 
+    /** Creates the session monitor. */
     protected W4SessionMonitor createSessionMonitor(String resource, String title) {
         return null;
     }
@@ -524,7 +451,7 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
             return "External cartridge";
         }
         String title = location.substring(start, end);
-        if (title.toLowerCase().endsWith(".wasm")) {
+        if (FilePageBuilder.endsWithIgnoreCase(title, ".wasm")) {
             title = title.substring(0, title.length() - 5);
         }
         return title.length() == 0 ? "External cartridge" : title;
