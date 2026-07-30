@@ -11,6 +11,11 @@
 - keeps fused `f32.const` cells in the same zero-extended representation as
   ordinary decoded `f32` values.
 
+### Startup performance
+
+- decodes function bodies through bounded local instruction/control arrays,
+  removing parse-loop `ObjectList` calls while preserving the existing limits.
+
 ### Audio
 
 - specializes constant mono pulse synthesis by hoisting the phase step and

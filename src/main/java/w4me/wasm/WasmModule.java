@@ -737,6 +737,17 @@ public final class WasmModule {
         }
     }
 
+    private static Instruction[] growInstructionBuffer(
+            Instruction[] values, int maximum) {
+        int capacity = values.length << 1;
+        if (capacity > maximum) {
+            capacity = maximum;
+        }
+        Instruction[] grown = new Instruction[capacity];
+        System.arraycopy(values, 0, grown, 0, values.length);
+        return grown;
+    }
+
     private FunctionBody decodeBody(
             ByteReader reader,
             int declaredLocalCount,
@@ -744,8 +755,10 @@ public final class WasmModule {
             int localCount,
             FuncType functionType)
             throws WasmException {
-        ObjectList code = new ObjectList();
-        ObjectList openBlocks = new ObjectList();
+        Instruction[] code = new Instruction[64];
+        int codeSize = 0;
+        Instruction[] openBlocks = new Instruction[8];
+        int openBlockTop = 0;
         ValidationState validation = new ValidationState(functionType.results);
         boolean complete = false;
         int totalFunctions = importList.size() + definedFunctionTypes.size();
@@ -753,37 +766,42 @@ public final class WasmModule {
         while (!complete && reader.hasRemaining()) {
             int opcode = reader.readU8();
             Instruction instruction = new Instruction(opcode);
-            int instructionIndex = code.size();
+            int instructionIndex = codeSize;
 
             switch (opcode) {
                 case BLOCK:
                 case LOOP:
                 case IF:
                     readBlockType(reader, instruction);
-                    openBlocks.addElement(instruction);
+                    if (openBlockTop < MAX_CONTROL_STACK) {
+                        if (openBlockTop >= openBlocks.length) {
+                            openBlocks =
+                                    growInstructionBuffer(
+                                            openBlocks, MAX_CONTROL_STACK);
+                        }
+                        openBlocks[openBlockTop++] = instruction;
+                    }
                     break;
                 case 0x05:
-                    if (openBlocks.size() == 0) {
+                    if (openBlockTop == 0) {
                         throw reader.error("else without if");
                     }
-                    Instruction conditional =
-                            (Instruction) openBlocks.elementAt(openBlocks.size() - 1);
+                    Instruction conditional = openBlocks[openBlockTop - 1];
                     if (conditional.opcode != IF || conditional.elsePc >= 0) {
                         throw reader.error("else does not match an if");
                     }
                     conditional.elsePc = instructionIndex;
                     break;
                 case 0x0b:
-                    if (openBlocks.size() == 0) {
+                    if (openBlockTop == 0) {
                         instruction.functionEnd = true;
                         complete = true;
                     } else {
-                        Instruction block = (Instruction) openBlocks.elementAt(openBlocks.size() - 1);
-                        openBlocks.removeElementAt(openBlocks.size() - 1);
+                        Instruction block = openBlocks[--openBlockTop];
+                        openBlocks[openBlockTop] = null;
                         block.endPc = instructionIndex;
                         if (block.elsePc >= 0) {
-                            Instruction elseInstruction =
-                                    (Instruction) code.elementAt(block.elsePc);
+                            Instruction elseInstruction = code[block.elsePc];
                             elseInstruction.endPc = instructionIndex;
                         }
                     }
@@ -791,7 +809,7 @@ public final class WasmModule {
                 case 0x0c:
                 case 0x0d:
                     instruction.a = reader.readVarUInt32();
-                    requireBranchDepth(instruction.a, openBlocks.size(), reader);
+                    requireBranchDepth(instruction.a, openBlockTop, reader);
                     break;
                 case 0x10:
                     instruction.a = reader.readVarUInt32();
@@ -826,7 +844,7 @@ public final class WasmModule {
                     for (target = 0; target <= targetCount; target++) {
                         instruction.vector[target] = reader.readVarUInt32();
                         requireBranchDepth(
-                                instruction.vector[target], openBlocks.size(), reader);
+                                instruction.vector[target], openBlockTop, reader);
                     }
                     break;
                 case 0x11:
@@ -950,18 +968,21 @@ public final class WasmModule {
                     localCount,
                     totalFunctions,
                     reader);
-            if (code.size() >= MAX_INSTRUCTIONS) {
+            if (codeSize >= MAX_INSTRUCTIONS) {
                 throw reader.error("function exceeds instruction limit " + MAX_INSTRUCTIONS);
             }
-            code.addElement(instruction);
+            if (codeSize >= code.length) {
+                code = growInstructionBuffer(code, MAX_INSTRUCTIONS);
+            }
+            code[codeSize++] = instruction;
         }
 
-        if (!complete || openBlocks.size() != 0) {
+        if (!complete || openBlockTop != 0) {
             throw reader.error("unterminated function body");
         }
         validation.requireComplete(reader);
-        Instruction[] instructions = new Instruction[code.size()];
-        code.copyInto(instructions);
+        Instruction[] instructions = new Instruction[codeSize];
+        System.arraycopy(code, 0, instructions, 0, codeSize);
         int[] branchDescriptors =
                 buildBranchDescriptors(instructions, functionType.results.length, reader);
         validateBranchDescriptors(
