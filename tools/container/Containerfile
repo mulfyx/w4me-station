@@ -210,18 +210,15 @@ RUN cldc_api_url='https://repo.maven.apache.org/maven2/org/microemu/cldcapi11/2.
 
 # KEmulator automation CLI pinned to an exact revision. The bundle includes
 # KEmulator.jar, MIDP APIs, and kemu.sh.
-COPY tools/container/kemu-icon.xpm /tmp/kemu-icon/res/icon
 # KEmulator's upstream release script resolves sources relative to its working
 # directory and does not expose an equivalent directory argument.
 # hadolint ignore=DL3003
-RUN kemu_commit='73ba4b14b8c2c10a04a426de8cdd49102d3d6490' \
+RUN kemu_commit='eefea4dd8373abca660cb5dff3fd9b9e51ad5e19' \
     && git clone --filter=blob:none 'https://github.com/mulfyx/KEmulator.git' /tmp/kemu-src \
     && git -C /tmp/kemu-src checkout "${kemu_commit}" \
     && cd /tmp/kemu-src \
     && JAVA_HOME=/opt/jdk8 PATH="/opt/jdk8/bin:$PATH" ./build-release.sh /opt/kemu \
-    && (cd /tmp/kemu-icon && /opt/jdk8/bin/jar uf /opt/kemu/KEmulator.jar res/icon) \
     && rm -rf /tmp/kemu-src \
-    && rm -rf /tmp/kemu-icon \
     && chmod -R a+rX /opt/kemu
 
 FROM runtime-base AS toolchain

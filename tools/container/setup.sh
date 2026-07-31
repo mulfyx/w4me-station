@@ -22,7 +22,6 @@ fingerprint="$(
         package-lock.json \
         package.json \
         tools/container/Containerfile \
-        tools/container/kemu-icon.xpm \
         tools/container/setup.sh \
         | sha256sum \
         | cut -d ' ' -f 1
