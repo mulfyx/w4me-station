@@ -76,6 +76,9 @@ rules for repository automation.
 ## Repository workflow
 
 - Use the pinned project commands instead of host-installed substitutes.
+- Run only one container-backed `just` command at a time in a checkout. Parallel
+  commands can relabel the same rootless Podman bind mount and race over shared
+  `build/` output; use separate worktrees for concurrent work.
 - Run `just quality` and `just verify` before presenting a source change as
   ready to commit.
 - Run `just analysis` when changing Java production code or analysis

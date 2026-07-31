@@ -34,6 +34,11 @@ Project scripts automatically start a disposable container from the
 The image is built only by `just setup`; command containers use `--rm` and
 leave generated files in the bind-mounted `build/` and `dist/` directories.
 
+Run only one container-backed `just` command at a time in a checkout. Concurrent
+commands can relabel the same rootless Podman bind mount and can clean or write
+the same `build/` paths, resulting in transient `Permission denied` or missing
+output. Use separate Git worktrees when commands must run concurrently.
+
 ## Common commands
 
 ```sh

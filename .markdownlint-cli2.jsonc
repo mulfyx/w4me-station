@@ -8,7 +8,7 @@
     "!build/**",
     "!dist/**",
     "!node_modules/**",
-    "!target/**",
+    "!target/**"
   ],
   "config": {
     "default": true,
@@ -20,13 +20,13 @@
     "MD041": false,
     // Match Prettier's authoritative indentation for nested task-list content.
     "MD007": {
-      "indent": 4,
+      "indent": 4
     },
     "MD024": {
-      "siblings_only": true,
+      "siblings_only": true
     },
     "MD033": {
-      "allowed_elements": ["a", "img", "p"],
-    },
-  },
+      "allowed_elements": ["a", "img", "p"]
+    }
+  }
 }
