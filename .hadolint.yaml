@@ -9,4 +9,5 @@ label-schema:
   org.opencontainers.image.source: url
   org.opencontainers.image.title: text
 trustedRegistries:
+  - quay.io
   - registry.fedoraproject.org

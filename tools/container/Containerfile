@@ -1,6 +1,6 @@
 # W4ME Station development environment. Build with:
 #   docker build -t w4me-station -f tools/container/Containerfile .
-FROM registry.fedoraproject.org/fedora:44@sha256:754c6d7d5767750e57caf10376a72eb347ce5721a4310334aaeedb09ba80e05f
+FROM quay.io/fedora/fedora-minimal:44@sha256:6ae7513e2ff8e9a21c2130a7ba957372cd1024cec20d5b404fe08c979359176b AS runtime-base
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -9,8 +9,9 @@ LABEL org.opencontainers.image.title="W4ME Station toolchain" \
     org.opencontainers.image.source="https://github.com/mulfyx/w4me-station" \
     org.opencontainers.image.licenses="MIT"
 
-# Fedora package repositories do not expose an immutable snapshot URL. The base
-# image and every quality executable are pinned independently below.
+# Fedora package repositories do not expose an immutable snapshot URL. The
+# minimal base image and every quality executable are pinned independently
+# below.
 # hadolint ignore=DL3041
 RUN dnf -y install --setopt=install_weak_deps=False \
     binutils ca-certificates curl diffutils file findutils gawk git-core gzip jq \
@@ -35,10 +36,28 @@ RUN dnf -y install --setopt=install_weak_deps=False \
     gdk-pixbuf2-modules-extra \
     && dnf clean all
 
+ENV JAVA_HOME=/opt/jdk8 \
+    JDK8_HOME=/opt/jdk8 \
+    QUALITY_JAVA_HOME=/opt/jdk21 \
+    MAVEN_HOME=/opt/maven \
+    NODE_HOME=/opt/node \
+    PROGUARD_HOME=/opt/proguard \
+    CLDC_API_JAR=/opt/j2me-api/cldcapi11-2.0.4.jar \
+    MIDP_API_STUB_JAR=/opt/j2me-api/midpapi20-2.0.4.jar \
+    KEMU_HOME=/opt/kemu
+
+FROM runtime-base AS toolchain-build
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Native RE2 is the only component compiled inside the image. Compilers and
+# build metadata stay in this stage and never reach the final toolchain image.
+# hadolint ignore=DL3041
+RUN dnf -y install --setopt=install_weak_deps=False gcc-c++ make \
+    && dnf clean all
+
 # Temurin JDK 8, pinned to an exact release and verified checksum. JDK 8 is
 # used both for legacy-compatible Java builds and KEmulator.
-ENV JAVA_HOME=/opt/jdk8
-ENV JDK8_HOME=/opt/jdk8
 RUN jdk8_version='jdk8u492-b09' \
     && jdk8_url="https://github.com/adoptium/temurin8-binaries/releases/download/${jdk8_version}/OpenJDK8U-jdk_x64_linux_hotspot_8u492b09.tar.gz" \
     && jdk8_sha256='da257f161d7f8c6ca5b0e5d9e4090f65ac28c5e398072e68b8ae87988b1d1a2e' \
@@ -51,7 +70,6 @@ RUN jdk8_version='jdk8u492-b09' \
 
 # JDK 21 is used only for formatting and analysis-only Java 8 classfiles.
 # Release compilation continues to use JDK 8 and the Java ME boot class path.
-ENV QUALITY_JAVA_HOME=/opt/jdk21
 RUN jdk21_version='jdk-21.0.10+7' \
     && jdk21_url="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%2B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz" \
     && jdk21_sha256='ea3b9bd464d6dd253e9a7accf59f7ccd2a36e4aa69640b7251e3370caef896a4' \
@@ -64,7 +82,6 @@ RUN jdk21_version='jdk-21.0.10+7' \
     && chmod -R a+rX /opt/jdk21
 
 # Maven resolves the pinned Java quality plugins declared in pom.xml.
-ENV MAVEN_HOME=/opt/maven
 RUN maven_version='3.9.16' \
     && maven_url="https://archive.apache.org/dist/maven/maven-3/${maven_version}/binaries/apache-maven-${maven_version}-bin.tar.gz" \
     && maven_sha512='831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6' \
@@ -76,8 +93,7 @@ RUN maven_version='3.9.16' \
     && chmod -R a+rX /opt/maven
 
 # Node is pinned independently from Fedora. npm ci installs the exact lockfile.
-ENV NODE_HOME=/opt/node \
-    NPM_CONFIG_UPDATE_NOTIFIER=false
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 RUN node_version='24.17.0' \
     && node_url="https://nodejs.org/dist/v${node_version}/node-v${node_version}-linux-x64.tar.xz" \
     && node_sha256='ab343a1b747c7cbf3630dfd7dbf818c5423fab2eb4f5ad1afc896f6bd121a917' \
@@ -154,11 +170,7 @@ RUN python3 -m venv /opt/quality/venv \
     && chmod -R a+rX /opt/quality/venv
 
 COPY package.json package-lock.json /opt/quality/node-tools/
-# Native RE2 is a build-only dependency; Node and every npm package remain
-# exactly pinned even though Fedora cannot pin the transient compiler packages.
-# hadolint ignore=DL3041
-RUN dnf -y install --setopt=install_weak_deps=False gcc-c++ make \
-    && PATH="/opt/node/bin:${PATH}" npm ci \
+RUN PATH="/opt/node/bin:${PATH}" npm ci \
     --ignore-scripts \
     --audit=false \
     --fund=false \
@@ -169,12 +181,9 @@ RUN dnf -y install --setopt=install_weak_deps=False gcc-c++ make \
         --nodedir=/opt/node \
     && PATH="/opt/node/bin:${PATH}" node -e \
         'const RE2 = require("/opt/quality/node-tools/node_modules/re2"); if (!new RE2("^strict$").test("strict")) process.exit(1)' \
-    && dnf -y remove gcc-c++ make \
-    && dnf clean all \
     && chmod -R a+rX /opt/quality/node-tools
 
 # ProGuard adds the Java ME StackMap attributes required by real CLDC VMs.
-ENV PROGUARD_HOME=/opt/proguard
 RUN proguard_version='7.0.1' \
     && proguard_url="https://github.com/Guardsquare/proguard/releases/download/v${proguard_version}/proguard-${proguard_version}.zip" \
     && proguard_sha256='dd9a844389eb8cf421e4580713d0608e9cc10f5a0ac6f9e3f6c44154cd53dbc0' \
@@ -188,8 +197,6 @@ RUN proguard_version='7.0.1' \
 # MicroEmulator's CLDC 1.1 API stubs provide the strict javac bootclasspath.
 # They prevent production sources from resolving Java SE APIs that old phones
 # do not implement. The LGPL stub JARs are build-time-only and never packaged.
-ENV CLDC_API_JAR=/opt/j2me-api/cldcapi11-2.0.4.jar
-ENV MIDP_API_STUB_JAR=/opt/j2me-api/midpapi20-2.0.4.jar
 RUN cldc_api_url='https://repo.maven.apache.org/maven2/org/microemu/cldcapi11/2.0.4/cldcapi11-2.0.4.jar' \
     && cldc_api_sha256='f86f41bfb4097e4bd9cdfeca528960f6977cbda0f5785342adef9909a6a3baef' \
     && midp_api_url='https://repo.maven.apache.org/maven2/org/microemu/midpapi20/2.0.4/midpapi20-2.0.4.jar' \
@@ -203,7 +210,6 @@ RUN cldc_api_url='https://repo.maven.apache.org/maven2/org/microemu/cldcapi11/2.
 
 # KEmulator automation CLI pinned to an exact revision. The bundle includes
 # KEmulator.jar, MIDP APIs, and kemu.sh.
-ENV KEMU_HOME=/opt/kemu
 COPY tools/container/kemu-icon.xpm /tmp/kemu-icon/res/icon
 # KEmulator's upstream release script resolves sources relative to its working
 # directory and does not expose an equivalent directory argument.
@@ -217,6 +223,24 @@ RUN kemu_commit='73ba4b14b8c2c10a04a426de8cdd49102d3d6490' \
     && rm -rf /tmp/kemu-src \
     && rm -rf /tmp/kemu-icon \
     && chmod -R a+rX /opt/kemu
+
+FROM runtime-base AS toolchain
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+COPY --from=toolchain-build /opt/jdk8/ /opt/jdk8/
+COPY --from=toolchain-build /opt/jdk21/ /opt/jdk21/
+COPY --from=toolchain-build /opt/maven/ /opt/maven/
+COPY --from=toolchain-build /opt/node/ /opt/node/
+COPY --from=toolchain-build /opt/quality/bin/ /opt/quality/bin/
+COPY --from=toolchain-build /opt/quality/vale-styles/ /opt/quality/vale-styles/
+COPY --from=toolchain-build /opt/quality/requirements.lock /opt/quality/requirements.lock
+COPY --from=toolchain-build /opt/quality/venv/ /opt/quality/venv/
+COPY --from=toolchain-build /opt/quality/node-tools/ /opt/quality/node-tools/
+COPY --from=toolchain-build /opt/proguard-7.0.1/ /opt/proguard-7.0.1/
+COPY --from=toolchain-build /opt/j2me-api/ /opt/j2me-api/
+COPY --from=toolchain-build /opt/kemu/ /opt/kemu/
+RUN ln -s /opt/proguard-7.0.1 /opt/proguard
 
 ENV OPENSPEC_TELEMETRY=0 \
     PATH=/opt/jdk8/bin:/opt/proguard/bin:/opt/maven/bin:/opt/node/bin:/opt/quality/bin:/opt/quality/venv/bin:/opt/quality/node-tools/node_modules/.bin:$PATH

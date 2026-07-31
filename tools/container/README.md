@@ -18,7 +18,7 @@ just doctor
 without a toolchain change is a no-op. After a successful rebuild it removes
 only superseded and dangling W4ME Station images; unrelated images, active
 containers, and volumes are not pruned. Set `W4ME_TOOLCHAIN_FORCE_REBUILD=1`
-when the pinned Fedora base should be refreshed without a source change.
+when the pinned Fedora Minimal base should be refreshed without a source change.
 
 Project scripts source `tools/container/env.sh`. When launched from the host,
 they automatically re-exec themselves in a disposable `docker run --rm`
@@ -67,16 +67,17 @@ docker rm -f w4me-station-kemu
 
 ## Pinned tools
 
-| Tool                                           | Version / source                                                                             |
-| ---------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Base image                                     | Fedora 44                                                                                    |
-| Temurin JDK                                    | `jdk8u492-b09` in `/opt/jdk8`                                                                |
-| Java ME source/target                          | `1.3` / `1.3`                                                                                |
-| ProGuard                                       | `7.0.1`, Java ME `StackMap` preverification                                                  |
-| CLDC/MIDP API lint                             | MicroEmulator `cldcapi11:2.0.4` and `midpapi20:2.0.4` LGPL build-time stubs, checksum-pinned |
-| KEmulator                                      | `mulfyx/KEmulator` commit `73ba4b14b8c2` in `/opt/kemu`                                      |
-| WABT                                           | Fedora 44 package (`wasm2wat`, `wasm-objdump`, `wasm-validate`)                              |
-| Python, binutils, diffutils, ShellCheck, shfmt | Fedora 44 packages                                                                           |
+| Tool                        | Version / source                                                                             |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
+| Base image                  | Fedora Minimal 44                                                                            |
+| Temurin JDK                 | `jdk8u492-b09` in `/opt/jdk8`                                                                |
+| Java ME source/target       | `1.3` / `1.3`                                                                                |
+| ProGuard                    | `7.0.1`, Java ME `StackMap` preverification                                                  |
+| CLDC/MIDP API lint          | MicroEmulator `cldcapi11:2.0.4` and `midpapi20:2.0.4` LGPL build-time stubs, checksum-pinned |
+| KEmulator                   | `mulfyx/KEmulator` commit `73ba4b14b8c2` in `/opt/kemu`                                      |
+| WABT                        | Fedora Minimal 44 package (`wasm2wat`, `wasm-objdump`, `wasm-validate`)                      |
+| Python, binutils, diffutils | Fedora Minimal 44 packages                                                                   |
+| ShellCheck, shfmt           | Checksum-pinned standalone releases                                                          |
 
 Fedora 44 delegates standard image decoding away from the legacy GDK Pixbuf
 module interface used by KEmulator's SWT build. The container includes the
