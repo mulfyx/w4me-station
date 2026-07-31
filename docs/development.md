@@ -30,23 +30,34 @@ just doctor
 ```
 
 Project scripts automatically start a disposable container from the
-`w4me-station` image when they need the pinned Java ME toolchain. The image is
-built only by `just setup`; command containers use `--rm` and leave generated
-files in the bind-mounted `build/` and `dist/` directories.
+`w4me-station` image when they need the pinned Java ME and quality toolchain.
+The image is built only by `just setup`; command containers use `--rm` and
+leave generated files in the bind-mounted `build/` and `dist/` directories.
 
 ## Common commands
 
 ```sh
-just build       # build and validate both release JAR variants
-just test        # deterministic host regression suite
-just verify      # test, build, JAR checks, counterless differential
-just run         # open the station in KEmulator
-just bench       # native phoneME corpus benchmark
-just bench-pcm   # native phoneME PCM synthesis benchmark
-just bench-argb  # native phoneME framebuffer conversion benchmark
+just fmt           # format every repository-owned language
+just quality       # formatting, lint, OpenSpec, and repository contracts
+just analysis      # Error Prone and SpotBugs on analysis-only Java 8 classes
+just security      # secrets, advisories, licenses, and commit messages
+just build         # build and validate both release JAR variants
+just test          # deterministic host regression suite
+just verify        # lint, test, build, JAR checks, counterless differential
+just run           # open the station in KEmulator
+just bench         # native phoneME corpus benchmark
+just bench-pcm     # native phoneME PCM synthesis benchmark
+just bench-argb    # native phoneME framebuffer conversion benchmark
 just bench-w4bench # deterministic synthetic interpreter benchmark
-just release     # complete release gate and SHA256SUMS
+just nightly       # links, Trivy, SBOM, and reproducible release
+just release       # complete release gate and SHA256SUMS
 ```
+
+Run `just quality` and `just verify` before submitting a change. Run
+`just analysis` for production Java changes and `just security` for dependency,
+workflow, permission, release-tooling, or security changes. `just nightly`
+matches the deeper weekly audit and writes its reports to
+`build/reports/nightly/`.
 
 The `justfile` is the stable public interface. Specialized tools use
 subcommands rather than one script per scenario:
@@ -61,6 +72,24 @@ tools/verify.sh <jar|counterless> [args...]
 ```
 
 All KEmulator and benchmark output is written below `build/reports/`.
+
+## Automated checks
+
+The main GitHub Actions workflow runs strict Java analysis, security and supply
+chain gates, the complete release gate, and a check that tracked
+artifacts in `dist/` are reproducible from the submitted source.
+
+The weekly and manually triggered nightly workflow adds external-link
+validation, Trivy filesystem and toolchain scans, a CycloneDX SBOM, an OpenSSF
+Scorecard report when GitHub repository metadata is available, and a clean
+two-build reproducibility comparison. Nightly reports are retained as workflow
+artifacts and are also available locally under `build/reports/nightly/`.
+
+The pinned toolchain owns formatting and lint versions. Do not substitute
+host-installed formatters when changing repository files. See
+[`AGENTS.md`](../AGENTS.md) for repository automation rules,
+[`CONTRIBUTING.md`](../CONTRIBUTING.md) for contribution requirements, and
+[`SECURITY.md`](../SECURITY.md) for vulnerability reporting.
 
 ## Java ME constraints
 

@@ -20,8 +20,16 @@ that compatibility unless the project scope is explicitly revised.
 The minimum local verification is:
 
 ```sh
+just quality
 just verify
 ```
+
+Run `just analysis` when changing production Java code or analysis
+configuration. Run `just security` when changing dependencies, workflows,
+permissions, release tooling, or security configuration. The deeper
+`just nightly` gate additionally checks external links, scans the repository
+and toolchain with Trivy, emits a CycloneDX SBOM, and verifies reproducible
+release output.
 
 Specialized KEmulator scenarios use `tools/kemu/run.sh verify <scenario>`.
 Interpreter performance changes require paired native i686 phoneME

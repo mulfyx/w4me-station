@@ -7,8 +7,9 @@ devices, including feature phones from the mid 2000s.
 
 <p>
   <a href="https://github.com/mulfyx/w4me-station/actions/workflows/ci.yml"><img src="https://github.com/mulfyx/w4me-station/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/mulfyx/w4me-station/actions/workflows/nightly.yml"><img src="https://github.com/mulfyx/w4me-station/actions/workflows/nightly.yml/badge.svg" alt="Nightly quality"></a>
   <img src="https://img.shields.io/badge/Java_ME-CLDC_1.1_%2F_MIDP_2.0-ED8B00" alt="Java ME: CLDC 1.1 / MIDP 2.0">
-  <img src="https://img.shields.io/badge/release-1.1.0-blue" alt="Release 1.1.0">
+  <a href="https://github.com/mulfyx/w4me-station/releases/latest"><img src="https://img.shields.io/github/v/release/mulfyx/w4me-station?display_name=tag" alt="Latest release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
 </p>
 
@@ -67,10 +68,12 @@ Further `.wasm` files can be installed from the device.
 - thirteen bundled cartridges plus HTTP(S), RMS, URL, and optional JSR-75 loading;
 - phone keys, keyboard controls, pointer input, and an on-screen touch pad;
 - per-cartridge persistent disk storage with checksummed RMS generations;
-- one temporary in-session Save State/Load State slot from the native game menu;
+- a native paused game menu with Continue, Save State, Load State, Settings,
+  Restart Cart, and Exit actions;
+- one temporary in-session Save State/Load State slot;
 - device-dependent MMAPI audio with streamed MIDI, `playTone`, and silent
   fallbacks;
-- global RMS-backed sound On/Off and master-volume controls;
+- global RMS-backed hard mute and master-volume controls;
 - deterministic host, KEmulator, and optional phoneME verification.
 
 The release version is `1.1.0`. The verified scope and remaining limitations
@@ -130,11 +133,18 @@ Touchscreen devices display an on-screen directional pad and action buttons.
 The controls stay outside the 160×160 framebuffer whenever the screen is large
 enough.
 
+The gameplay soft key opens the native LCDUI system menu at a completed frame
+boundary. Game updates, presentation timing, input, and audio advancement stay
+paused until play resumes. The menu provides Continue, Save State, Load State,
+Settings, Restart Cart, and Exit.
+
 `Sound settings` is available from the cartridge library and the in-game
 command menu. It offers explicit WAV synthesis, MIDI synthesis, and Simple
 tones profiles, a hard global Sound On/Off mute, and master volume when the
 backend supports it. The form reports the active fallback when the selected
-technology is unavailable. Confirmed settings persist across MIDlet restarts.
+technology is unavailable. Sound Off bypasses host audio bookkeeping,
+synthesis, Player work, and end-of-frame audio ticks. Confirmed settings
+persist across MIDlet restarts.
 
 The in-game menu also provides one temporary `Save State`/`Load State` slot.
 It is replaced by the next save and is cleared when the cartridge is restarted,
@@ -161,21 +171,41 @@ licenses are listed in [Third-party notices](THIRD_PARTY_NOTICES.md).
 ## Verification
 
 ```sh
-just test
+just fmt
+just quality
+just analysis
+just security
 just verify
-just run
+```
+
+`just quality` and `just verify` are the minimum local gates. Java production
+changes also run through Error Prone and SpotBugs with `just analysis`.
+Dependency, workflow, permission, release-tooling, and security changes use
+`just security`.
+
+The main CI repeats strict analysis, security, correctness, release, and
+checked-in artifact checks. The weekly and manually triggered
+[`Nightly quality`](https://github.com/mulfyx/w4me-station/actions/workflows/nightly.yml)
+workflow adds external-link checks, Trivy scanning, a CycloneDX SBOM, and a
+reproducible-release comparison. Run the same deep gate locally with:
+
+```sh
+just nightly
 ```
 
 The stable commands are listed by `just --list`. Specialized KEmulator,
 phoneME, and profiling commands are described in
-[Development](docs/development.md). Generated logs, screenshots, and benchmark
-receipts are written under `build/reports/`.
+[Development](docs/development.md). Generated logs, screenshots, benchmark
+receipts, and audit reports are written under `build/reports/`.
 
 ## Documentation
 
 - [Compatibility and limitations](docs/compatibility.md)
 - [Installing on a phone](docs/installation.md)
 - [1.1.0 release notes](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
+- [Repository automation rules](AGENTS.md)
+- [Security policy](SECURITY.md)
 - [Development and testing](docs/development.md)
 - [Performance methodology](docs/performance.md)
 - [Release checklist](docs/releasing.md)
