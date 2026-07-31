@@ -5,6 +5,7 @@
 .codex/
 build/
 dist/
+handoffs/
 node_modules/
 target/
 

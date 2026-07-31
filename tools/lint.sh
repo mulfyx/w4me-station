@@ -17,8 +17,22 @@ quality_maven checkstyle:check pmd:check
 
 shopt -s globstar nullglob
 scripts=("${ROOT_DIR}"/tools/**/*.sh)
+shellcheck_scripts=()
+for script in "${scripts[@]}"; do
+    case "${script}" in
+        "${ROOT_DIR}"/tools/kemu/lib/*.sh | \
+            "${ROOT_DIR}"/tools/kemu/verify/*.sh | \
+            "${ROOT_DIR}"/tools/kemu/bench/*.sh) ;;
+        *) shellcheck_scripts+=("${script}") ;;
+    esac
+done
 
-shellcheck --enable=all --severity=style "${scripts[@]}"
+shellcheck \
+    --enable=all \
+    --severity=style \
+    --external-sources \
+    --source-path=SCRIPTDIR \
+    "${shellcheck_scripts[@]}"
 
 ruff check "${ROOT_DIR}/bench" "${ROOT_DIR}/tools"
 
