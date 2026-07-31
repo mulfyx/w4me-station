@@ -14,7 +14,7 @@ final class SystemMenuList extends List implements CommandListener {
     private final Command selectCommand = new Command("Select", Command.ITEM, 1);
     private final Command continueCommand = new Command("Continue", Command.BACK, 1);
 
-    SystemMenuList(W4MeMidlet midlet, W4Canvas source, SaveStateMenuActions saveStateActions, int initialAction) {
+    SystemMenuList(W4MeMidlet midlet, W4Canvas source, SaveStateMenuActions saveStateActions) {
         super("Paused", List.IMPLICIT);
         this.midlet = midlet;
         this.source = source;
@@ -23,10 +23,6 @@ final class SystemMenuList extends List implements CommandListener {
         int index;
         for (index = 0; index < model.size(); index++) {
             append(model.labelAt(index), null);
-        }
-        int initialIndex = model.indexOfAction(initialAction);
-        if (initialIndex >= 0) {
-            setSelectedIndex(initialIndex, true);
         }
         setSelectCommand(selectCommand);
         addCommand(continueCommand);

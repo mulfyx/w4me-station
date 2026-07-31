@@ -64,8 +64,8 @@ workflow, permission, release-tooling, or security changes. `just nightly`
 matches the deeper weekly audit and writes its reports to
 `build/reports/nightly/`.
 
-The `justfile` is the stable public interface. Specialized tools use
-subcommands rather than one script per scenario:
+The `justfile` is the stable public interface. Specialized tools keep stable
+subcommand entrypoints:
 
 ```sh
 tools/kemu/run.sh session <start|cmd|stop> [args...]
@@ -75,6 +75,13 @@ tools/phoneme/run.sh <bench|bench-pcm|bench-argb|bench-w4bench|verify|verify-arm
 tools/bench/run.sh <untangle|corpus|fusions|w4bench>
 tools/verify.sh <jar|counterless> [args...]
 ```
+
+`tools/kemu/run.sh` is only the KEmulator dispatcher. Shared build, automation,
+and session code lives under `tools/kemu/lib/`; verification scenarios are
+grouped under `tools/kemu/verify/`, and benchmark scenarios under
+`tools/kemu/bench/`. Those modules are sourced by the dispatcher and are not
+standalone commands. ShellCheck follows that source graph from the dispatcher
+instead of treating the modules as unrelated executables.
 
 All KEmulator and benchmark output is written below `build/reports/`.
 
@@ -121,6 +128,12 @@ belong to test MIDlets under `src/test/`. KEmulator commands inject those
 classes into temporary probe JARs. Release JARs contain the cartridges and
 runtime integrity hashes, but no replay route or expected screen oracle;
 `tools/verify.sh jar` enforces that boundary.
+
+Bundled-cartridge KEmulator scenarios select the real LCDUI library entry
+by resolving its unique visible title and using the revision-gated automation
+API. Direct-launch test MIDlets are reserved for non-catalog fixtures and
+specialized runtime harnesses; they are not a substitute for product
+navigation coverage.
 
 Third-party cartridges must remain byte-identical. Update
 `THIRD_PARTY_NOTICES.md` when the corpus changes.

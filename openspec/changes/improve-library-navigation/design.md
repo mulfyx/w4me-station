@@ -42,12 +42,22 @@ On return, the library attempts to restore the view, search query, selected iden
 
 The query is matched against titles case-insensitively. Search opens a `TextBox` and then returns the result to the LCDUI library List.
 
+### 6. Automate the displayed LCDUI model
+
+KEmulator verification drives the actual `List` with revision-gated `observe`,
+`list select`, and `command run` operations. It resolves the current row from
+one exact visible title instead of encoding catalog indices. Bundled cartridges
+are selected through the product library rather than through a test-only action
+selector or direct-launch MIDlet. Direct launch remains valid only for test
+fixtures that are not present in the product catalog or for a specialized
+runtime harness whose behavior is itself under test.
+
 ## Risks / Trade-offs
 
 - [Fingerprint collision] → use a composite identity and do not merge ambiguous entries.
 - [Metadata grows] → fixed limits, a compact binary record, and rewrite of one transactional record.
 - [An empty filter breaks navigation] → a dedicated empty-state path and Back/Clear Search commands.
-- [KEmulator headless automation cannot inject navigation into a high-level LCDUI List] → verify the LCDUI model and commands through `observe`, keep cartridge oracle scenarios independent through test-only direct-launch MIDlets, and retain a real-device navigation smoke test.
+- [Emulator automation hides product navigation] → require every bundled-cartridge flow to select the displayed library entry before launch; retain a real-device smoke test for platform-specific rendering and keypad/touch behavior.
 
 ## Migration Plan
 

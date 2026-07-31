@@ -250,20 +250,14 @@ public class W4MeMidlet extends MIDlet implements CommandListener {
 
     void showSystemMenu(final W4Canvas source) {
         final SaveStateMenuActions actions = saveStateMenuActions;
-        final int initialAction = initialSystemMenuAction();
         Display.getDisplay(this).callSerially(new Runnable() {
             public void run() {
                 if (canvas == source && source.isSystemMenuOpen()) {
                     Display.getDisplay(W4MeMidlet.this)
-                            .setCurrent(new SystemMenuList(W4MeMidlet.this, source, actions, initialAction));
+                            .setCurrent(new SystemMenuList(W4MeMidlet.this, source, actions));
                 }
             }
         });
-    }
-
-    /** Performs the initial system menu action operation. */
-    protected int initialSystemMenuAction() {
-        return SystemMenuModel.ACTION_CONTINUE;
     }
 
     private void registerSaveStateMenuActions(SaveStateMenuActions actions) {

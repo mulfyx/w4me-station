@@ -34,16 +34,6 @@ final class SystemMenuModel {
         return LABELS[actionAt(index)];
     }
 
-    int indexOfAction(int action) {
-        int index;
-        for (index = 0; index < actions.length; index++) {
-            if (actions[index] == action) {
-                return index;
-            }
-        }
-        return -1;
-    }
-
     private void requireIndex(int index) {
         if (index < 0 || index >= actions.length) {
             throw new IndexOutOfBoundsException();
