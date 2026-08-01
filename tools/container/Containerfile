@@ -1,6 +1,5 @@
-# W4ME Station development environment. Build with:
-#   docker build -t w4me-station -f tools/container/Containerfile .
-FROM quay.io/fedora/fedora-minimal:44@sha256:6ae7513e2ff8e9a21c2130a7ba957372cd1024cec20d5b404fe08c979359176b AS runtime-base
+# W4ME Station development environment. Build only through `just setup`.
+FROM registry.fedoraproject.org/fedora-minimal:44@sha256:6ae7513e2ff8e9a21c2130a7ba957372cd1024cec20d5b404fe08c979359176b AS runtime-base
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -256,6 +255,22 @@ RUN printf '%s\n' \
     "export MIDP_API_STUB_JAR=/opt/j2me-api/midpapi20-2.0.4.jar" \
     "export PATH=/opt/jdk8/bin:/opt/proguard/bin:/opt/maven/bin:/opt/node/bin:/opt/quality/bin:/opt/quality/venv/bin:\${PATH}" \
     > /etc/profile.d/w4me-station-toolchain.sh
+
+# Fail the image build before the canonical tag moves if the final stage lost
+# a required executable or copied an unusable native Node module.
+RUN for command_name in \
+        actionlint editorconfig-checker gitleaks hadolint java javac just \
+        lychee mvn node npm osv-scanner python3 reuse ruff scorecard \
+        shellcheck shfmt trivy typos vale wasm2wat wasm-validate yamllint zizmor; do \
+        command -v "${command_name}" > /dev/null \
+            || { printf 'missing toolchain command: %s\n' "${command_name}" >&2; exit 1; } \
+    done \
+    && test -x "${KEMU_HOME}/kemu.sh" \
+    && test -r "${CLDC_API_JAR}" \
+    && test -r "${MIDP_API_STUB_JAR}" \
+    && java -version \
+    && PATH="/opt/node/bin:${PATH}" node -e \
+        'const RE2 = require("/opt/quality/node-tools/node_modules/re2"); if (!new RE2("^strict$").test("strict")) process.exit(1)'
 
 # Keep direct image use unprivileged. The project runner explicitly overrides
 # this numeric identity with the invoking host UID/GID so bind-mounted build

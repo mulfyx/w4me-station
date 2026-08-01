@@ -1,13 +1,13 @@
 # W4ME Station Docker toolchain
 
-The `w4me-station` image is the canonical environment for project commands. It
+The `localhost/w4me-station:latest` image is the only local project image. It
 pins JDK 8, KEmulator, and supporting tools.
 
 ## Setup
 
-Install `just` and a `docker` command on the Linux host. Docker Engine works
-directly; Podman users can provide a Docker-compatible `docker` command. Build
-the image once per machine:
+Install `just`, `flock`, and a `docker` command on the Linux host. Docker Engine
+works directly; Podman users can provide a Docker-compatible `docker` command.
+Build the image once per machine:
 
 ```sh
 just setup
@@ -15,10 +15,15 @@ just doctor
 ```
 
 `just setup` fingerprints the Containerfile and its local inputs. Repeating it
-without a toolchain change is a no-op. After a successful rebuild it removes
-only superseded and dangling W4ME Station images; unrelated images, active
-containers, and volumes are not pruned. Set `W4ME_TOOLCHAIN_FORCE_REBUILD=1`
-when the pinned Fedora Minimal base should be refreshed without a source change.
+without a toolchain change is a no-op. A failed build leaves the existing
+canonical image intact. After a successful build, setup removes superseded
+project-labelled images and Podman build records, then verifies that only the
+canonical image remains. Podman layer caching is disabled for this image so a
+successful multi-stage rebuild leaves no visible `<none>` image records. Cleanup
+is filtered by the W4ME project label; unrelated images and volumes are never
+pruned. A running project container blocks replacement. Set
+`W4ME_TOOLCHAIN_FORCE_REBUILD=1` to rebuild the image and refresh the pinned
+Fedora Minimal packages without a source change.
 
 Project scripts source `tools/container/env.sh`. When launched from the host,
 they automatically re-exec themselves in a disposable `docker run --rm`

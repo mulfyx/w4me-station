@@ -2,11 +2,12 @@
 set -euo pipefail
 
 ROOT_DIR="$(readlink -f -- "$(dirname -- "${BASH_SOURCE[0]}")/../..")"
-IMAGE="${W4ME_TOOLCHAIN_IMAGE:-w4me-station:latest}"
 KEMU_SESSION_CONTAINER="${W4ME_KEMU_SESSION_CONTAINER:-w4me-station-kemu}"
 
 # shellcheck disable=SC1091
 source "${ROOT_DIR}/tools/container/runtime.sh"
+
+IMAGE="${W4ME_TOOLCHAIN_IMAGE}"
 
 if [[ "${W4ME_TOOLCHAIN_CONTAINER:-}" = "1" ]]; then
     printf 'error: tools/container/run.sh is a host-side entrypoint\n' >&2
@@ -16,6 +17,7 @@ if ! command -v docker > /dev/null 2>&1; then
     printf 'error: docker command not found; install Docker or a Docker-compatible Podman shim\n' >&2
     exit 1
 fi
+lock_toolchain_image shared
 set +e
 inspect_container_image "${IMAGE}" > /dev/null
 inspect_status="$?"
@@ -45,6 +47,7 @@ exec "$@"
 
 COMMON_ARGS=(
     --init
+    --label "${W4ME_TOOLCHAIN_PROJECT_LABEL}=true"
     "${CONTAINER_USER_ARGS[@]}"
     -e W4ME_TOOLCHAIN_CONTAINER=1
     -e "W4ME_TOOLCHAIN_IMAGE=${IMAGE}"

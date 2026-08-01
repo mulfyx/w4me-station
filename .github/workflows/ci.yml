@@ -36,25 +36,20 @@ jobs:
           context: .
           file: tools/container/Containerfile
           load: true
-          tags: w4me-toolchain:ci
+          tags: localhost/w4me-station:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run strict Java analysis
-        env:
-          W4ME_TOOLCHAIN_IMAGE: w4me-toolchain:ci
         run: ./tools/analysis.sh
 
       - name: Run security and supply-chain gates
         env:
           COMMITLINT_FROM: ${{ github.event.pull_request.base.sha || github.event.before }}
           COMMITLINT_TO: ${{ github.sha }}
-          W4ME_TOOLCHAIN_IMAGE: w4me-toolchain:ci
         run: ./tools/security.sh
 
       - name: Test and build release artifacts
-        env:
-          W4ME_TOOLCHAIN_IMAGE: w4me-toolchain:ci
         run: ./tools/release.sh
 
       - name: Verify checked-in release artifacts

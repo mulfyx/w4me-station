@@ -37,14 +37,13 @@ jobs:
           context: .
           file: tools/container/Containerfile
           load: true
-          tags: w4me-toolchain:nightly
+          tags: localhost/w4me-station:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run nightly release and supply-chain audit
         env:
           GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          W4ME_TOOLCHAIN_IMAGE: w4me-toolchain:nightly
         run: ./tools/nightly.sh
 
       - name: Upload audit reports

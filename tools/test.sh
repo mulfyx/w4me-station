@@ -35,6 +35,7 @@ esac
 printf 'paired-stats:pass dirty-source-classification\n'
 
 bash "${ROOT_DIR}/tools/container/runtime-smoke.sh"
+bash "${ROOT_DIR}/tools/container/setup-smoke.sh"
 
 "${ROOT_DIR}/tools/bench/run.sh" w4bench
 

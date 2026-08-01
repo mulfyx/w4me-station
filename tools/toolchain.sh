@@ -4,9 +4,12 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # shellcheck disable=SC1091
+source "${ROOT_DIR}/tools/container/runtime.sh"
+
+# shellcheck disable=SC1091
 source "${ROOT_DIR}/tools/container/env.sh"
 
-printf 'container-image: %s\n' "${W4ME_TOOLCHAIN_IMAGE:-w4me-station:latest}"
+printf 'container-image: %s\n' "${W4ME_TOOLCHAIN_IMAGE}"
 java -version
 javac -version
 "${QUALITY_JAVA_HOME}/bin/java" -version

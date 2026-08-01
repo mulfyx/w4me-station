@@ -19,9 +19,9 @@ the reproducible versioned JAR/JAD release set produced by `just release`.
 
 ## Toolchain
 
-Install `just` and a `docker` command on the Linux host. Docker Engine works
-directly; Podman users can provide its Docker-compatible command. The project
-image contains JDK 8, ProGuard, KEmulator, WABT, Python, ShellCheck, and
+Install `just`, `flock`, and a `docker` command on the Linux host. Docker Engine
+works directly; Podman users can provide its Docker-compatible command. The
+project image contains JDK 8, ProGuard, KEmulator, WABT, Python, ShellCheck, and
 formatting tools.
 
 ```sh
@@ -29,10 +29,14 @@ just setup
 just doctor
 ```
 
-Project scripts automatically start a disposable container from the
-`w4me-station` image when they need the pinned Java ME and quality toolchain.
-The image is built only by `just setup`; command containers use `--rm` and
-leave generated files in the bind-mounted `build/` and `dist/` directories.
+Project scripts automatically start a disposable container from the canonical
+`localhost/w4me-station:latest` image when they need the pinned Java ME and
+quality toolchain. The image is built only by `just setup`. A failed build
+preserves the previous image; a successful build removes superseded W4ME
+images and project-labelled intermediate build records. Podman layer caching is
+disabled for this project image, so successful multi-stage rebuilds leave no
+visible `<none>` image records. Command containers use `--rm` and leave
+generated files in the bind-mounted `build/` and `dist/` directories.
 
 Run only one container-backed `just` command at a time in a checkout. Concurrent
 commands can relabel the same rootless Podman bind mount and can clean or write
